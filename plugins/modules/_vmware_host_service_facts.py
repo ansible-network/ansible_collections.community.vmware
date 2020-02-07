@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['deprecated'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["deprecated"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_host_service_facts
 deprecated:
@@ -47,9 +48,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather facts about all ESXi Host in given Cluster
   vmware_host_service_facts:
     hostname: '{{ vcenter_hostname }}'
@@ -67,9 +68,9 @@ EXAMPLES = r'''
     esxi_hostname: '{{ esxi_hostname }}'
   delegate_to: localhost
   register: host_services
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 host_service_facts:
     description:
     - dict with hostname as key and dict with host service config facts
@@ -99,18 +100,23 @@ host_service_facts:
             },
         ]
     }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class VmwareServiceManager(PyVmomi):
     def __init__(self, module):
         super(VmwareServiceManager, self).__init__(module)
-        cluster_name = self.params.get('cluster_name', None)
-        esxi_host_name = self.params.get('esxi_hostname', None)
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=esxi_host_name)
+        cluster_name = self.params.get("cluster_name", None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=esxi_host_name
+        )
 
     def gather_host_facts(self):
         hosts_facts = {}
@@ -128,8 +134,12 @@ class VmwareServiceManager(PyVmomi):
                             uninstallable=service.uninstallable,
                             running=service.running,
                             policy=service.policy,
-                            source_package_name=service.sourcePackage.sourcePackageName if service.sourcePackage else None,
-                            source_package_desc=service.sourcePackage.description if service.sourcePackage else None,
+                            source_package_name=service.sourcePackage.sourcePackageName
+                            if service.sourcePackage
+                            else None,
+                            source_package_desc=service.sourcePackage.description
+                            if service.sourcePackage
+                            else None,
                         )
                     )
             hosts_facts[host.name] = host_service_facts
@@ -139,20 +149,21 @@ class VmwareServiceManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        cluster_name=dict(type='str', required=False),
-        esxi_hostname=dict(type='str', required=False),
+        cluster_name=dict(type="str", required=False),
+        esxi_hostname=dict(type="str", required=False),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
+        required_one_of=[["cluster_name", "esxi_hostname"]],
         supports_check_mode=True,
     )
 
     vmware_host_service_config = VmwareServiceManager(module)
-    module.exit_json(changed=False, host_service_facts=vmware_host_service_config.gather_host_facts())
+    module.exit_json(
+        changed=False,
+        host_service_facts=vmware_host_service_config.gather_host_facts(),
+    )
 
 
 if __name__ == "__main__":

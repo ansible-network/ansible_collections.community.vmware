@@ -5,16 +5,17 @@
 
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_dvs_portgroup_find
 short_description: Find portgroup(s) in a VMware environment
@@ -52,9 +53,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Get all portgroups in dvswitch vDS
   vmware_dvs_portgroup_find:
     hostname: "{{ vcenter_hostname }}"
@@ -72,9 +73,9 @@ EXAMPLES = r'''
     vlanid: '15'
     validate_certs: no
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 dvs_portgroups:
     description: basic details of portgroups found
     returned: on success
@@ -88,7 +89,7 @@ dvs_portgroups:
             "vlan_id": "0"
         }
     ]
-'''
+"""
 
 try:
     from pyVmomi import vim
@@ -96,23 +97,31 @@ except ImportError as e:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_dvs_by_name
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+    find_dvs_by_name,
+)
 
 
 class DVSPortgroupFindManager(PyVmomi):
     def __init__(self, module):
         super(DVSPortgroupFindManager, self).__init__(module)
-        self.dvs_name = self.params['dvswitch']
-        self.vlan = self.params['vlanid']
+        self.dvs_name = self.params["dvswitch"]
+        self.vlan = self.params["vlanid"]
         self.cmp_vlans = True if self.vlan else False
-        self.pgs = self.find_portgroups_by_name(self.content, self.module.params['name'])
+        self.pgs = self.find_portgroups_by_name(
+            self.content, self.module.params["name"]
+        )
 
         if self.dvs_name:
             self.pgs = self.find_portgroups_by_dvs(self.pgs, self.dvs_name)
 
     def find_portgroups_by_name(self, content, name=None):
         vimtype = [vim.dvs.DistributedVirtualPortgroup]
-        container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
+        container = content.viewManager.CreateContainerView(
+            content.rootFolder, vimtype, True
+        )
         if not name:
             obj = container.view
         else:
@@ -137,8 +146,8 @@ class DVSPortgroupFindManager(PyVmomi):
             return True
 
         for ln in vlanlst:
-            if '-' in ln:
-                arr = ln.split('-')
+            if "-" in ln:
+                arr = ln.split("-")
                 if arr[0] < self.vlan and self.vlan < arr[1]:
                     res = True
             elif ln == str(self.vlan):
@@ -163,7 +172,9 @@ class DVSPortgroupFindManager(PyVmomi):
                     if item.start == item.end:
                         vlan_id_list.append(str(item.start))
                     else:
-                        vlan_id_list.append(str(item.start) + '-' + str(item.end))
+                        vlan_id_list.append(
+                            str(item.start) + "-" + str(item.end)
+                        )
             elif isinstance(vlanInfo, cl2):
                 pvlan = True
                 vlan_id_list.append(str(vlanInfo.pvlanId))
@@ -171,20 +182,30 @@ class DVSPortgroupFindManager(PyVmomi):
                 vlan_id_list.append(str(vlanInfo.vlanId))
 
             if self.cmp_vlans:
-                if self.vlan_match(pg.config.uplink, self.module.params['show_uplink'], vlan_id_list):
-                    pglist.append(dict(
+                if self.vlan_match(
+                    pg.config.uplink,
+                    self.module.params["show_uplink"],
+                    vlan_id_list,
+                ):
+                    pglist.append(
+                        dict(
+                            name=pg.name,
+                            trunk=trunk,
+                            pvlan=pvlan,
+                            vlan_id=",".join(vlan_id_list),
+                            dvswitch=pg.config.distributedVirtualSwitch.name,
+                        )
+                    )
+            else:
+                pglist.append(
+                    dict(
                         name=pg.name,
                         trunk=trunk,
                         pvlan=pvlan,
-                        vlan_id=','.join(vlan_id_list),
-                        dvswitch=pg.config.distributedVirtualSwitch.name))
-            else:
-                pglist.append(dict(
-                    name=pg.name,
-                    trunk=trunk,
-                    pvlan=pvlan,
-                    vlan_id=','.join(vlan_id_list),
-                    dvswitch=pg.config.distributedVirtualSwitch.name))
+                        vlan_id=",".join(vlan_id_list),
+                        dvswitch=pg.config.distributedVirtualSwitch.name,
+                    )
+                )
 
         return pglist
 
@@ -192,22 +213,21 @@ class DVSPortgroupFindManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        dvswitch=dict(type='str', required=False),
-        vlanid=dict(type='int', required=False),
-        name=dict(type='str', required=False),
-        show_uplink=dict(type='bool', default=False),
+        dvswitch=dict(type="str", required=False),
+        vlanid=dict(type="int", required=False),
+        name=dict(type="str", required=False),
+        show_uplink=dict(type="bool", default=False),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[
-            ['show_uplink', 'True', 'vlanid']
-        ]
+        required_if=[["show_uplink", "True", "vlanid"]],
     )
 
     dvs_pg_mgr = DVSPortgroupFindManager(module)
-    module.exit_json(changed=False,
-                     dvs_portgroups=dvs_pg_mgr.get_dvs_portgroup())
+    module.exit_json(
+        changed=False, dvs_portgroups=dvs_pg_mgr.get_dvs_portgroup()
+    )
 
 
 if __name__ == "__main__":

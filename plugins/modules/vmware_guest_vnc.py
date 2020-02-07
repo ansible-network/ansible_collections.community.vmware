@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_vnc
 short_description: Manages VNC remote display on virtual machines in vCenter
@@ -92,9 +93,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Enable VNC remote display on the VM
   vmware_guest_vnc:
     hostname: "{{ vcenter_hostname }}"
@@ -133,9 +134,9 @@ EXAMPLES = '''
     state: absent
   delegate_to: localhost
   register: vnc_result
-'''
+"""
 
-RETURN = '''
+RETURN = """
 changed:
   description: If anything changed on VM's extraConfig.
   returned: always
@@ -148,7 +149,7 @@ instance:
   description: Dictionary describing the VM, including VNC info.
   returned: On success in both I(state)
   type: dict
-'''
+"""
 
 try:
     from pyVmomi import vim
@@ -156,19 +157,23 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, get_vnc_extraconfig, wait_for_task, gather_vm_facts, TaskError
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+    get_vnc_extraconfig,
+    wait_for_task,
+    gather_vm_facts,
+    TaskError,
+)
 from ansible.module_utils._text import to_native
 
 
 def set_vnc_extraconfig(content, vm, enabled, ip, port, password):
-    result = dict(
-        changed=False,
-        failed=False,
-    )
+    result = dict(changed=False, failed=False)
     # set new values
     key_prefix = "remotedisplay.vnc."
     new_values = dict()
-    for key in ['enabled', 'ip', 'port', 'password']:
+    for key in ["enabled", "ip", "port", "password"]:
         new_values[key_prefix + key] = ""
     if enabled:
         new_values[key_prefix + "enabled"] = "true"
@@ -203,42 +208,42 @@ def set_vnc_extraconfig(content, vm, enabled, ip, port, password):
     try:
         wait_for_task(task)
     except TaskError as task_err:
-        result['failed'] = True
-        result['msg'] = to_native(task_err)
+        result["failed"] = True
+        result["msg"] = to_native(task_err)
 
-    if task.info.state == 'error':
-        result['failed'] = True
-        result['msg'] = task.info.error.msg
+    if task.info.state == "error":
+        result["failed"] = True
+        result["msg"] = task.info.error.msg
     else:
-        result['changed'] = True
-        result['instance'] = gather_vm_facts(content, vm)
+        result["changed"] = True
+        result["instance"] = gather_vm_facts(content, vm)
     return result
 
 
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        state=dict(type='str', default='present', choices=['present', 'absent']),
-        name=dict(type='str'),
-        name_match=dict(type='str', choices=['first', 'last'], default='first'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        folder=dict(type='str'),
-        vnc_ip=dict(type='str', default='0.0.0.0'),
-        vnc_port=dict(type='int', default=0),
-        vnc_password=dict(type='str', default='', no_log=True),
-        datacenter=dict(type='str', default='ha-datacenter')
+        state=dict(
+            type="str", default="present", choices=["present", "absent"]
+        ),
+        name=dict(type="str"),
+        name_match=dict(
+            type="str", choices=["first", "last"], default="first"
+        ),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        folder=dict(type="str"),
+        vnc_ip=dict(type="str", default="0.0.0.0"),
+        vnc_port=dict(type="int", default=0),
+        vnc_password=dict(type="str", default="", no_log=True),
+        datacenter=dict(type="str", default="ha-datacenter"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ],
-        mutually_exclusive=[
-            ['name', 'uuid', 'moid']
-        ]
+        required_one_of=[["name", "uuid", "moid"]],
+        mutually_exclusive=[["name", "uuid", "moid"]],
     )
 
     result = dict(changed=False, failed=False)
@@ -249,16 +254,23 @@ def main():
         result = set_vnc_extraconfig(
             pyv.content,
             vm,
-            (module.params['state'] == "present"),
-            module.params['vnc_ip'],
-            module.params['vnc_port'],
-            module.params['vnc_password']
+            (module.params["state"] == "present"),
+            module.params["vnc_ip"],
+            module.params["vnc_port"],
+            module.params["vnc_password"],
         )
     else:
-        vm_id = module.params.get('uuid') or module.params.get('name') or module.params.get('moid')
-        module.fail_json(msg="Unable to set VNC config for non-existing virtual machine : '%s'" % vm_id)
+        vm_id = (
+            module.params.get("uuid")
+            or module.params.get("name")
+            or module.params.get("moid")
+        )
+        module.fail_json(
+            msg="Unable to set VNC config for non-existing virtual machine : '%s'"
+            % vm_id
+        )
 
-    if result.get('failed') is True:
+    if result.get("failed") is True:
         module.fail_json(**result)
 
     module.exit_json(**result)

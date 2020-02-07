@@ -7,15 +7,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['deprecated'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["deprecated"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_disk_facts
 deprecated:
@@ -80,9 +81,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Gather disk facts from virtual machine using UUID
   vmware_guest_disk_facts:
     hostname: "{{ vcenter_hostname }}"
@@ -115,7 +116,7 @@ EXAMPLES = '''
     moid: vm-42
   delegate_to: localhost
   register: disk_facts
-'''
+"""
 
 RETURN = """
 guest_disk_facts:
@@ -170,7 +171,10 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_text
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+)
 
 
 class PyVmomiHelper(PyVmomi):
@@ -192,11 +196,11 @@ class PyVmomiHelper(PyVmomi):
             return disks_facts
 
         controller_types = {
-            vim.vm.device.VirtualLsiLogicController: 'lsilogic',
-            vim.vm.device.ParaVirtualSCSIController: 'paravirtual',
-            vim.vm.device.VirtualBusLogicController: 'buslogic',
-            vim.vm.device.VirtualLsiLogicSASController: 'lsilogicsas',
-            vim.vm.device.VirtualIDEController: 'ide'
+            vim.vm.device.VirtualLsiLogicController: "lsilogic",
+            vim.vm.device.ParaVirtualSCSIController: "paravirtual",
+            vim.vm.device.VirtualBusLogicController: "buslogic",
+            vim.vm.device.VirtualLsiLogicSASController: "lsilogicsas",
+            vim.vm.device.VirtualIDEController: "ide",
         }
 
         controller_index = 0
@@ -206,7 +210,7 @@ class PyVmomiHelper(PyVmomi):
                     key=controller.key,
                     controller_type=controller_types[type(controller)],
                     bus_number=controller.busNumber,
-                    devices=controller.device
+                    devices=controller.device,
                 )
                 controller_index += 1
 
@@ -224,64 +228,141 @@ class PyVmomiHelper(PyVmomi):
                     capacity_in_kb=disk.capacityInKB,
                     capacity_in_bytes=disk.capacityInBytes,
                 )
-                if isinstance(disk.backing, vim.vm.device.VirtualDisk.FlatVer1BackingInfo):
-                    disks_facts[disk_index]['backing_type'] = 'FlatVer1'
-                    disks_facts[disk_index]['backing_writethrough'] = disk.backing.writeThrough
+                if isinstance(
+                    disk.backing, vim.vm.device.VirtualDisk.FlatVer1BackingInfo
+                ):
+                    disks_facts[disk_index]["backing_type"] = "FlatVer1"
+                    disks_facts[disk_index][
+                        "backing_writethrough"
+                    ] = disk.backing.writeThrough
 
-                elif isinstance(disk.backing, vim.vm.device.VirtualDisk.FlatVer2BackingInfo):
-                    disks_facts[disk_index]['backing_type'] = 'FlatVer2'
-                    disks_facts[disk_index]['backing_writethrough'] = bool(disk.backing.writeThrough)
-                    disks_facts[disk_index]['backing_thinprovisioned'] = bool(disk.backing.thinProvisioned)
-                    disks_facts[disk_index]['backing_eagerlyscrub'] = bool(disk.backing.eagerlyScrub)
-                    disks_facts[disk_index]['backing_uuid'] = disk.backing.uuid
+                elif isinstance(
+                    disk.backing, vim.vm.device.VirtualDisk.FlatVer2BackingInfo
+                ):
+                    disks_facts[disk_index]["backing_type"] = "FlatVer2"
+                    disks_facts[disk_index]["backing_writethrough"] = bool(
+                        disk.backing.writeThrough
+                    )
+                    disks_facts[disk_index]["backing_thinprovisioned"] = bool(
+                        disk.backing.thinProvisioned
+                    )
+                    disks_facts[disk_index]["backing_eagerlyscrub"] = bool(
+                        disk.backing.eagerlyScrub
+                    )
+                    disks_facts[disk_index]["backing_uuid"] = disk.backing.uuid
 
-                elif isinstance(disk.backing, vim.vm.device.VirtualDisk.LocalPMemBackingInfo):
-                    disks_facts[disk_index]['backing_type'] = 'LocalPMem'
-                    disks_facts[disk_index]['backing_volumeuuid'] = disk.backing.volumeUUID
-                    disks_facts[disk_index]['backing_uuid'] = disk.backing.uuid
+                elif isinstance(
+                    disk.backing,
+                    vim.vm.device.VirtualDisk.LocalPMemBackingInfo,
+                ):
+                    disks_facts[disk_index]["backing_type"] = "LocalPMem"
+                    disks_facts[disk_index][
+                        "backing_volumeuuid"
+                    ] = disk.backing.volumeUUID
+                    disks_facts[disk_index]["backing_uuid"] = disk.backing.uuid
 
-                elif isinstance(disk.backing, vim.vm.device.VirtualDisk.PartitionedRawDiskVer2BackingInfo):
-                    disks_facts[disk_index]['backing_type'] = 'PartitionedRawDiskVer2'
-                    disks_facts[disk_index]['backing_descriptorfilename'] = disk.backing.descriptorFileName
-                    disks_facts[disk_index]['backing_uuid'] = disk.backing.uuid
+                elif isinstance(
+                    disk.backing,
+                    vim.vm.device.VirtualDisk.PartitionedRawDiskVer2BackingInfo,
+                ):
+                    disks_facts[disk_index][
+                        "backing_type"
+                    ] = "PartitionedRawDiskVer2"
+                    disks_facts[disk_index][
+                        "backing_descriptorfilename"
+                    ] = disk.backing.descriptorFileName
+                    disks_facts[disk_index]["backing_uuid"] = disk.backing.uuid
 
-                elif isinstance(disk.backing, vim.vm.device.VirtualDisk.RawDiskMappingVer1BackingInfo):
-                    disks_facts[disk_index]['backing_type'] = 'RawDiskMappingVer1'
-                    disks_facts[disk_index]['backing_devicename'] = disk.backing.deviceName
-                    disks_facts[disk_index]['backing_diskmode'] = disk.backing.diskMode
-                    disks_facts[disk_index]['backing_lunuuid'] = disk.backing.lunUuid
-                    disks_facts[disk_index]['backing_uuid'] = disk.backing.uuid
+                elif isinstance(
+                    disk.backing,
+                    vim.vm.device.VirtualDisk.RawDiskMappingVer1BackingInfo,
+                ):
+                    disks_facts[disk_index][
+                        "backing_type"
+                    ] = "RawDiskMappingVer1"
+                    disks_facts[disk_index][
+                        "backing_devicename"
+                    ] = disk.backing.deviceName
+                    disks_facts[disk_index][
+                        "backing_diskmode"
+                    ] = disk.backing.diskMode
+                    disks_facts[disk_index][
+                        "backing_lunuuid"
+                    ] = disk.backing.lunUuid
+                    disks_facts[disk_index]["backing_uuid"] = disk.backing.uuid
 
-                elif isinstance(disk.backing, vim.vm.device.VirtualDisk.RawDiskVer2BackingInfo):
-                    disks_facts[disk_index]['backing_type'] = 'RawDiskVer2'
-                    disks_facts[disk_index]['backing_descriptorfilename'] = disk.backing.descriptorFileName
-                    disks_facts[disk_index]['backing_uuid'] = disk.backing.uuid
+                elif isinstance(
+                    disk.backing,
+                    vim.vm.device.VirtualDisk.RawDiskVer2BackingInfo,
+                ):
+                    disks_facts[disk_index]["backing_type"] = "RawDiskVer2"
+                    disks_facts[disk_index][
+                        "backing_descriptorfilename"
+                    ] = disk.backing.descriptorFileName
+                    disks_facts[disk_index]["backing_uuid"] = disk.backing.uuid
 
-                elif isinstance(disk.backing, vim.vm.device.VirtualDisk.SeSparseBackingInfo):
-                    disks_facts[disk_index]['backing_type'] = 'SeSparse'
-                    disks_facts[disk_index]['backing_diskmode'] = disk.backing.diskMode
-                    disks_facts[disk_index]['backing_writethrough'] = bool(disk.backing.writeThrough)
-                    disks_facts[disk_index]['backing_uuid'] = disk.backing.uuid
+                elif isinstance(
+                    disk.backing, vim.vm.device.VirtualDisk.SeSparseBackingInfo
+                ):
+                    disks_facts[disk_index]["backing_type"] = "SeSparse"
+                    disks_facts[disk_index][
+                        "backing_diskmode"
+                    ] = disk.backing.diskMode
+                    disks_facts[disk_index]["backing_writethrough"] = bool(
+                        disk.backing.writeThrough
+                    )
+                    disks_facts[disk_index]["backing_uuid"] = disk.backing.uuid
 
-                elif isinstance(disk.backing, vim.vm.device.VirtualDisk.SparseVer1BackingInfo):
-                    disks_facts[disk_index]['backing_type'] = 'SparseVer1'
-                    disks_facts[disk_index]['backing_diskmode'] = disk.backing.diskMode
-                    disks_facts[disk_index]['backing_spaceusedinkb'] = disk.backing.spaceUsedInKB
-                    disks_facts[disk_index]['backing_split'] = bool(disk.backing.split)
-                    disks_facts[disk_index]['backing_writethrough'] = bool(disk.backing.writeThrough)
+                elif isinstance(
+                    disk.backing,
+                    vim.vm.device.VirtualDisk.SparseVer1BackingInfo,
+                ):
+                    disks_facts[disk_index]["backing_type"] = "SparseVer1"
+                    disks_facts[disk_index][
+                        "backing_diskmode"
+                    ] = disk.backing.diskMode
+                    disks_facts[disk_index][
+                        "backing_spaceusedinkb"
+                    ] = disk.backing.spaceUsedInKB
+                    disks_facts[disk_index]["backing_split"] = bool(
+                        disk.backing.split
+                    )
+                    disks_facts[disk_index]["backing_writethrough"] = bool(
+                        disk.backing.writeThrough
+                    )
 
-                elif isinstance(disk.backing, vim.vm.device.VirtualDisk.SparseVer2BackingInfo):
-                    disks_facts[disk_index]['backing_type'] = 'SparseVer2'
-                    disks_facts[disk_index]['backing_diskmode'] = disk.backing.diskMode
-                    disks_facts[disk_index]['backing_spaceusedinkb'] = disk.backing.spaceUsedInKB
-                    disks_facts[disk_index]['backing_split'] = bool(disk.backing.split)
-                    disks_facts[disk_index]['backing_writethrough'] = bool(disk.backing.writeThrough)
-                    disks_facts[disk_index]['backing_uuid'] = disk.backing.uuid
+                elif isinstance(
+                    disk.backing,
+                    vim.vm.device.VirtualDisk.SparseVer2BackingInfo,
+                ):
+                    disks_facts[disk_index]["backing_type"] = "SparseVer2"
+                    disks_facts[disk_index][
+                        "backing_diskmode"
+                    ] = disk.backing.diskMode
+                    disks_facts[disk_index][
+                        "backing_spaceusedinkb"
+                    ] = disk.backing.spaceUsedInKB
+                    disks_facts[disk_index]["backing_split"] = bool(
+                        disk.backing.split
+                    )
+                    disks_facts[disk_index]["backing_writethrough"] = bool(
+                        disk.backing.writeThrough
+                    )
+                    disks_facts[disk_index]["backing_uuid"] = disk.backing.uuid
 
                 for controller_index in range(len(controller_facts)):
-                    if controller_facts[controller_index]['key'] == disks_facts[disk_index]['controller_key']:
-                        disks_facts[disk_index]['controller_bus_number'] = controller_facts[controller_index]['bus_number']
-                        disks_facts[disk_index]['controller_type'] = controller_facts[controller_index]['controller_type']
+                    if (
+                        controller_facts[controller_index]["key"]
+                        == disks_facts[disk_index]["controller_key"]
+                    ):
+                        disks_facts[disk_index][
+                            "controller_bus_number"
+                        ] = controller_facts[controller_index]["bus_number"]
+                        disks_facts[disk_index][
+                            "controller_type"
+                        ] = controller_facts[controller_index][
+                            "controller_type"
+                        ]
 
                 disk_index += 1
         return disks_facts
@@ -290,25 +371,23 @@ class PyVmomiHelper(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        use_instance_uuid=dict(type='bool', default=False),
-        folder=dict(type='str'),
-        datacenter=dict(type='str', required=True),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        use_instance_uuid=dict(type="bool", default=False),
+        folder=dict(type="str"),
+        datacenter=dict(type="str", required=True),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ],
+        required_one_of=[["name", "uuid", "moid"]],
         supports_check_mode=True,
     )
 
-    if module.params['folder']:
+    if module.params["folder"]:
         # FindByInventoryPath() does not require an absolute path
         # so we should leave the input folder path unmodified
-        module.params['folder'] = module.params['folder'].rstrip('/')
+        module.params["folder"] = module.params["folder"].rstrip("/")
 
     pyv = PyVmomiHelper(module)
     # Check if the VM exists before continuing
@@ -319,13 +398,21 @@ def main():
         try:
             module.exit_json(guest_disk_facts=pyv.gather_disk_facts(vm))
         except Exception as exc:
-            module.fail_json(msg="Failed to gather facts with exception : %s" % to_text(exc))
+            module.fail_json(
+                msg="Failed to gather facts with exception : %s" % to_text(exc)
+            )
     else:
         # We unable to find the virtual machine user specified
         # Bail out
-        vm_id = (module.params.get('uuid') or module.params.get('moid') or module.params.get('name'))
-        module.fail_json(msg="Unable to gather disk facts for non-existing VM %s" % vm_id)
+        vm_id = (
+            module.params.get("uuid")
+            or module.params.get("moid")
+            or module.params.get("name")
+        )
+        module.fail_json(
+            msg="Unable to gather disk facts for non-existing VM %s" % vm_id
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -6,15 +6,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_vm_shell
 short_description: Run commands in a VMware guest operating system
@@ -110,9 +111,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Run command inside a virtual machine
   vmware_vm_shell:
     hostname: "{{ vcenter_hostname }}"
@@ -177,9 +178,9 @@ EXAMPLES = r'''
     vm_shell: "/usr/bin/hostnamectl"
     vm_shell_args: "set-hostname new_hostname > /tmp/$$.txt 2>&1"
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 results:
     description: metadata about the new process after completion with wait_for_process
     returned: on success
@@ -194,9 +195,10 @@ results:
         "start_time": "2018-04-26T05:03:19+00:00",
         "uuid": "564db1e2-a3ff-3b0e-8b77-49c25570bb66",
       }
-'''
+"""
 
 import time
+
 try:
     from pyVmomi import vim, vmodl
 except ImportError:
@@ -204,52 +206,71 @@ except ImportError:
 
 from ansible.module_utils._text import to_native
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_cluster_by_name,
-                                         find_datacenter_by_name, find_vm_by_id,
-                                         vmware_argument_spec)
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    find_cluster_by_name,
+    find_datacenter_by_name,
+    find_vm_by_id,
+    vmware_argument_spec,
+)
 
 
 class VMwareShellManager(PyVmomi):
     def __init__(self, module):
         super(VMwareShellManager, self).__init__(module)
-        datacenter_name = module.params['datacenter']
-        cluster_name = module.params['cluster']
-        folder = module.params['folder']
+        datacenter_name = module.params["datacenter"]
+        cluster_name = module.params["cluster"]
+        folder = module.params["folder"]
         self.pm = self.content.guestOperationsManager.processManager
-        self.timeout = self.params.get('timeout', 3600)
-        self.wait_for_pid = self.params.get('wait_for_process', False)
+        self.timeout = self.params.get("timeout", 3600)
+        self.wait_for_pid = self.params.get("wait_for_process", False)
 
         datacenter = None
         if datacenter_name:
             datacenter = find_datacenter_by_name(self.content, datacenter_name)
             if not datacenter:
-                module.fail_json(changed=False, msg="Unable to find %(datacenter)s datacenter" % module.params)
+                module.fail_json(
+                    changed=False,
+                    msg="Unable to find %(datacenter)s datacenter"
+                    % module.params,
+                )
 
         cluster = None
         if cluster_name:
-            cluster = find_cluster_by_name(self.content, cluster_name, datacenter)
+            cluster = find_cluster_by_name(
+                self.content, cluster_name, datacenter
+            )
             if not cluster:
-                module.fail_json(changed=False, msg="Unable to find %(cluster)s cluster" % module.params)
+                module.fail_json(
+                    changed=False,
+                    msg="Unable to find %(cluster)s cluster" % module.params,
+                )
 
-        if module.params['vm_id_type'] == 'inventory_path':
-            vm = find_vm_by_id(self.content,
-                               vm_id=module.params['vm_id'],
-                               vm_id_type="inventory_path",
-                               folder=folder)
+        if module.params["vm_id_type"] == "inventory_path":
+            vm = find_vm_by_id(
+                self.content,
+                vm_id=module.params["vm_id"],
+                vm_id_type="inventory_path",
+                folder=folder,
+            )
         else:
-            vm = find_vm_by_id(self.content,
-                               vm_id=module.params['vm_id'],
-                               vm_id_type=module.params['vm_id_type'],
-                               datacenter=datacenter,
-                               cluster=cluster)
+            vm = find_vm_by_id(
+                self.content,
+                vm_id=module.params["vm_id"],
+                vm_id_type=module.params["vm_id_type"],
+                datacenter=datacenter,
+                cluster=cluster,
+            )
 
         if not vm:
-            module.fail_json(msg='Unable to find virtual machine.')
+            module.fail_json(msg="Unable to find virtual machine.")
 
         tools_status = vm.guest.toolsStatus
-        if tools_status in ['toolsNotInstalled', 'toolsNotRunning']:
-            self.module.fail_json(msg="VMwareTools is not installed or is not running in the guest."
-                                      " VMware Tools are necessary to run this module.")
+        if tools_status in ["toolsNotInstalled", "toolsNotRunning"]:
+            self.module.fail_json(
+                msg="VMwareTools is not installed or is not running in the guest."
+                " VMware Tools are necessary to run this module."
+            )
 
         try:
             self.execute_command(vm, module.params)
@@ -262,48 +283,58 @@ class VMwareShellManager(PyVmomi):
 
     def execute_command(self, vm, params):
         # https://github.com/vmware/pyvmomi-community-samples/blob/master/samples/execute_program_in_vm.py
-        vm_username = params['vm_username']
-        vm_password = params['vm_password']
-        program_path = params['vm_shell']
-        args = params['vm_shell_args']
-        env = params['vm_shell_env']
-        cwd = params['vm_shell_cwd']
+        vm_username = params["vm_username"]
+        vm_password = params["vm_password"]
+        program_path = params["vm_shell"]
+        args = params["vm_shell_args"]
+        env = params["vm_shell_env"]
+        cwd = params["vm_shell_cwd"]
 
-        credentials = vim.vm.guest.NamePasswordAuthentication(username=vm_username,
-                                                              password=vm_password)
-        cmd_spec = vim.vm.guest.ProcessManager.ProgramSpec(arguments=args,
-                                                           envVariables=env,
-                                                           programPath=program_path,
-                                                           workingDirectory=cwd)
+        credentials = vim.vm.guest.NamePasswordAuthentication(
+            username=vm_username, password=vm_password
+        )
+        cmd_spec = vim.vm.guest.ProcessManager.ProgramSpec(
+            arguments=args,
+            envVariables=env,
+            programPath=program_path,
+            workingDirectory=cwd,
+        )
 
-        res = self.pm.StartProgramInGuest(vm=vm, auth=credentials, spec=cmd_spec)
+        res = self.pm.StartProgramInGuest(
+            vm=vm, auth=credentials, spec=cmd_spec
+        )
         if self.wait_for_pid:
             res_data = self.wait_for_process(vm, res, credentials)
-            results = dict(uuid=vm.summary.config.uuid,
-                           owner=res_data.owner,
-                           start_time=res_data.startTime.isoformat(),
-                           end_time=res_data.endTime.isoformat(),
-                           exit_code=res_data.exitCode,
-                           name=res_data.name,
-                           cmd_line=res_data.cmdLine)
+            results = dict(
+                uuid=vm.summary.config.uuid,
+                owner=res_data.owner,
+                start_time=res_data.startTime.isoformat(),
+                end_time=res_data.endTime.isoformat(),
+                exit_code=res_data.exitCode,
+                name=res_data.name,
+                cmd_line=res_data.cmdLine,
+            )
 
             if res_data.exitCode != 0:
-                results['msg'] = "Failed to execute command"
-                results['changed'] = False
-                results['failed'] = True
+                results["msg"] = "Failed to execute command"
+                results["changed"] = False
+                results["failed"] = True
                 self.module.fail_json(**results)
             else:
-                results['changed'] = True
-                results['failed'] = False
+                results["changed"] = True
+                results["failed"] = False
                 self.module.exit_json(**results)
         else:
-            self.module.exit_json(changed=True, uuid=vm.summary.config.uuid, msg=res)
+            self.module.exit_json(
+                changed=True, uuid=vm.summary.config.uuid, msg=res
+            )
 
     def process_exists_in_guest(self, vm, pid, creds):
         res = self.pm.ListProcessesInGuest(vm, creds, pids=[pid])
         if not res:
             self.module.fail_json(
-                changed=False, msg='ListProcessesInGuest: None (unexpected)')
+                changed=False, msg="ListProcessesInGuest: None (unexpected)"
+            )
         res = res[0]
         if res.exitCode is None:
             return True, None
@@ -314,7 +345,9 @@ class VMwareShellManager(PyVmomi):
         start_time = time.time()
         while True:
             current_time = time.time()
-            process_status, res_data = self.process_exists_in_guest(vm, pid, creds)
+            process_status, res_data = self.process_exists_in_guest(
+                vm, pid, creds
+            )
             if not process_status:
                 return res_data
             elif current_time - start_time >= self.timeout:
@@ -324,7 +357,8 @@ class VMwareShellManager(PyVmomi):
                     pid=pid,
                     start_time=start_time,
                     current_time=current_time,
-                    timeout=self.timeout)
+                    timeout=self.timeout,
+                )
             else:
                 time.sleep(5)
 
@@ -333,37 +367,40 @@ def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
         dict(
-            datacenter=dict(type='str'),
-            cluster=dict(type='str'),
-            folder=dict(type='str'),
-            vm_id=dict(type='str', required=True),
-            vm_id_type=dict(default='vm_name', type='str',
-                            choices=['inventory_path',
-                                     'uuid',
-                                     'instance_uuid',
-                                     'dns_name',
-                                     'vm_name']),
-            vm_username=dict(type='str', required=True),
-            vm_password=dict(type='str', no_log=True, required=True),
-            vm_shell=dict(type='str', required=True),
-            vm_shell_args=dict(default=" ", type='str'),
-            vm_shell_env=dict(type='list'),
-            vm_shell_cwd=dict(type='str'),
-            wait_for_process=dict(type='bool', default=False),
-            timeout=dict(type='int', default=3600),
+            datacenter=dict(type="str"),
+            cluster=dict(type="str"),
+            folder=dict(type="str"),
+            vm_id=dict(type="str", required=True),
+            vm_id_type=dict(
+                default="vm_name",
+                type="str",
+                choices=[
+                    "inventory_path",
+                    "uuid",
+                    "instance_uuid",
+                    "dns_name",
+                    "vm_name",
+                ],
+            ),
+            vm_username=dict(type="str", required=True),
+            vm_password=dict(type="str", no_log=True, required=True),
+            vm_shell=dict(type="str", required=True),
+            vm_shell_args=dict(default=" ", type="str"),
+            vm_shell_env=dict(type="list"),
+            vm_shell_cwd=dict(type="str"),
+            wait_for_process=dict(type="bool", default=False),
+            timeout=dict(type="int", default=3600),
         )
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=False,
-        required_if=[
-            ['vm_id_type', 'inventory_path', ['folder']]
-        ],
+        required_if=[["vm_id_type", "inventory_path", ["folder"]]],
     )
 
     vm_shell_mgr = VMwareShellManager(module)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

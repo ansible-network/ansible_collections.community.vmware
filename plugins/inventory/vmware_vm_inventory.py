@@ -4,10 +4,11 @@
 #
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
     name: vmware_vm_inventory
     plugin_type: inventory
     short_description: VMware Guest inventory source
@@ -76,9 +77,9 @@ DOCUMENTATION = '''
 
 extends_documentation_fragment:
 - inventory_cache
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 # Sample configuration file for VMware Guest dynamic inventory
     plugin: vmware_vm_inventory
     strict: False
@@ -99,7 +100,7 @@ EXAMPLES = '''
     properties:
     - 'name'
     - 'guest.ipAddress'
-'''
+"""
 
 import ssl
 import atexit
@@ -108,6 +109,7 @@ from ansible.errors import AnsibleError, AnsibleParserError
 try:
     # requests is required for exception handling of the ConnectionError
     import requests
+
     HAS_REQUESTS = True
 except ImportError:
     HAS_REQUESTS = False
@@ -115,6 +117,7 @@ except ImportError:
 try:
     from pyVim import connect
     from pyVmomi import vim, vmodl
+
     HAS_PYVMOMI = True
 except ImportError:
     HAS_PYVMOMI = False
@@ -122,6 +125,7 @@ except ImportError:
 try:
     from com.vmware.vapi.std_client import DynamicID
     from vmware.vapi.vsphere.client import create_vsphere_client
+
     HAS_VSPHERE = True
 except ImportError:
     HAS_VSPHERE = False
@@ -131,7 +135,9 @@ from ansible.plugins.inventory import BaseInventoryPlugin, Cacheable
 
 
 class BaseVMwareInventory:
-    def __init__(self, hostname, username, password, port, validate_certs, with_tags):
+    def __init__(
+        self, hostname, username, password, port, validate_certs, with_tags
+    ):
         self.hostname = hostname
         self.username = username
         self.password = password
@@ -165,12 +171,16 @@ class BaseVMwareInventory:
         server = self.hostname
         if self.port:
             server += ":" + str(self.port)
-        client = create_vsphere_client(server=server,
-                                       username=self.username,
-                                       password=self.password,
-                                       session=session)
+        client = create_vsphere_client(
+            server=server,
+            username=self.username,
+            password=self.password,
+            session=session,
+        )
         if client is None:
-            raise AnsibleError("Failed to login to %s using %s" % (server, self.username))
+            raise AnsibleError(
+                "Failed to login to %s using %s" % (server, self.username)
+            )
         return client
 
     def _login(self):
@@ -179,36 +189,59 @@ class BaseVMwareInventory:
         Returns: connection object
 
         """
-        if self.validate_certs and not hasattr(ssl, 'SSLContext'):
-            raise AnsibleError('pyVim does not support changing verification mode with python < 2.7.9. Either update '
-                               'python or set validate_certs to false in configuration YAML file.')
+        if self.validate_certs and not hasattr(ssl, "SSLContext"):
+            raise AnsibleError(
+                "pyVim does not support changing verification mode with python < 2.7.9. Either update "
+                "python or set validate_certs to false in configuration YAML file."
+            )
 
         ssl_context = None
-        if not self.validate_certs and hasattr(ssl, 'SSLContext'):
+        if not self.validate_certs and hasattr(ssl, "SSLContext"):
             ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ssl_context.verify_mode = ssl.CERT_NONE
 
         service_instance = None
         try:
-            service_instance = connect.SmartConnect(host=self.hostname, user=self.username,
-                                                    pwd=self.password, sslContext=ssl_context,
-                                                    port=self.port)
+            service_instance = connect.SmartConnect(
+                host=self.hostname,
+                user=self.username,
+                pwd=self.password,
+                sslContext=ssl_context,
+                port=self.port,
+            )
         except vim.fault.InvalidLogin as e:
-            raise AnsibleParserError("Unable to log on to vCenter or ESXi API at %s:%s as %s: %s" % (self.hostname, self.port, self.username, e.msg))
+            raise AnsibleParserError(
+                "Unable to log on to vCenter or ESXi API at %s:%s as %s: %s"
+                % (self.hostname, self.port, self.username, e.msg)
+            )
         except vim.fault.NoPermission as e:
-            raise AnsibleParserError("User %s does not have required permission"
-                                     " to log on to vCenter or ESXi API at %s:%s : %s" % (self.username, self.hostname, self.port, e.msg))
+            raise AnsibleParserError(
+                "User %s does not have required permission"
+                " to log on to vCenter or ESXi API at %s:%s : %s"
+                % (self.username, self.hostname, self.port, e.msg)
+            )
         except (requests.ConnectionError, ssl.SSLError) as e:
-            raise AnsibleParserError("Unable to connect to vCenter or ESXi API at %s on TCP/%s: %s" % (self.hostname, self.port, e))
+            raise AnsibleParserError(
+                "Unable to connect to vCenter or ESXi API at %s on TCP/%s: %s"
+                % (self.hostname, self.port, e)
+            )
         except vmodl.fault.InvalidRequest as e:
             # Request is malformed
-            raise AnsibleParserError("Failed to get a response from server %s:%s as "
-                                     "request is malformed: %s" % (self.hostname, self.port, e.msg))
+            raise AnsibleParserError(
+                "Failed to get a response from server %s:%s as "
+                "request is malformed: %s" % (self.hostname, self.port, e.msg)
+            )
         except Exception as e:
-            raise AnsibleParserError("Unknown error while connecting to vCenter or ESXi API at %s:%s : %s" % (self.hostname, self.port, e))
+            raise AnsibleParserError(
+                "Unknown error while connecting to vCenter or ESXi API at %s:%s : %s"
+                % (self.hostname, self.port, e)
+            )
 
         if service_instance is None:
-            raise AnsibleParserError("Unknown error while connecting to vCenter or ESXi API at %s:%s" % (self.hostname, self.port))
+            raise AnsibleParserError(
+                "Unknown error while connecting to vCenter or ESXi API at %s:%s"
+                % (self.hostname, self.port)
+            )
 
         atexit.register(connect.Disconnect, service_instance)
         return service_instance.RetrieveContent()
@@ -216,11 +249,15 @@ class BaseVMwareInventory:
     def check_requirements(self):
         """ Check all requirements for this inventory are satisified"""
         if not HAS_REQUESTS:
-            raise AnsibleParserError('Please install "requests" Python module as this is required'
-                                     ' for VMware Guest dynamic inventory plugin.')
+            raise AnsibleParserError(
+                'Please install "requests" Python module as this is required'
+                " for VMware Guest dynamic inventory plugin."
+            )
         elif not HAS_PYVMOMI:
-            raise AnsibleParserError('Please install "PyVmomi" Python module as this is required'
-                                     ' for VMware Guest dynamic inventory plugin.')
+            raise AnsibleParserError(
+                'Please install "PyVmomi" Python module as this is required'
+                " for VMware Guest dynamic inventory plugin."
+            )
         if HAS_REQUESTS:
             # Pyvmomi 5.5 and onwards requires requests 2.3
             # https://github.com/vmware/pyvmomi/blob/master/requirements.txt
@@ -229,21 +266,32 @@ class BaseVMwareInventory:
             try:
                 requests_major_minor = tuple(map(int, requests_version))
             except ValueError:
-                raise AnsibleParserError("Failed to parse 'requests' library version.")
+                raise AnsibleParserError(
+                    "Failed to parse 'requests' library version."
+                )
 
             if requests_major_minor < required_version:
-                raise AnsibleParserError("'requests' library version should"
-                                         " be >= %s, found: %s." % (".".join([str(w) for w in required_version]),
-                                                                    requests.__version__))
+                raise AnsibleParserError(
+                    "'requests' library version should"
+                    " be >= %s, found: %s."
+                    % (
+                        ".".join([str(w) for w in required_version]),
+                        requests.__version__,
+                    )
+                )
 
         if not HAS_VSPHERE and self.with_tags:
-            raise AnsibleError("Unable to find 'vSphere Automation SDK' Python library which is required."
-                               " Please refer this URL for installation steps"
-                               " - https://code.vmware.com/web/sdk/65/vsphere-automation-python")
+            raise AnsibleError(
+                "Unable to find 'vSphere Automation SDK' Python library which is required."
+                " Please refer this URL for installation steps"
+                " - https://code.vmware.com/web/sdk/65/vsphere-automation-python"
+            )
 
         if not all([self.hostname, self.username, self.password]):
-            raise AnsibleError("Missing one of the following : hostname, username, password. Please read "
-                               "the documentation for more information.")
+            raise AnsibleError(
+                "Missing one of the following : hostname, username, password. Please read "
+                "the documentation for more information."
+            )
 
     def _get_managed_objects_properties(self, vim_type, properties=None):
         """
@@ -256,38 +304,38 @@ class BaseVMwareInventory:
         root_folder = self.content.rootFolder
 
         if properties is None:
-            properties = ['name']
+            properties = ["name"]
 
         # Create Container View with default root folder
-        mor = self.content.viewManager.CreateContainerView(root_folder, [vim_type], True)
+        mor = self.content.viewManager.CreateContainerView(
+            root_folder, [vim_type], True
+        )
 
         # Create Traversal spec
         traversal_spec = vmodl.query.PropertyCollector.TraversalSpec(
             name="traversal_spec",
-            path='view',
+            path="view",
             skip=False,
-            type=vim.view.ContainerView
+            type=vim.view.ContainerView,
         )
 
         # Create Property Spec
         property_spec = vmodl.query.PropertyCollector.PropertySpec(
             type=vim_type,  # Type of object to retrieved
             all=False,
-            pathSet=properties
+            pathSet=properties,
         )
 
         # Create Object Spec
         object_spec = vmodl.query.PropertyCollector.ObjectSpec(
-            obj=mor,
-            skip=True,
-            selectSet=[traversal_spec]
+            obj=mor, skip=True, selectSet=[traversal_spec]
         )
 
         # Create Filter Spec
         filter_spec = vmodl.query.PropertyCollector.FilterSpec(
             objectSet=[object_spec],
             propSet=[property_spec],
-            reportMissingObjectsInResults=False
+            reportMissingObjectsInResults=False,
         )
 
         return self.content.propertyCollector.RetrieveContents([filter_spec])
@@ -306,7 +354,7 @@ class BaseVMwareInventory:
 
 class InventoryModule(BaseInventoryPlugin, Cacheable):
 
-    NAME = 'vmware.general.vmware_vm_inventory'
+    NAME = "vmware.general.vmware_vm_inventory"
 
     def verify_file(self, path):
         """
@@ -317,7 +365,14 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
         """
         valid = False
         if super(InventoryModule, self).verify_file(path):
-            if path.endswith(('vmware.yaml', 'vmware.yml', 'vmware_vm_inventory.yaml', 'vmware_vm_inventory.yml')):
+            if path.endswith(
+                (
+                    "vmware.yaml",
+                    "vmware.yml",
+                    "vmware_vm_inventory.yaml",
+                    "vmware_vm_inventory.yml",
+                )
+            ):
                 valid = True
 
         return valid
@@ -326,7 +381,9 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
         """
         Parses the inventory file
         """
-        super(InventoryModule, self).parse(inventory, loader, path, cache=cache)
+        super(InventoryModule, self).parse(
+            inventory, loader, path, cache=cache
+        )
 
         cache_key = self.get_cache_key(path)
 
@@ -336,12 +393,12 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
         self._consume_options(config_data)
 
         self.pyv = BaseVMwareInventory(
-            hostname=self.get_option('hostname'),
-            username=self.get_option('username'),
-            password=self.get_option('password'),
-            port=self.get_option('port'),
-            with_tags=self.get_option('with_tags'),
-            validate_certs=self.get_option('validate_certs')
+            hostname=self.get_option("hostname"),
+            username=self.get_option("username"),
+            password=self.get_option("password"),
+            port=self.get_option("port"),
+            with_tags=self.get_option("with_tags"),
+            validate_certs=self.get_option("validate_certs"),
         )
 
         self.pyv.do_login()
@@ -350,7 +407,7 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
 
         source_data = None
         if cache:
-            cache = self.get_option('cache')
+            cache = self.get_option("cache")
 
         update_cache = False
         if cache:
@@ -360,23 +417,27 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
                 update_cache = True
 
         using_current_cache = cache and not update_cache
-        cacheable_results = self._populate_from_source(source_data, using_current_cache)
+        cacheable_results = self._populate_from_source(
+            source_data, using_current_cache
+        )
 
         if update_cache:
             self._cache[cache_key] = cacheable_results
 
     def _populate_from_cache(self, source_data):
         """ Populate cache using source data """
-        hostvars = source_data.pop('_meta', {}).get('hostvars', {})
+        hostvars = source_data.pop("_meta", {}).get("hostvars", {})
         for group in source_data:
-            if group == 'all':
+            if group == "all":
                 continue
             else:
                 self.inventory.add_group(group)
-                hosts = source_data[group].get('hosts', [])
+                hosts = source_data[group].get("hosts", [])
                 for host in hosts:
-                    self._populate_host_vars([host], hostvars.get(host, {}), group)
-                self.inventory.add_child('all', group)
+                    self._populate_host_vars(
+                        [host], hostvars.get(host, {}), group
+                    )
+                self.inventory.add_child("all", group)
 
     def _populate_from_source(self, source_data, using_current_cache):
         """
@@ -387,10 +448,11 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
             self._populate_from_cache(source_data)
             return source_data
 
-        cacheable_results = {'_meta': {'hostvars': {}}}
+        cacheable_results = {"_meta": {"hostvars": {}}}
         hostvars = {}
-        objects = self.pyv._get_managed_objects_properties(vim_type=vim.VirtualMachine,
-                                                           properties=['name'])
+        objects = self.pyv._get_managed_objects_properties(
+            vim_type=vim.VirtualMachine, properties=["name"]
+        )
 
         if self.pyv.with_tags:
             tag_svc = self.pyv.rest_content.tagging.Tag
@@ -402,7 +464,7 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
                 tag_obj = tag_svc.get(tag)
                 tags_info[tag_obj.id] = tag_obj.name
                 if tag_obj.name not in cacheable_results:
-                    cacheable_results[tag_obj.name] = {'hosts': []}
+                    cacheable_results[tag_obj.name] = {"hosts": []}
                     self.inventory.add_group(tag_obj.name)
 
         for vm_obj in objects:
@@ -414,7 +476,9 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
                     # Sometime orphaned VMs return no configurations
                     continue
 
-                current_host = vm_obj_property.val + "_" + vm_obj.obj.config.uuid
+                current_host = (
+                    vm_obj_property.val + "_" + vm_obj.obj.config.uuid
+                )
 
                 if current_host not in hostvars:
                     hostvars[current_host] = {}
@@ -422,7 +486,9 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
 
                     host_ip = vm_obj.obj.guest.ipAddress
                     if host_ip:
-                        self.inventory.set_variable(current_host, 'ansible_host', host_ip)
+                        self.inventory.set_variable(
+                            current_host, "ansible_host", host_ip
+                        )
 
                     self._populate_host_properties(vm_obj, current_host)
 
@@ -430,47 +496,63 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
                     if HAS_VSPHERE and self.pyv.with_tags:
                         # Add virtual machine to appropriate tag group
                         vm_mo_id = vm_obj.obj._GetMoId()
-                        vm_dynamic_id = DynamicID(type='VirtualMachine', id=vm_mo_id)
-                        attached_tags = tag_association.list_attached_tags(vm_dynamic_id)
+                        vm_dynamic_id = DynamicID(
+                            type="VirtualMachine", id=vm_mo_id
+                        )
+                        attached_tags = tag_association.list_attached_tags(
+                            vm_dynamic_id
+                        )
 
                         for tag_id in attached_tags:
-                            self.inventory.add_child(tags_info[tag_id], current_host)
-                            cacheable_results[tags_info[tag_id]]['hosts'].append(current_host)
+                            self.inventory.add_child(
+                                tags_info[tag_id], current_host
+                            )
+                            cacheable_results[tags_info[tag_id]][
+                                "hosts"
+                            ].append(current_host)
 
                     # Based on power state of virtual machine
                     vm_power = str(vm_obj.obj.summary.runtime.powerState)
                     if vm_power not in cacheable_results:
-                        cacheable_results[vm_power] = {'hosts': []}
+                        cacheable_results[vm_power] = {"hosts": []}
                         self.inventory.add_group(vm_power)
-                    cacheable_results[vm_power]['hosts'].append(current_host)
+                    cacheable_results[vm_power]["hosts"].append(current_host)
                     self.inventory.add_child(vm_power, current_host)
 
                     # Based on guest id
                     vm_guest_id = vm_obj.obj.config.guestId
                     if vm_guest_id and vm_guest_id not in cacheable_results:
-                        cacheable_results[vm_guest_id] = {'hosts': []}
+                        cacheable_results[vm_guest_id] = {"hosts": []}
                         self.inventory.add_group(vm_guest_id)
-                    cacheable_results[vm_guest_id]['hosts'].append(current_host)
+                    cacheable_results[vm_guest_id]["hosts"].append(
+                        current_host
+                    )
                     self.inventory.add_child(vm_guest_id, current_host)
 
         for host in hostvars:
             h = self.inventory.get_host(host)
-            cacheable_results['_meta']['hostvars'][h.name] = h.vars
+            cacheable_results["_meta"]["hostvars"][h.name] = h.vars
 
         return cacheable_results
 
     def _populate_host_properties(self, vm_obj, current_host):
         # Load VM properties in host_vars
-        vm_properties = self.get_option('properties') or []
+        vm_properties = self.get_option("properties") or []
 
         field_mgr = self.pyv.content.customFieldsManager.field
 
         for vm_prop in vm_properties:
-            if vm_prop == 'customValue':
+            if vm_prop == "customValue":
                 for cust_value in vm_obj.obj.customValue:
-                    self.inventory.set_variable(current_host,
-                                                [y.name for y in field_mgr if y.key == cust_value.key][0],
-                                                cust_value.value)
+                    self.inventory.set_variable(
+                        current_host,
+                        [y.name for y in field_mgr if y.key == cust_value.key][
+                            0
+                        ],
+                        cust_value.value,
+                    )
             else:
-                vm_value = self.pyv._get_object_prop(vm_obj.obj, vm_prop.split("."))
+                vm_value = self.pyv._get_object_prop(
+                    vm_obj.obj, vm_prop.split(".")
+                )
                 self.inventory.set_variable(current_host, vm_prop, vm_value)

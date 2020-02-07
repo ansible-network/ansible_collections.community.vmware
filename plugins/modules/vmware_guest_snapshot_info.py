@@ -6,15 +6,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_snapshot_info
 short_description: Gather info about virtual machine's snapshots in vCenter
@@ -74,9 +75,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Gather snapshot information about the virtual machine in the given vCenter
   vmware_guest_snapshot_info:
     hostname: "{{ vcenter_hostname }}"
@@ -96,7 +97,7 @@ EXAMPLES = '''
     moid: vm-42
   delegate_to: localhost
   register: snapshot_info
-'''
+"""
 
 RETURN = """
 guest_snapshots:
@@ -124,7 +125,11 @@ guest_snapshots:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, list_snapshots, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    list_snapshots,
+    vmware_argument_spec,
+)
 
 
 class PyVmomiHelper(PyVmomi):
@@ -149,30 +154,29 @@ class PyVmomiHelper(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        use_instance_uuid=dict(type='bool', default=False),
-        folder=dict(type='str'),
-        datacenter=dict(required=True, type='str'),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        use_instance_uuid=dict(type="bool", default=False),
+        folder=dict(type="str"),
+        datacenter=dict(required=True, type="str"),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_together=[
-            ['name', 'folder']
-        ],
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ],
+        required_together=[["name", "folder"]],
+        required_one_of=[["name", "uuid", "moid"]],
         supports_check_mode=True,
     )
-    if module._name == 'vmware_guest_snapshot_facts':
-        module.deprecate("The 'vmware_guest_snapshot_facts' module has been renamed to 'vmware_guest_snapshot_info'", version='2.13')
+    if module._name == "vmware_guest_snapshot_facts":
+        module.deprecate(
+            "The 'vmware_guest_snapshot_facts' module has been renamed to 'vmware_guest_snapshot_info'",
+            version="2.13",
+        )
 
-    if module.params['folder']:
+    if module.params["folder"]:
         # FindByInventoryPath() does not require an absolute path
         # so we should leave the input folder path unmodified
-        module.params['folder'] = module.params['folder'].rstrip('/')
+        module.params["folder"] = module.params["folder"].rstrip("/")
 
     pyv = PyVmomiHelper(module)
     # Check if the VM exists before continuing
@@ -180,13 +184,22 @@ def main():
 
     if not vm:
         # If UUID is set, get_vm select UUID, show error message accordingly.
-        vm_id = (module.params.get('uuid') or module.params.get('name') or module.params.get('moid'))
-        module.fail_json(msg="Unable to gather information about snapshots for"
-                             " non-existing VM ['%s']" % vm_id)
+        vm_id = (
+            module.params.get("uuid")
+            or module.params.get("name")
+            or module.params.get("moid")
+        )
+        module.fail_json(
+            msg="Unable to gather information about snapshots for"
+            " non-existing VM ['%s']" % vm_id
+        )
 
-    results = dict(changed=False, guest_snapshots=pyv.gather_guest_snapshot_info(vm_obj=vm))
+    results = dict(
+        changed=False,
+        guest_snapshots=pyv.gather_guest_snapshot_info(vm_obj=vm),
+    )
     module.exit_json(**results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

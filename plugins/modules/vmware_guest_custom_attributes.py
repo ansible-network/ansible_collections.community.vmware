@@ -7,17 +7,18 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_custom_attributes
 short_description: Manage custom attributes from VMware for the given virtual machine
@@ -79,9 +80,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Add virtual machine custom attributes
   vmware_guest_custom_attributes:
     hostname: "{{ vcenter_hostname }}"
@@ -133,7 +134,7 @@ EXAMPLES = '''
       - name: MyAttribute
   delegate_to: localhost
   register: attributes
-'''
+"""
 
 RETURN = """
 custom_attributes:
@@ -155,7 +156,10 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+)
 
 
 class VmAttributeManager(PyVmomi):
@@ -168,30 +172,45 @@ class VmAttributeManager(PyVmomi):
         changed = False
 
         for field in user_fields:
-            field_key = self.check_exists(field['name'])
+            field_key = self.check_exists(field["name"])
             found = False
-            field_value = field.get('value', '')
+            field_value = field.get("value", "")
 
-            for k, v in [(x.name, v.value) for x in self.custom_field_mgr for v in vm.customValue if x.key == v.key]:
-                if k == field['name']:
+            for k, v in [
+                (x.name, v.value)
+                for x in self.custom_field_mgr
+                for v in vm.customValue
+                if x.key == v.key
+            ]:
+                if k == field["name"]:
                     found = True
                     if v != field_value:
                         if not self.module.check_mode:
-                            self.content.customFieldsManager.SetField(entity=vm, key=field_key.key, value=field_value)
+                            self.content.customFieldsManager.SetField(
+                                entity=vm, key=field_key.key, value=field_value
+                            )
                             result_fields[k] = field_value
                         change_list.append(True)
             if not found and field_value != "":
                 if not field_key and not self.module.check_mode:
-                    field_key = self.content.customFieldsManager.AddFieldDefinition(name=field['name'], moType=vim.VirtualMachine)
+                    field_key = self.content.customFieldsManager.AddFieldDefinition(
+                        name=field["name"], moType=vim.VirtualMachine
+                    )
                 change_list.append(True)
                 if not self.module.check_mode:
-                    self.content.customFieldsManager.SetField(entity=vm, key=field_key.key, value=field_value)
-                result_fields[field['name']] = field_value
+                    self.content.customFieldsManager.SetField(
+                        entity=vm, key=field_key.key, value=field_value
+                    )
+                result_fields[field["name"]] = field_value
 
         if any(change_list):
             changed = True
 
-        return {'changed': changed, 'failed': False, 'custom_attributes': result_fields}
+        return {
+            "changed": changed,
+            "failed": False,
+            "custom_attributes": result_fields,
+        }
 
     def check_exists(self, field):
         for x in self.custom_field_mgr:
@@ -203,56 +222,60 @@ class VmAttributeManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        datacenter=dict(type='str'),
-        name=dict(type='str'),
-        folder=dict(type='str'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        use_instance_uuid=dict(type='bool', default=False),
-        state=dict(type='str', default='present',
-                   choices=['absent', 'present']),
+        datacenter=dict(type="str"),
+        name=dict(type="str"),
+        folder=dict(type="str"),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        use_instance_uuid=dict(type="bool", default=False),
+        state=dict(
+            type="str", default="present", choices=["absent", "present"]
+        ),
         attributes=dict(
-            type='list',
+            type="list",
             default=[],
             options=dict(
-                name=dict(type='str', required=True),
-                value=dict(type='str'),
-            )
+                name=dict(type="str", required=True), value=dict(type="str")
+            ),
         ),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ],
+        required_one_of=[["name", "uuid", "moid"]],
     )
 
-    if module.params.get('folder'):
+    if module.params.get("folder"):
         # FindByInventoryPath() does not require an absolute path
         # so we should leave the input folder path unmodified
-        module.params['folder'] = module.params['folder'].rstrip('/')
+        module.params["folder"] = module.params["folder"].rstrip("/")
 
     pyv = VmAttributeManager(module)
-    results = {'changed': False, 'failed': False, 'instance': dict()}
+    results = {"changed": False, "failed": False, "instance": dict()}
 
     # Check if the virtual machine exists before continuing
     vm = pyv.get_vm()
 
     if vm:
         # virtual machine already exists
-        if module.params['state'] == "present":
-            results = pyv.set_custom_field(vm, module.params['attributes'])
-        elif module.params['state'] == "absent":
-            results = pyv.set_custom_field(vm, module.params['attributes'])
+        if module.params["state"] == "present":
+            results = pyv.set_custom_field(vm, module.params["attributes"])
+        elif module.params["state"] == "absent":
+            results = pyv.set_custom_field(vm, module.params["attributes"])
         module.exit_json(**results)
     else:
         # virtual machine does not exists
-        vm_id = (module.params.get('name') or module.params.get('uuid') or module.params.get('moid'))
-        module.fail_json(msg="Unable to manage custom attributes for non-existing"
-                             " virtual machine %s" % vm_id)
+        vm_id = (
+            module.params.get("name")
+            or module.params.get("uuid")
+            or module.params.get("moid")
+        )
+        module.fail_json(
+            msg="Unable to manage custom attributes for non-existing"
+            " virtual machine %s" % vm_id
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

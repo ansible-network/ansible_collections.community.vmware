@@ -5,16 +5,17 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['deprecated'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["deprecated"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_host_vmhba_facts
 deprecated:
@@ -49,9 +50,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather facts about vmhbas of all ESXi Host in the given Cluster
   vmware_host_vmhba_facts:
     hostname: '{{ vcenter_hostname }}'
@@ -69,9 +70,9 @@ EXAMPLES = r'''
     esxi_hostname: '{{ esxi_hostname }}'
   delegate_to: localhost
   register: host_vmhbas
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 hosts_vmhbas_facts:
     description:
     - dict with hostname as key and dict with vmhbas facts as value.
@@ -123,19 +124,25 @@ hosts_vmhbas_facts:
                 ],
             }
         }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class HostVmhbaMgr(PyVmomi):
     """Class to manage vmhba facts"""
+
     def __init__(self, module):
         super(HostVmhbaMgr, self).__init__(module)
-        cluster_name = self.params.get('cluster_name', None)
-        esxi_host_name = self.params.get('esxi_hostname', None)
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=esxi_host_name)
+        cluster_name = self.params.get("cluster_name", None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=esxi_host_name
+        )
         if not self.hosts:
             self.module.fail_json(msg="Failed to find host system.")
 
@@ -147,47 +154,55 @@ class HostVmhbaMgr(PyVmomi):
             host_st_system = host.configManager.storageSystem
             if host_st_system:
                 device_info = host_st_system.storageDeviceInfo
-                host_vmhba_facts['vmhba_details'] = []
+                host_vmhba_facts["vmhba_details"] = []
                 for hba in device_info.hostBusAdapter:
                     hba_facts = dict()
                     if hba.pci:
-                        hba_facts['location'] = hba.pci
+                        hba_facts["location"] = hba.pci
                         for pci_device in host.hardware.pciDevice:
                             if pci_device.id == hba.pci:
-                                hba_facts['adapter'] = pci_device.vendorName + ' ' + pci_device.deviceName
+                                hba_facts["adapter"] = (
+                                    pci_device.vendorName
+                                    + " "
+                                    + pci_device.deviceName
+                                )
                                 break
                     else:
-                        hba_facts['location'] = 'PCI'
-                    hba_facts['device'] = hba.device
+                        hba_facts["location"] = "PCI"
+                    hba_facts["device"] = hba.device
                     # contains type as string in format of 'key-vim.host.FibreChannelHba-vmhba1'
                     hba_type = hba.key.split(".")[-1].split("-")[0]
-                    if hba_type == 'SerialAttachedHba':
-                        hba_facts['type'] = 'SAS'
-                    elif hba_type == 'FibreChannelHba':
-                        hba_facts['type'] = 'Fibre Channel'
+                    if hba_type == "SerialAttachedHba":
+                        hba_facts["type"] = "SAS"
+                    elif hba_type == "FibreChannelHba":
+                        hba_facts["type"] = "Fibre Channel"
                     else:
-                        hba_facts['type'] = hba_type
-                    hba_facts['bus'] = hba.bus
-                    hba_facts['status'] = hba.status
-                    hba_facts['model'] = hba.model
-                    hba_facts['driver'] = hba.driver
+                        hba_facts["type"] = hba_type
+                    hba_facts["bus"] = hba.bus
+                    hba_facts["status"] = hba.status
+                    hba_facts["model"] = hba.model
+                    hba_facts["driver"] = hba.driver
                     try:
-                        hba_facts['node_wwn'] = self.format_number(hba.nodeWorldWideName)
+                        hba_facts["node_wwn"] = self.format_number(
+                            hba.nodeWorldWideName
+                        )
                     except AttributeError:
                         pass
                     try:
-                        hba_facts['port_wwn'] = self.format_number(hba.portWorldWideName)
+                        hba_facts["port_wwn"] = self.format_number(
+                            hba.portWorldWideName
+                        )
                     except AttributeError:
                         pass
                     try:
-                        hba_facts['port_type'] = hba.portType
+                        hba_facts["port_type"] = hba.portType
                     except AttributeError:
                         pass
                     try:
-                        hba_facts['speed'] = hba.speed
+                        hba_facts["speed"] = hba.speed
                     except AttributeError:
                         pass
-                    host_vmhba_facts['vmhba_details'].append(hba_facts)
+                    host_vmhba_facts["vmhba_details"].append(hba_facts)
 
             hosts_vmhba_facts[host.name] = host_vmhba_facts
         return hosts_vmhba_facts
@@ -196,27 +211,28 @@ class HostVmhbaMgr(PyVmomi):
     def format_number(number):
         """Format number"""
         string = str(number)
-        return ':'.join(a + b for a, b in zip(string[::2], string[1::2]))
+        return ":".join(a + b for a, b in zip(string[::2], string[1::2]))
 
 
 def main():
     """Main"""
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        cluster_name=dict(type='str', required=False),
-        esxi_hostname=dict(type='str', required=False),
+        cluster_name=dict(type="str", required=False),
+        esxi_hostname=dict(type="str", required=False),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
+        required_one_of=[["cluster_name", "esxi_hostname"]],
         supports_check_mode=True,
     )
 
     host_vmhba_mgr = HostVmhbaMgr(module)
-    module.exit_json(changed=False, hosts_vmhbas_facts=host_vmhba_mgr.gather_host_vmhba_facts())
+    module.exit_json(
+        changed=False,
+        hosts_vmhbas_facts=host_vmhba_mgr.gather_host_vmhba_facts(),
+    )
 
 
 if __name__ == "__main__":

@@ -6,15 +6,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_guest_move
 short_description: Moves virtual machines in vCenter
@@ -79,9 +80,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Move Virtual Machine
   vmware_guest_move:
     hostname: "{{ vcenter_hostname }}"
@@ -127,7 +128,7 @@ EXAMPLES = r'''
     dest_folder: "/DataCenter/vm/path/to/new/folder/where/we/want"
   delegate_to: localhost
   register: facts
-'''
+"""
 
 RETURN = """
 instance:
@@ -181,7 +182,11 @@ instance:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+    wait_for_task,
+)
 
 
 class PyVmomiHelper(PyVmomi):
@@ -192,29 +197,26 @@ class PyVmomiHelper(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
+        name=dict(type="str"),
         name_match=dict(
-            type='str', choices=['first', 'last'], default='first'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        use_instance_uuid=dict(type='bool', default=False),
-        dest_folder=dict(type='str', required=True),
-        datacenter=dict(type='str', required=True),
+            type="str", choices=["first", "last"], default="first"
+        ),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        use_instance_uuid=dict(type="bool", default=False),
+        dest_folder=dict(type="str", required=True),
+        datacenter=dict(type="str", required=True),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ],
-        mutually_exclusive=[
-            ['name', 'uuid', 'moid']
-        ],
-        supports_check_mode=True
+        required_one_of=[["name", "uuid", "moid"]],
+        mutually_exclusive=[["name", "uuid", "moid"]],
+        supports_check_mode=True,
     )
 
     # FindByInventoryPath() does not require an absolute path
     # so we should leave the input folder path unmodified
-    module.params['dest_folder'] = module.params['dest_folder'].rstrip('/')
+    module.params["dest_folder"] = module.params["dest_folder"].rstrip("/")
     pyv = PyVmomiHelper(module)
     search_index = pyv.content.searchIndex
 
@@ -224,36 +226,47 @@ def main():
     # VM exists
     if vm:
         try:
-            vm_path = pyv.get_vm_path(pyv.content, vm).lstrip('/')
-            if module.params['name']:
-                vm_name = module.params['name']
+            vm_path = pyv.get_vm_path(pyv.content, vm).lstrip("/")
+            if module.params["name"]:
+                vm_name = module.params["name"]
             else:
                 vm_name = vm.name
 
-            vm_full = vm_path + '/' + vm_name
-            folder = search_index.FindByInventoryPath(module.params['dest_folder'])
+            vm_full = vm_path + "/" + vm_name
+            folder = search_index.FindByInventoryPath(
+                module.params["dest_folder"]
+            )
             if folder is None:
                 module.fail_json(msg="Folder name and/or path does not exist")
             vm_to_move = search_index.FindByInventoryPath(vm_full)
             if module.check_mode:
                 module.exit_json(changed=True, instance=pyv.gather_facts(vm))
-            if vm_path != module.params['dest_folder'].lstrip('/'):
+            if vm_path != module.params["dest_folder"].lstrip("/"):
                 move_task = folder.MoveInto([vm_to_move])
                 changed, err = wait_for_task(move_task)
                 if changed:
                     module.exit_json(
-                        changed=True, instance=pyv.gather_facts(vm))
+                        changed=True, instance=pyv.gather_facts(vm)
+                    )
             else:
                 module.exit_json(instance=pyv.gather_facts(vm))
         except Exception as exc:
-            module.fail_json(msg="Failed to move VM with exception %s" %
-                             to_native(exc))
+            module.fail_json(
+                msg="Failed to move VM with exception %s" % to_native(exc)
+            )
     else:
         if module.check_mode:
             module.exit_json(changed=False)
-        vm_id = (module.params.get('uuid') or module.params.get('name') or module.params.get('moid'))
-        module.fail_json(msg="Unable to find VM %s to move to %s" % (vm_id, module.params.get('dest_folder')))
+        vm_id = (
+            module.params.get("uuid")
+            or module.params.get("name")
+            or module.params.get("moid")
+        )
+        module.fail_json(
+            msg="Unable to find VM %s to move to %s"
+            % (vm_id, module.params.get("dest_folder"))
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

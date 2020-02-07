@@ -4,15 +4,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_resource_pool_info
 short_description: Gathers info about resource pool information
@@ -28,9 +29,9 @@ requirements:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather resource pool info about all resource pools available
   vmware_resource_pool_info:
     hostname: '{{ vcenter_hostname }}'
@@ -38,9 +39,9 @@ EXAMPLES = r'''
     password: '{{ vcenter_password }}'
   register: rp_info
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 resource_pool_info:
     description: metadata about resource pool configuration
     returned: on success
@@ -76,7 +77,7 @@ resource_pool_info:
             "runtime_memory_unreserved_for_vm": 1007681536
         },
     ]
-'''
+"""
 
 try:
     from pyVmomi import vim
@@ -84,7 +85,11 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, get_all_objs
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+    get_all_objs,
+)
 
 
 class ResourcePoolInfoManager(PyVmomi):
@@ -131,10 +136,14 @@ class ResourcePoolInfoManager(PyVmomi):
 
 def main():
     argument_spec = vmware_argument_spec()
-    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
     vmware_rp_mgr = ResourcePoolInfoManager(module)
-    module.exit_json(changed=False, resource_pool_info=vmware_rp_mgr.gather_rp_info())
+    module.exit_json(
+        changed=False, resource_pool_info=vmware_rp_mgr.gather_rp_info()
+    )
 
 
 if __name__ == "__main__":

@@ -5,17 +5,18 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_local_user_info
 short_description: Gather info about users on the given ESXi host
@@ -34,9 +35,9 @@ requirements:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather info about all Users on given ESXi host system
   vmware_local_user_info:
     hostname: '{{ esxi_hostname }}'
@@ -44,9 +45,9 @@ EXAMPLES = r'''
     password: '{{ esxi_password }}'
   delegate_to: localhost
   register: all_user_info
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 local_user_info:
     description: metadata about all local users
     returned: always
@@ -69,7 +70,7 @@ local_user_info:
             "shell_access": false
         },
     ]
-'''
+"""
 
 try:
     from pyVmomi import vmodl
@@ -77,44 +78,54 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+)
 from ansible.module_utils._text import to_native
 
 
 class VMwareUserInfoManager(PyVmomi):
     """Class to manage local user info"""
+
     def __init__(self, module):
         super(VMwareUserInfoManager, self).__init__(module)
 
         if self.is_vcenter():
             self.module.fail_json(
                 msg="Failed to get local account manager settings.",
-                details="It seems that '%s' is a vCenter server instead of an ESXi server" % self.module.params['hostname']
+                details="It seems that '%s' is a vCenter server instead of an ESXi server"
+                % self.module.params["hostname"],
             )
 
     def gather_user_info(self):
         """Gather info about local users"""
         results = dict(changed=False, local_user_info=[])
-        search_string = ''
+        search_string = ""
         exact_match = False
         find_users = True
         find_groups = False
         user_accounts = self.content.userDirectory.RetrieveUserGroups(
-            None, search_string, None, None, exact_match, find_users, find_groups
+            None,
+            search_string,
+            None,
+            None,
+            exact_match,
+            find_users,
+            find_groups,
         )
         if user_accounts:
             for user in user_accounts:
                 temp_user = dict()
-                temp_user['user_name'] = user.principal
-                temp_user['description'] = user.fullName
-                temp_user['group'] = user.group
-                temp_user['user_id'] = user.id
-                temp_user['shell_access'] = user.shellAccess
-                temp_user['role'] = None
+                temp_user["user_name"] = user.principal
+                temp_user["description"] = user.fullName
+                temp_user["group"] = user.group
+                temp_user["user_id"] = user.id
+                temp_user["shell_access"] = user.shellAccess
+                temp_user["role"] = None
                 try:
                     permissions = self.content.authorizationManager.RetrieveEntityPermissions(
-                        entity=self.content.rootFolder,
-                        inherited=False
+                        entity=self.content.rootFolder, inherited=False
                     )
                 except vmodl.fault.ManagedObjectNotFound as not_found:
                     self.module.fail_json(
@@ -122,10 +133,13 @@ class VMwareUserInfoManager(PyVmomi):
                     )
                 for permission in permissions:
                     if permission.principal == user.principal:
-                        temp_user['role'] = self.get_role_name(permission.roleId, self.content.authorizationManager.roleList)
+                        temp_user["role"] = self.get_role_name(
+                            permission.roleId,
+                            self.content.authorizationManager.roleList,
+                        )
                         break
 
-                results['local_user_info'].append(temp_user)
+                results["local_user_info"].append(temp_user)
         self.module.exit_json(**results)
 
     @staticmethod
@@ -134,13 +148,13 @@ class VMwareUserInfoManager(PyVmomi):
         role_name = None
         # Default role: No access
         if role_id == -5:
-            role_name = 'no-access'
+            role_name = "no-access"
         # Default role: Read-only
         elif role_id == -2:
-            role_name = 'read-only'
+            role_name = "read-only"
         # Default role: Administrator
         elif role_id == -1:
-            role_name = 'admin'
+            role_name = "admin"
         # Custom roles
         else:
             for role in role_list:
@@ -153,12 +167,13 @@ class VMwareUserInfoManager(PyVmomi):
 def main():
     """Main"""
     argument_spec = vmware_argument_spec()
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
     vmware_local_user_info = VMwareUserInfoManager(module)
     vmware_local_user_info.gather_user_info()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

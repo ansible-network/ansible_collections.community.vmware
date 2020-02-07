@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_vmkernel_info
 short_description: Gathers VMKernel info about an ESXi host
@@ -42,9 +43,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather VMKernel info about all ESXi Host in given Cluster
   vmware_vmkernel_info:
     hostname: '{{ vcenter_hostname }}'
@@ -62,9 +63,9 @@ EXAMPLES = r'''
     esxi_hostname: '{{ esxi_hostname }}'
   delegate_to: localhost
   register: host_vmks
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 host_vmk_info:
     description: metadata about VMKernel present on given host system
     returned: success
@@ -90,7 +91,7 @@ host_vmk_info:
             ]
         }
 
-'''
+"""
 
 try:
     from pyVmomi import vim, vmodl
@@ -98,16 +99,21 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 from ansible.module_utils._text import to_native
 
 
 class VmkernelInfoManager(PyVmomi):
     def __init__(self, module):
         super(VmkernelInfoManager, self).__init__(module)
-        cluster_name = self.params.get('cluster_name', None)
-        esxi_host_name = self.params.get('esxi_hostname', None)
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=esxi_host_name)
+        cluster_name = self.params.get("cluster_name", None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=esxi_host_name
+        )
         self.service_type_vmks = dict()
         self.get_all_vmks_by_service_type()
 
@@ -117,9 +123,13 @@ class VmkernelInfoManager(PyVmomi):
 
         """
         for host in self.hosts:
-            self.service_type_vmks[host.name] = dict(vmotion=[], vsan=[], management=[], faultToleranceLogging=[])
+            self.service_type_vmks[host.name] = dict(
+                vmotion=[], vsan=[], management=[], faultToleranceLogging=[]
+            )
             for service_type in self.service_type_vmks[host.name].keys():
-                vmks_list = self.query_service_type_for_vmks(host, service_type)
+                vmks_list = self.query_service_type_for_vmks(
+                    host, service_type
+                )
                 self.service_type_vmks[host.name][service_type] = vmks_list
 
     def query_service_type_for_vmks(self, host_system, service_type):
@@ -135,21 +145,35 @@ class VmkernelInfoManager(PyVmomi):
         vmks_list = []
         query = None
         try:
-            query = host_system.configManager.virtualNicManager.QueryNetConfig(service_type)
+            query = host_system.configManager.virtualNicManager.QueryNetConfig(
+                service_type
+            )
         except vim.fault.HostConfigFault as config_fault:
-            self.module.fail_json(msg="Failed to get all VMKs for service type %s due to"
-                                      " host config fault : %s" % (service_type, to_native(config_fault.msg)))
+            self.module.fail_json(
+                msg="Failed to get all VMKs for service type %s due to"
+                " host config fault : %s"
+                % (service_type, to_native(config_fault.msg))
+            )
         except vmodl.fault.InvalidArgument as invalid_argument:
-            self.module.fail_json(msg="Failed to get all VMKs for service type %s due to"
-                                      " invalid arguments : %s" % (service_type, to_native(invalid_argument.msg)))
+            self.module.fail_json(
+                msg="Failed to get all VMKs for service type %s due to"
+                " invalid arguments : %s"
+                % (service_type, to_native(invalid_argument.msg))
+            )
         except Exception as e:
-            self.module.fail_json(msg="Failed to get all VMKs for service type %s due to"
-                                      "%s" % (service_type, to_native(e)))
+            self.module.fail_json(
+                msg="Failed to get all VMKs for service type %s due to"
+                "%s" % (service_type, to_native(e))
+            )
 
         if not query or not query.selectedVnic:
             return vmks_list
         selected_vnics = [vnic for vnic in query.selectedVnic]
-        vnics_with_service_type = [vnic.device for vnic in query.candidateVnic if vnic.key in selected_vnics]
+        vnics_with_service_type = [
+            vnic.device
+            for vnic in query.candidateVnic
+            if vnic.key in selected_vnics
+        ]
         return vnics_with_service_type
 
     def gather_host_vmk_info(self):
@@ -161,21 +185,28 @@ class VmkernelInfoManager(PyVmomi):
             if host_network_system:
                 vmks_config = host.config.network.vnic
                 for vmk in vmks_config:
-                    host_vmk_info.append(dict(
-                        device=vmk.device,
-                        key=vmk.key,
-                        portgroup=vmk.portgroup,
-                        ipv4_address=vmk.spec.ip.ipAddress,
-                        ipv4_subnet_mask=vmk.spec.ip.subnetMask,
-                        dhcp=vmk.spec.ip.dhcp,
-                        mac=vmk.spec.mac,
-                        mtu=vmk.spec.mtu,
-                        stack=vmk.spec.netStackInstanceKey,
-                        enable_vsan=vmk.device in self.service_type_vmks[host.name]['vsan'],
-                        enable_vmotion=vmk.device in self.service_type_vmks[host.name]['vmotion'],
-                        enable_management=vmk.device in self.service_type_vmks[host.name]['management'],
-                        enable_ft=vmk.device in self.service_type_vmks[host.name]['faultToleranceLogging'],
-                    )
+                    host_vmk_info.append(
+                        dict(
+                            device=vmk.device,
+                            key=vmk.key,
+                            portgroup=vmk.portgroup,
+                            ipv4_address=vmk.spec.ip.ipAddress,
+                            ipv4_subnet_mask=vmk.spec.ip.subnetMask,
+                            dhcp=vmk.spec.ip.dhcp,
+                            mac=vmk.spec.mac,
+                            mtu=vmk.spec.mtu,
+                            stack=vmk.spec.netStackInstanceKey,
+                            enable_vsan=vmk.device
+                            in self.service_type_vmks[host.name]["vsan"],
+                            enable_vmotion=vmk.device
+                            in self.service_type_vmks[host.name]["vmotion"],
+                            enable_management=vmk.device
+                            in self.service_type_vmks[host.name]["management"],
+                            enable_ft=vmk.device
+                            in self.service_type_vmks[host.name][
+                                "faultToleranceLogging"
+                            ],
+                        )
                     )
             hosts_info[host.name] = host_vmk_info
         return hosts_info
@@ -184,20 +215,20 @@ class VmkernelInfoManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        cluster_name=dict(type='str', required=False),
-        esxi_hostname=dict(type='str', required=False),
+        cluster_name=dict(type="str", required=False),
+        esxi_hostname=dict(type="str", required=False),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
-        supports_check_mode=True
+        required_one_of=[["cluster_name", "esxi_hostname"]],
+        supports_check_mode=True,
     )
 
     vmware_vmk_config = VmkernelInfoManager(module)
-    module.exit_json(changed=False, host_vmk_info=vmware_vmk_config.gather_host_vmk_info())
+    module.exit_json(
+        changed=False, host_vmk_info=vmware_vmk_config.gather_host_vmk_info()
+    )
 
 
 if __name__ == "__main__":

@@ -6,15 +6,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_folder_info
 short_description: Provides information about folders in a datacenter
@@ -37,9 +38,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Provide information about vCenter folders
   vmware_folder_info:
     hostname: '{{ vcenter_hostname }}'
@@ -48,9 +49,9 @@ EXAMPLES = r'''
     datacenter: datacenter_name
   delegate_to: localhost
   register: vcenter_folder_info
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 folder_info:
     description:
     - dict about folders
@@ -94,7 +95,7 @@ folder_info:
                 }
             }
         }
-'''
+"""
 
 try:
     from pyVmomi import vim
@@ -102,38 +103,45 @@ except ImportError as import_err:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class VmwareFolderInfoManager(PyVmomi):
     def __init__(self, module):
         super(VmwareFolderInfoManager, self).__init__(module)
-        self.dc_name = self.params['datacenter']
+        self.dc_name = self.params["datacenter"]
 
     def gather_folder_info(self):
         datacenter = self.find_datacenter_by_name(self.dc_name)
         if datacenter is None:
-            self.module.fail_json(msg="Failed to find the datacenter %s" % self.dc_name)
+            self.module.fail_json(
+                msg="Failed to find the datacenter %s" % self.dc_name
+            )
 
         folder_trees = {}
-        folder_trees['vmFolders'] = self.build_folder_tree(datacenter.vmFolder, "/%s/vm" % self.dc_name)
-        folder_trees['hostFolders'] = self.build_folder_tree(datacenter.hostFolder, "/%s/host" % self.dc_name)
-        folder_trees['networkFolders'] = self.build_folder_tree(datacenter.networkFolder, "/%s/network" % self.dc_name)
-        folder_trees['datastoreFolders'] = self.build_folder_tree(datacenter.datastoreFolder, "/%s/datastore" % self.dc_name)
-
-        self.module.exit_json(
-            changed=False,
-            folder_info=folder_trees
+        folder_trees["vmFolders"] = self.build_folder_tree(
+            datacenter.vmFolder, "/%s/vm" % self.dc_name
+        )
+        folder_trees["hostFolders"] = self.build_folder_tree(
+            datacenter.hostFolder, "/%s/host" % self.dc_name
+        )
+        folder_trees["networkFolders"] = self.build_folder_tree(
+            datacenter.networkFolder, "/%s/network" % self.dc_name
+        )
+        folder_trees["datastoreFolders"] = self.build_folder_tree(
+            datacenter.datastoreFolder, "/%s/datastore" % self.dc_name
         )
 
+        self.module.exit_json(changed=False, folder_info=folder_trees)
+
     def build_folder_tree(self, folder, path):
-        tree = {
-            'path': path,
-            'subfolders': {}
-        }
+        tree = {"path": path, "subfolders": {}}
 
         children = None
-        if hasattr(folder, 'childEntity'):
+        if hasattr(folder, "childEntity"):
             children = folder.childEntity
 
         if children:
@@ -141,20 +149,21 @@ class VmwareFolderInfoManager(PyVmomi):
                 if child == folder:
                     continue
                 if isinstance(child, vim.Folder):
-                    ctree = self.build_folder_tree(child, "%s/%s" % (path, child.name))
-                    tree['subfolders'][child.name] = dict.copy(ctree)
+                    ctree = self.build_folder_tree(
+                        child, "%s/%s" % (path, child.name)
+                    )
+                    tree["subfolders"][child.name] = dict.copy(ctree)
         return tree
 
 
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        datacenter=dict(type='str', required=True, aliases=['datacenter_name'])
+        datacenter=dict(type="str", required=True, aliases=["datacenter_name"])
     )
 
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True,
+        argument_spec=argument_spec, supports_check_mode=True
     )
 
     vmware_folder_info_mgr = VmwareFolderInfoManager(module)

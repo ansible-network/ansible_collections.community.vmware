@@ -7,15 +7,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_boot_manager
 short_description: Manage boot options for the given virtual machine
@@ -96,9 +97,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Change virtual machine's boot order and related parameters
   vmware_guest_boot_manager:
     hostname: "{{ vcenter_hostname }}"
@@ -138,7 +139,7 @@ EXAMPLES = r'''
       - disk
   delegate_to: localhost
   register: vm_boot_order
-'''
+"""
 
 RETURN = r"""
 vm_boot_status:
@@ -176,7 +177,13 @@ vm_boot_status:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_vm_by_id, wait_for_task, TaskError
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+    find_vm_by_id,
+    wait_for_task,
+    TaskError,
+)
 
 try:
     from pyVmomi import vim, VmomiSupport
@@ -187,10 +194,10 @@ except ImportError:
 class VmBootManager(PyVmomi):
     def __init__(self, module):
         super(VmBootManager, self).__init__(module)
-        self.name = self.params['name']
-        self.uuid = self.params['uuid']
-        self.moid = self.params['moid']
-        self.use_instance_uuid = self.params['use_instance_uuid']
+        self.name = self.params["name"]
+        self.uuid = self.params["uuid"]
+        self.moid = self.params["moid"]
+        self.use_instance_uuid = self.params["use_instance_uuid"]
         self.vm = None
 
     def _get_vm(self):
@@ -198,126 +205,205 @@ class VmBootManager(PyVmomi):
 
         if self.uuid:
             if self.use_instance_uuid:
-                vm_obj = find_vm_by_id(self.content, vm_id=self.uuid, vm_id_type="instance_uuid")
+                vm_obj = find_vm_by_id(
+                    self.content, vm_id=self.uuid, vm_id_type="instance_uuid"
+                )
             else:
-                vm_obj = find_vm_by_id(self.content, vm_id=self.uuid, vm_id_type="uuid")
+                vm_obj = find_vm_by_id(
+                    self.content, vm_id=self.uuid, vm_id_type="uuid"
+                )
             if vm_obj is None:
-                self.module.fail_json(msg="Failed to find the virtual machine with UUID : %s" % self.uuid)
+                self.module.fail_json(
+                    msg="Failed to find the virtual machine with UUID : %s"
+                    % self.uuid
+                )
             vms = [vm_obj]
 
         elif self.name:
-            objects = self.get_managed_objects_properties(vim_type=vim.VirtualMachine, properties=['name'])
+            objects = self.get_managed_objects_properties(
+                vim_type=vim.VirtualMachine, properties=["name"]
+            )
             for temp_vm_object in objects:
                 if temp_vm_object.obj.name == self.name:
                     vms.append(temp_vm_object.obj)
 
         elif self.moid:
-            vm_obj = VmomiSupport.templateOf('VirtualMachine')(self.module.params['moid'], self.si._stub)
+            vm_obj = VmomiSupport.templateOf("VirtualMachine")(
+                self.module.params["moid"], self.si._stub
+            )
             if vm_obj:
                 vms.append(vm_obj)
 
         if vms:
-            if self.params.get('name_match') == 'first':
+            if self.params.get("name_match") == "first":
                 self.vm = vms[0]
-            elif self.params.get('name_match') == 'last':
+            elif self.params.get("name_match") == "last":
                 self.vm = vms[-1]
         else:
-            self.module.fail_json(msg="Failed to find virtual machine using %s" % (self.name or self.uuid))
+            self.module.fail_json(
+                msg="Failed to find virtual machine using %s"
+                % (self.name or self.uuid)
+            )
 
     @staticmethod
     def humanize_boot_order(boot_order):
         results = []
         for device in boot_order:
             if isinstance(device, vim.vm.BootOptions.BootableCdromDevice):
-                results.append('cdrom')
+                results.append("cdrom")
             elif isinstance(device, vim.vm.BootOptions.BootableDiskDevice):
-                results.append('disk')
+                results.append("disk")
             elif isinstance(device, vim.vm.BootOptions.BootableEthernetDevice):
-                results.append('ethernet')
+                results.append("ethernet")
             elif isinstance(device, vim.vm.BootOptions.BootableFloppyDevice):
-                results.append('floppy')
+                results.append("floppy")
         return results
 
     def ensure(self):
         self._get_vm()
 
-        valid_device_strings = ['cdrom', 'disk', 'ethernet', 'floppy']
+        valid_device_strings = ["cdrom", "disk", "ethernet", "floppy"]
 
         boot_order_list = []
-        for device_order in self.params.get('boot_order'):
+        for device_order in self.params.get("boot_order"):
             if device_order not in valid_device_strings:
-                self.module.fail_json(msg="Invalid device found [%s], please specify device from ['%s']" % (device_order,
-                                                                                                            "', '".join(valid_device_strings)))
-            if device_order == 'cdrom':
-                first_cdrom = [device for device in self.vm.config.hardware.device if isinstance(device, vim.vm.device.VirtualCdrom)]
+                self.module.fail_json(
+                    msg="Invalid device found [%s], please specify device from ['%s']"
+                    % (device_order, "', '".join(valid_device_strings))
+                )
+            if device_order == "cdrom":
+                first_cdrom = [
+                    device
+                    for device in self.vm.config.hardware.device
+                    if isinstance(device, vim.vm.device.VirtualCdrom)
+                ]
                 if first_cdrom:
-                    boot_order_list.append(vim.vm.BootOptions.BootableCdromDevice())
-            elif device_order == 'disk':
-                first_hdd = [device for device in self.vm.config.hardware.device if isinstance(device, vim.vm.device.VirtualDisk)]
+                    boot_order_list.append(
+                        vim.vm.BootOptions.BootableCdromDevice()
+                    )
+            elif device_order == "disk":
+                first_hdd = [
+                    device
+                    for device in self.vm.config.hardware.device
+                    if isinstance(device, vim.vm.device.VirtualDisk)
+                ]
                 if first_hdd:
-                    boot_order_list.append(vim.vm.BootOptions.BootableDiskDevice(deviceKey=first_hdd[0].key))
-            elif device_order == 'ethernet':
-                first_ether = [device for device in self.vm.config.hardware.device if isinstance(device, vim.vm.device.VirtualEthernetCard)]
+                    boot_order_list.append(
+                        vim.vm.BootOptions.BootableDiskDevice(
+                            deviceKey=first_hdd[0].key
+                        )
+                    )
+            elif device_order == "ethernet":
+                first_ether = [
+                    device
+                    for device in self.vm.config.hardware.device
+                    if isinstance(device, vim.vm.device.VirtualEthernetCard)
+                ]
                 if first_ether:
-                    boot_order_list.append(vim.vm.BootOptions.BootableEthernetDevice(deviceKey=first_ether[0].key))
-            elif device_order == 'floppy':
-                first_floppy = [device for device in self.vm.config.hardware.device if isinstance(device, vim.vm.device.VirtualFloppy)]
+                    boot_order_list.append(
+                        vim.vm.BootOptions.BootableEthernetDevice(
+                            deviceKey=first_ether[0].key
+                        )
+                    )
+            elif device_order == "floppy":
+                first_floppy = [
+                    device
+                    for device in self.vm.config.hardware.device
+                    if isinstance(device, vim.vm.device.VirtualFloppy)
+                ]
                 if first_floppy:
-                    boot_order_list.append(vim.vm.BootOptions.BootableFloppyDevice())
+                    boot_order_list.append(
+                        vim.vm.BootOptions.BootableFloppyDevice()
+                    )
 
         change_needed = False
         kwargs = dict()
         if len(boot_order_list) != len(self.vm.config.bootOptions.bootOrder):
-            kwargs.update({'bootOrder': boot_order_list})
+            kwargs.update({"bootOrder": boot_order_list})
             change_needed = True
         else:
             for i in range(0, len(boot_order_list)):
                 boot_device_type = type(boot_order_list[i])
-                vm_boot_device_type = type(self.vm.config.bootOptions.bootOrder[i])
+                vm_boot_device_type = type(
+                    self.vm.config.bootOptions.bootOrder[i]
+                )
                 if boot_device_type != vm_boot_device_type:
-                    kwargs.update({'bootOrder': boot_order_list})
+                    kwargs.update({"bootOrder": boot_order_list})
                     change_needed = True
 
-        if self.vm.config.bootOptions.bootDelay != self.params.get('boot_delay'):
-            kwargs.update({'bootDelay': self.params.get('boot_delay')})
+        if self.vm.config.bootOptions.bootDelay != self.params.get(
+            "boot_delay"
+        ):
+            kwargs.update({"bootDelay": self.params.get("boot_delay")})
             change_needed = True
 
-        if self.vm.config.bootOptions.enterBIOSSetup != self.params.get('enter_bios_setup'):
-            kwargs.update({'enterBIOSSetup': self.params.get('enter_bios_setup')})
+        if self.vm.config.bootOptions.enterBIOSSetup != self.params.get(
+            "enter_bios_setup"
+        ):
+            kwargs.update(
+                {"enterBIOSSetup": self.params.get("enter_bios_setup")}
+            )
             change_needed = True
 
-        if self.vm.config.bootOptions.bootRetryEnabled != self.params.get('boot_retry_enabled'):
-            kwargs.update({'bootRetryEnabled': self.params.get('boot_retry_enabled')})
+        if self.vm.config.bootOptions.bootRetryEnabled != self.params.get(
+            "boot_retry_enabled"
+        ):
+            kwargs.update(
+                {"bootRetryEnabled": self.params.get("boot_retry_enabled")}
+            )
             change_needed = True
 
-        if self.vm.config.bootOptions.bootRetryDelay != self.params.get('boot_retry_delay'):
+        if self.vm.config.bootOptions.bootRetryDelay != self.params.get(
+            "boot_retry_delay"
+        ):
             if not self.vm.config.bootOptions.bootRetryEnabled:
-                kwargs.update({'bootRetryEnabled': True})
-            kwargs.update({'bootRetryDelay': self.params.get('boot_retry_delay')})
+                kwargs.update({"bootRetryEnabled": True})
+            kwargs.update(
+                {"bootRetryDelay": self.params.get("boot_retry_delay")}
+            )
             change_needed = True
 
         boot_firmware_required = False
-        if self.vm.config.firmware != self.params.get('boot_firmware'):
+        if self.vm.config.firmware != self.params.get("boot_firmware"):
             change_needed = True
             boot_firmware_required = True
 
-        if self.vm.config.bootOptions.efiSecureBootEnabled != self.params.get('secure_boot_enabled'):
-            if self.params.get('secure_boot_enabled') and self.params.get('boot_firmware') == "bios":
-                self.module.fail_json(msg="EFI secure boot cannot be enabled when boot_firmware = bios, but both are specified")
+        if self.vm.config.bootOptions.efiSecureBootEnabled != self.params.get(
+            "secure_boot_enabled"
+        ):
+            if (
+                self.params.get("secure_boot_enabled")
+                and self.params.get("boot_firmware") == "bios"
+            ):
+                self.module.fail_json(
+                    msg="EFI secure boot cannot be enabled when boot_firmware = bios, but both are specified"
+                )
 
             # If the user is not specifying boot_firmware, make sure they aren't trying to enable it on a
             # system with boot_firmware already set to 'bios'
-            if self.params.get('secure_boot_enabled') and \
-               self.params.get('boot_firmware') is None and \
-               self.vm.config.firmware == 'bios':
-                self.module.fail_json(msg="EFI secure boot cannot be enabled when boot_firmware = bios.  VM's boot_firmware currently set to bios")
+            if (
+                self.params.get("secure_boot_enabled")
+                and self.params.get("boot_firmware") is None
+                and self.vm.config.firmware == "bios"
+            ):
+                self.module.fail_json(
+                    msg="EFI secure boot cannot be enabled when boot_firmware = bios.  VM's boot_firmware currently set to bios"
+                )
 
-            kwargs.update({'efiSecureBootEnabled': self.params.get('secure_boot_enabled')})
+            kwargs.update(
+                {
+                    "efiSecureBootEnabled": self.params.get(
+                        "secure_boot_enabled"
+                    )
+                }
+            )
             change_needed = True
 
         changed = False
         results = dict(
-            previous_boot_order=self.humanize_boot_order(self.vm.config.bootOptions.bootOrder),
+            previous_boot_order=self.humanize_boot_order(
+                self.vm.config.bootOptions.bootOrder
+            ),
             previous_boot_delay=self.vm.config.bootOptions.bootDelay,
             previous_enter_bios_setup=self.vm.config.bootOptions.enterBIOSSetup,
             previous_boot_retry_enabled=self.vm.config.bootOptions.bootRetryEnabled,
@@ -331,25 +417,29 @@ class VmBootManager(PyVmomi):
             vm_conf = vim.vm.ConfigSpec()
             vm_conf.bootOptions = vim.vm.BootOptions(**kwargs)
             if boot_firmware_required:
-                vm_conf.firmware = self.params.get('boot_firmware')
+                vm_conf.firmware = self.params.get("boot_firmware")
             task = self.vm.ReconfigVM_Task(vm_conf)
 
             try:
                 changed, result = wait_for_task(task)
             except TaskError as e:
-                self.module.fail_json(msg="Failed to perform reconfigure virtual"
-                                          " machine %s for boot order due to: %s" % (self.name or self.uuid,
-                                                                                     to_native(e)))
+                self.module.fail_json(
+                    msg="Failed to perform reconfigure virtual"
+                    " machine %s for boot order due to: %s"
+                    % (self.name or self.uuid, to_native(e))
+                )
 
         results.update(
             {
-                'current_boot_order': self.humanize_boot_order(self.vm.config.bootOptions.bootOrder),
-                'current_boot_delay': self.vm.config.bootOptions.bootDelay,
-                'current_enter_bios_setup': self.vm.config.bootOptions.enterBIOSSetup,
-                'current_boot_retry_enabled': self.vm.config.bootOptions.bootRetryEnabled,
-                'current_boot_retry_delay': self.vm.config.bootOptions.bootRetryDelay,
-                'current_boot_firmware': self.vm.config.firmware,
-                'current_secure_boot_enabled': self.vm.config.bootOptions.efiSecureBootEnabled,
+                "current_boot_order": self.humanize_boot_order(
+                    self.vm.config.bootOptions.bootOrder
+                ),
+                "current_boot_delay": self.vm.config.bootOptions.bootDelay,
+                "current_enter_bios_setup": self.vm.config.bootOptions.enterBIOSSetup,
+                "current_boot_retry_enabled": self.vm.config.bootOptions.bootRetryEnabled,
+                "current_boot_retry_delay": self.vm.config.bootOptions.bootRetryDelay,
+                "current_boot_firmware": self.vm.config.firmware,
+                "current_secure_boot_enabled": self.vm.config.bootOptions.efiSecureBootEnabled,
             }
         )
 
@@ -359,57 +449,29 @@ class VmBootManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        use_instance_uuid=dict(type='bool', default=False),
-        boot_order=dict(
-            type='list',
-            default=[],
-        ),
-        name_match=dict(
-            choices=['first', 'last'],
-            default='first'
-        ),
-        boot_delay=dict(
-            type='int',
-            default=0,
-        ),
-        enter_bios_setup=dict(
-            type='bool',
-            default=False,
-        ),
-        boot_retry_enabled=dict(
-            type='bool',
-            default=False,
-        ),
-        boot_retry_delay=dict(
-            type='int',
-            default=0,
-        ),
-        secure_boot_enabled=dict(
-            type='bool',
-            default=False,
-        ),
-        boot_firmware=dict(
-            type='str',
-            choices=['efi', 'bios'],
-        )
+        name=dict(type="str"),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        use_instance_uuid=dict(type="bool", default=False),
+        boot_order=dict(type="list", default=[]),
+        name_match=dict(choices=["first", "last"], default="first"),
+        boot_delay=dict(type="int", default=0),
+        enter_bios_setup=dict(type="bool", default=False),
+        boot_retry_enabled=dict(type="bool", default=False),
+        boot_retry_delay=dict(type="int", default=0),
+        secure_boot_enabled=dict(type="bool", default=False),
+        boot_firmware=dict(type="str", choices=["efi", "bios"]),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ],
-        mutually_exclusive=[
-            ['name', 'uuid', 'moid']
-        ],
+        required_one_of=[["name", "uuid", "moid"]],
+        mutually_exclusive=[["name", "uuid", "moid"]],
     )
 
     pyv = VmBootManager(module)
     pyv.ensure()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

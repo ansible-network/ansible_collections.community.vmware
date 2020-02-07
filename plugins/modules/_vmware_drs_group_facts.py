@@ -9,12 +9,12 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['deprecated'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["deprecated"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 deprecated:
   removed_in: '2.13'
@@ -49,9 +49,9 @@ short_description: "Gathers facts about DRS VM/Host groups on the given cluster"
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 ---
 - name: "Gather DRS facts about given Cluster"
   register: cluster_drs_group_facts
@@ -71,9 +71,9 @@ EXAMPLES = r'''
     username: "{{ vcenter_username }}"
     datacenter: "{{ datacenter }}"
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 drs_group_facts:
     description: Metadata about DRS group from given cluster / datacenter
     returned: always
@@ -114,7 +114,7 @@ drs_group_facts:
             ],
             "DC0_C1": []
         }
-'''
+"""
 
 try:
     from pyVmomi import vim
@@ -122,11 +122,15 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_datacenter_by_name, get_all_objs
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+    find_datacenter_by_name,
+    get_all_objs,
+)
 
 
 class VmwareDrsGroupFactManager(PyVmomi):
-
     def __init__(self, module, datacenter_name, cluster_name=None):
         """
         Doctring: Init
@@ -138,24 +142,32 @@ class VmwareDrsGroupFactManager(PyVmomi):
         self.__datacenter_obj = None
         self.__cluster_name = cluster_name
         self.__cluster_obj = None
-        self.__msg = 'Nothing to see here...'
+        self.__msg = "Nothing to see here..."
         self.__result = dict()
         self.__changed = False
 
         if datacenter_name:
 
-            datacenter_obj = find_datacenter_by_name(self.content, datacenter_name=datacenter_name)
+            datacenter_obj = find_datacenter_by_name(
+                self.content, datacenter_name=datacenter_name
+            )
             self.cluster_obj_list = []
 
             if datacenter_obj:
                 folder = datacenter_obj.hostFolder
-                self.cluster_obj_list = get_all_objs(self.content, [vim.ClusterComputeResource], folder)
+                self.cluster_obj_list = get_all_objs(
+                    self.content, [vim.ClusterComputeResource], folder
+                )
             else:
-                raise Exception("Datacenter '%s' not found" % self.__datacenter_name)
+                raise Exception(
+                    "Datacenter '%s' not found" % self.__datacenter_name
+                )
 
         if cluster_name:
 
-            cluster_obj = self.find_cluster_by_name(cluster_name=self.__cluster_name)
+            cluster_obj = self.find_cluster_by_name(
+                cluster_name=self.__cluster_name
+            )
 
             if cluster_obj is None:
                 raise Exception("Cluster '%s' not found" % self.__cluster_name)
@@ -214,17 +226,19 @@ class VmwareDrsGroupFactManager(PyVmomi):
             return {}
 
         # Check if group is a host group
-        if hasattr(group_obj, 'host'):
+        if hasattr(group_obj, "host"):
             return dict(
                 group_name=group_obj.name,
-                hosts=self.__get_all_from_group(group_obj=group_obj, host_group=True),
-                type="host"
+                hosts=self.__get_all_from_group(
+                    group_obj=group_obj, host_group=True
+                ),
+                type="host",
             )
         else:
             return dict(
                 group_name=group_obj.name,
                 vms=self.__get_all_from_group(group_obj=group_obj),
-                type="vm"
+                type="vm",
             )
 
     def gather_facts(self):
@@ -240,7 +254,9 @@ class VmwareDrsGroupFactManager(PyVmomi):
             cluster_group_facts[cluster_obj.name] = []
 
             for drs_group in cluster_obj.configurationEx.group:
-                cluster_group_facts[cluster_obj.name].append(self.__normalize_group_data(drs_group))
+                cluster_group_facts[cluster_obj.name].append(
+                    self.__normalize_group_data(drs_group)
+                )
 
         self.__set_result(cluster_group_facts)
 
@@ -250,33 +266,38 @@ def main():
     argument_spec = vmware_argument_spec()
 
     argument_spec.update(
-        datacenter=dict(type='str', required=False, aliases=['datacenter_name']),
-        cluster_name=dict(type='str', required=False),
+        datacenter=dict(
+            type="str", required=False, aliases=["datacenter_name"]
+        ),
+        cluster_name=dict(type="str", required=False),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_one_of=[['cluster_name', 'datacenter']],
-        mutually_exclusive=[['cluster_name', 'datacenter']],
+        required_one_of=[["cluster_name", "datacenter"]],
+        mutually_exclusive=[["cluster_name", "datacenter"]],
     )
 
     try:
         # Create instance of VmwareDrsGroupManager
-        vmware_drs_group_facts = VmwareDrsGroupFactManager(module=module,
-                                                           datacenter_name=module.params.get('datacenter'),
-                                                           cluster_name=module.params.get('cluster_name', None))
+        vmware_drs_group_facts = VmwareDrsGroupFactManager(
+            module=module,
+            datacenter_name=module.params.get("datacenter"),
+            cluster_name=module.params.get("cluster_name", None),
+        )
 
         vmware_drs_group_facts.gather_facts()
 
         # Set results
-        results = dict(failed=False,
-                       drs_group_facts=vmware_drs_group_facts.get_result())
+        results = dict(
+            failed=False, drs_group_facts=vmware_drs_group_facts.get_result()
+        )
 
     except Exception as error:
         results = dict(failed=True, msg="Error: %s" % error)
 
-    if results['failed']:
+    if results["failed"]:
         module.fail_json(**results)
     else:
         module.exit_json(**results)

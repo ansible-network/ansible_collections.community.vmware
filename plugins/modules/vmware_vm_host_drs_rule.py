@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 author:
   - "Karsten Kaj Jakobsen (@karstenjakobsen)"
@@ -89,9 +90,9 @@ short_description: "Creates vm/host group in a given cluster"
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 ---
 - name: "Create mandatory DRS Affinity rule for VM/Host"
   vmware_vm_host_drs_rule:
@@ -106,11 +107,11 @@ EXAMPLES = r'''
     mandatory: True
     enabled: True
     affinity_rule: True
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 
-'''
+"""
 
 try:
     from pyVmomi import vim
@@ -119,8 +120,13 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec, wait_for_task, find_cluster_by_name,
-                                         find_datacenter_by_name)
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+    wait_for_task,
+    find_cluster_by_name,
+    find_datacenter_by_name,
+)
 
 
 class VmwareVmHostRuleDrs(PyVmomi):
@@ -135,41 +141,51 @@ class VmwareVmHostRuleDrs(PyVmomi):
 
         super(VmwareVmHostRuleDrs, self).__init__(module)
 
-        self.__datacenter_name = module.params.get('datacenter', None)
+        self.__datacenter_name = module.params.get("datacenter", None)
         self.__datacenter_obj = None
-        self.__cluster_name = module.params['cluster_name']
+        self.__cluster_name = module.params["cluster_name"]
         self.__cluster_obj = None
-        self.__vm_group_name = module.params.get('vm_group_name', None)
-        self.__host_group_name = module.params.get('host_group_name', None)
-        self.__rule_name = module.params['drs_rule_name']
-        self.__enabled = module.params['enabled']
-        self.__mandatory = module.params['mandatory']
-        self.__affinity_rule = module.params['affinity_rule']
-        self.__state = module.params['state']
-        self.__msg = 'Nothing to see here...'
+        self.__vm_group_name = module.params.get("vm_group_name", None)
+        self.__host_group_name = module.params.get("host_group_name", None)
+        self.__rule_name = module.params["drs_rule_name"]
+        self.__enabled = module.params["enabled"]
+        self.__mandatory = module.params["mandatory"]
+        self.__affinity_rule = module.params["affinity_rule"]
+        self.__state = module.params["state"]
+        self.__msg = "Nothing to see here..."
         self.__result = dict()
         self.__changed = False
 
         if self.__datacenter_name is not None:
 
-            self.__datacenter_obj = find_datacenter_by_name(self.content, self.__datacenter_name)
+            self.__datacenter_obj = find_datacenter_by_name(
+                self.content, self.__datacenter_name
+            )
 
             if self.__datacenter_obj is None and module.check_mode is False:
-                raise Exception("Datacenter '%s' not found" % self.__datacenter_name)
+                raise Exception(
+                    "Datacenter '%s' not found" % self.__datacenter_name
+                )
 
-        self.__cluster_obj = find_cluster_by_name(content=self.content,
-                                                  cluster_name=self.__cluster_name,
-                                                  datacenter=self.__datacenter_obj)
+        self.__cluster_obj = find_cluster_by_name(
+            content=self.content,
+            cluster_name=self.__cluster_name,
+            datacenter=self.__datacenter_obj,
+        )
 
         # Throw error if cluster does not exist
         if self.__cluster_obj is None and module.check_mode is False:
             raise Exception("Cluster '%s' not found" % self.__cluster_name)
 
         # Dont populate lists if we are deleting group
-        if self.__state == 'present':
+        if self.__state == "present":
             # Get list of vm groups only if state is present
-            self.__vm_group_obj = self.__get_group_by_name(group_name=self.__vm_group_name)
-            self.__host_group_obj = self.__get_group_by_name(group_name=self.__host_group_name, host_group=True)
+            self.__vm_group_obj = self.__get_group_by_name(
+                group_name=self.__vm_group_name
+            )
+            self.__host_group_obj = self.__get_group_by_name(
+                group_name=self.__host_group_name, host_group=True
+            )
 
     def get_msg(self):
         """
@@ -198,7 +214,9 @@ class VmwareVmHostRuleDrs(PyVmomi):
         """
         return self.__changed
 
-    def __get_group_by_name(self, group_name, cluster_obj=None, host_group=False):
+    def __get_group_by_name(
+        self, group_name, cluster_obj=None, host_group=False
+    ):
         """
         Return group
         Args:
@@ -220,7 +238,10 @@ class VmwareVmHostRuleDrs(PyVmomi):
                 if group.name == group_name:
                     return group
 
-        raise Exception("Failed to find the group %s in given cluster %s" % (group_name, cluster_obj.name))
+        raise Exception(
+            "Failed to find the group %s in given cluster %s"
+            % (group_name, cluster_obj.name)
+        )
 
     def __get_rule_key_by_name(self, cluster_obj=None, rule_name=None):
         """
@@ -240,7 +261,11 @@ class VmwareVmHostRuleDrs(PyVmomi):
             rule_name = self.__rule_name
 
         if rule_name:
-            rules_list = [rule for rule in cluster_obj.configuration.rule if rule.name == rule_name]
+            rules_list = [
+                rule
+                for rule in cluster_obj.configuration.rule
+                if rule.name == rule_name
+            ]
             if rules_list:
                 return rules_list[0]
 
@@ -263,26 +288,34 @@ class VmwareVmHostRuleDrs(PyVmomi):
         if not all([rule_obj, cluster_obj]):
             return {}
 
-        return dict(rule_key=rule_obj.key,
-                    rule_enabled=rule_obj.enabled,
-                    rule_name=rule_obj.name,
-                    rule_mandatory=rule_obj.mandatory,
-                    rule_uuid=rule_obj.ruleUuid,
-                    rule_vm_group_name=rule_obj.vmGroupName,
-                    rule_affine_host_group_name=rule_obj.affineHostGroupName,
-                    rule_anti_affine_host_group_name=rule_obj.antiAffineHostGroupName,
-                    rule_vms=self.__get_all_from_group(group_name=rule_obj.vmGroupName,
-                                                       cluster_obj=cluster_obj),
-                    rule_affine_hosts=self.__get_all_from_group(group_name=rule_obj.affineHostGroupName,
-                                                                cluster_obj=cluster_obj,
-                                                                host_group=True),
-                    rule_anti_affine_hosts=self.__get_all_from_group(group_name=rule_obj.antiAffineHostGroupName,
-                                                                     cluster_obj=cluster_obj,
-                                                                     host_group=True),
-                    rule_type="vm_host_rule"
-                    )
+        return dict(
+            rule_key=rule_obj.key,
+            rule_enabled=rule_obj.enabled,
+            rule_name=rule_obj.name,
+            rule_mandatory=rule_obj.mandatory,
+            rule_uuid=rule_obj.ruleUuid,
+            rule_vm_group_name=rule_obj.vmGroupName,
+            rule_affine_host_group_name=rule_obj.affineHostGroupName,
+            rule_anti_affine_host_group_name=rule_obj.antiAffineHostGroupName,
+            rule_vms=self.__get_all_from_group(
+                group_name=rule_obj.vmGroupName, cluster_obj=cluster_obj
+            ),
+            rule_affine_hosts=self.__get_all_from_group(
+                group_name=rule_obj.affineHostGroupName,
+                cluster_obj=cluster_obj,
+                host_group=True,
+            ),
+            rule_anti_affine_hosts=self.__get_all_from_group(
+                group_name=rule_obj.antiAffineHostGroupName,
+                cluster_obj=cluster_obj,
+                host_group=True,
+            ),
+            rule_type="vm_host_rule",
+        )
 
-    def __get_all_from_group(self, group_name=None, cluster_obj=None, host_group=False):
+    def __get_all_from_group(
+        self, group_name=None, cluster_obj=None, host_group=False
+    ):
         """
         Return all VM / Host names using given group name
         Args:
@@ -317,14 +350,22 @@ class VmwareVmHostRuleDrs(PyVmomi):
         if cluster_obj is None:
             cluster_obj = self.__cluster_obj
 
-        existing_rule = self.__normalize_vm_host_rule_spec(rule_obj=rule_obj, cluster_obj=cluster_obj)
+        existing_rule = self.__normalize_vm_host_rule_spec(
+            rule_obj=rule_obj, cluster_obj=cluster_obj
+        )
 
         # Check if anything has changed
-        if ((existing_rule['rule_enabled'] == self.__enabled) and
-            (existing_rule['rule_mandatory'] == self.__mandatory) and
-            (existing_rule['rule_vm_group_name'] == self.__vm_group_name) and
-            (existing_rule['rule_affine_host_group_name'] == self.__host_group_name or
-             existing_rule['rule_anti_affine_host_group_name'] == self.__host_group_name)):
+        if (
+            (existing_rule["rule_enabled"] == self.__enabled)
+            and (existing_rule["rule_mandatory"] == self.__mandatory)
+            and (existing_rule["rule_vm_group_name"] == self.__vm_group_name)
+            and (
+                existing_rule["rule_affine_host_group_name"]
+                == self.__host_group_name
+                or existing_rule["rule_anti_affine_host_group_name"]
+                == self.__host_group_name
+            )
+        ):
 
             return False
         else:
@@ -339,14 +380,16 @@ class VmwareVmHostRuleDrs(PyVmomi):
         # Check if rule exists
         if rule_obj:
 
-            operation = 'edit'
+            operation = "edit"
             rule_changed = self.__check_rule_has_changed(rule_obj)
 
         else:
-            operation = 'add'
+            operation = "add"
 
         # Check if anything has changed when editing
-        if operation == 'add' or (operation == 'edit' and rule_changed is True):
+        if operation == "add" or (
+            operation == "edit" and rule_changed is True
+        ):
 
             rule = vim.cluster.VmHostRuleInfo()
 
@@ -371,7 +414,9 @@ class VmwareVmHostRuleDrs(PyVmomi):
 
             if not self.module.check_mode:
 
-                task = self.__cluster_obj.ReconfigureEx(config_spec, modify=True)
+                task = self.__cluster_obj.ReconfigureEx(
+                    config_spec, modify=True
+                )
                 wait_for_task(task)
 
             self.__changed = True
@@ -379,10 +424,14 @@ class VmwareVmHostRuleDrs(PyVmomi):
         rule_obj = self.__get_rule_key_by_name(rule_name=self.__rule_name)
         self.__result = self.__normalize_vm_host_rule_spec(rule_obj)
 
-        if operation == 'edit':
-            self.__msg = "Updated DRS rule `%s` successfully" % (self.__rule_name)
+        if operation == "edit":
+            self.__msg = "Updated DRS rule `%s` successfully" % (
+                self.__rule_name
+            )
         else:
-            self.__msg = "Created DRS rule `%s` successfully" % (self.__rule_name)
+            self.__msg = "Created DRS rule `%s` successfully" % (
+                self.__rule_name
+            )
 
     # Delete
     def delete(self, rule_name=None):
@@ -399,69 +448,87 @@ class VmwareVmHostRuleDrs(PyVmomi):
         if rule_obj is not None:
 
             rule_key = int(rule_obj.key)
-            rule_spec = vim.cluster.RuleSpec(removeKey=rule_key, operation='remove')
+            rule_spec = vim.cluster.RuleSpec(
+                removeKey=rule_key, operation="remove"
+            )
             config_spec = vim.cluster.ConfigSpecEx(rulesSpec=[rule_spec])
 
             if not self.module.check_mode:
 
-                task = self.__cluster_obj.ReconfigureEx(config_spec, modify=True)
+                task = self.__cluster_obj.ReconfigureEx(
+                    config_spec, modify=True
+                )
                 wait_for_task(task)
 
             self.__changed = True
 
         if self.__changed:
-            self.__msg = "Deleted DRS rule `%s` successfully" % (self.__rule_name)
+            self.__msg = "Deleted DRS rule `%s` successfully" % (
+                self.__rule_name
+            )
         else:
-            self.__msg = "DRS Rule `%s` does not exists or already deleted" % (self.__rule_name)
+            self.__msg = "DRS Rule `%s` does not exists or already deleted" % (
+                self.__rule_name
+            )
 
 
 def main():
 
     argument_spec = vmware_argument_spec()
 
-    argument_spec.update(dict(
-        state=dict(type='str', default='present', choices=['absent', 'present']),
-        vm_group_name=dict(type='str', required=True),
-        host_group_name=dict(type='str', required=True),
-        cluster_name=dict(type='str', required=True),
-        datacenter=dict(type='str', required=False, aliases=['datacenter_name']),
-        drs_rule_name=dict(type='str', required=True),
-        enabled=dict(type='bool', default=False),
-        mandatory=dict(type='bool', default=False),
-        affinity_rule=dict(type='bool', default=True))
+    argument_spec.update(
+        dict(
+            state=dict(
+                type="str", default="present", choices=["absent", "present"]
+            ),
+            vm_group_name=dict(type="str", required=True),
+            host_group_name=dict(type="str", required=True),
+            cluster_name=dict(type="str", required=True),
+            datacenter=dict(
+                type="str", required=False, aliases=["datacenter_name"]
+            ),
+            drs_rule_name=dict(type="str", required=True),
+            enabled=dict(type="bool", default=False),
+            mandatory=dict(type="bool", default=False),
+            affinity_rule=dict(type="bool", default=True),
+        )
     )
 
     required_if = [
-        ['state', 'present', ['vm_group_name'], ['host_group_name']],
+        ["state", "present", ["vm_group_name"], ["host_group_name"]]
     ]
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           required_if=required_if,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        required_if=required_if,
+        supports_check_mode=True,
+    )
 
     try:
         # Create instance of VmwareDrsGroupManager
         vm_host_drs = VmwareVmHostRuleDrs(module=module)
 
-        if module.params['state'] == 'present':
+        if module.params["state"] == "present":
             vm_host_drs.create()
-        elif module.params['state'] == 'absent':
+        elif module.params["state"] == "absent":
             vm_host_drs.delete()
 
         # Set results
-        results = dict(msg=vm_host_drs.get_msg(),
-                       failed=False,
-                       changed=vm_host_drs.get_changed(),
-                       result=vm_host_drs.get_result())
+        results = dict(
+            msg=vm_host_drs.get_msg(),
+            failed=False,
+            changed=vm_host_drs.get_changed(),
+            result=vm_host_drs.get_result(),
+        )
 
     except Exception as error:
         results = dict(failed=True, msg="Error: `%s`" % error)
 
-    if results['failed']:
+    if results["failed"]:
         module.fail_json(**results)
     else:
         module.exit_json(**results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

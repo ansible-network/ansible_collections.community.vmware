@@ -5,17 +5,18 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_local_role_info
 short_description: Gather info about local roles on an ESXi host
@@ -33,9 +34,9 @@ requirements:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Gather info about local role from an ESXi
   vmware_local_role_info:
     hostname: '{{ esxi_hostname }}'
@@ -48,9 +49,9 @@ EXAMPLES = '''
     admin_priv: "{{ fact_details.local_role_info['Admin']['privileges'] }}"
 - debug:
     msg: "{{ admin_priv }}"
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 local_role_info:
     description: Info about role present on ESXi host
     returned: always
@@ -89,14 +90,18 @@ local_role_info:
             "role_system": true
         }
     ]
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+)
 
 
 class VMwareLocalRoleInfo(PyVmomi):
     """Class to manage local role info"""
+
     def __init__(self, module):
         super(VMwareLocalRoleInfo, self).__init__(module)
         self.module = module
@@ -105,7 +110,8 @@ class VMwareLocalRoleInfo(PyVmomi):
         if self.content.authorizationManager is None:
             self.module.fail_json(
                 msg="Failed to get local authorization manager settings.",
-                details="It seems that '%s' is a vCenter server instead of an ESXi server" % self.params['hostname']
+                details="It seems that '%s' is a vCenter server instead of an ESXi server"
+                % self.params["hostname"],
             )
 
     def gather_local_role_info(self):
@@ -129,12 +135,13 @@ class VMwareLocalRoleInfo(PyVmomi):
 def main():
     """Main"""
     argument_spec = vmware_argument_spec()
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
     vmware_local_role_info = VMwareLocalRoleInfo(module)
     vmware_local_role_info.gather_local_role_info()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

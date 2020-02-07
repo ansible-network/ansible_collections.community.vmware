@@ -7,15 +7,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_host
 short_description: Add, remove, or move an ESXi host to, from, or within vCenter
@@ -135,9 +136,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add ESXi Host to vCenter
   vmware_host:
     hostname: '{{ vcenter_hostname }}'
@@ -202,15 +203,15 @@ EXAMPLES = r'''
     esxi_ssl_thumbprint: "3C:A5:60:6F:7A:B7:C4:6C:48:28:3D:2F:A5:EC:A3:58:13:88:F6:DD"
     state: present
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 result:
     description: metadata about the new host system added
     returned: on successful addition
     type: str
     sample: "Host already connected to vCenter 'vcenter01' in cluster 'cluster01'"
-'''
+"""
 
 try:
     from pyVmomi import vim, vmodl
@@ -223,51 +224,62 @@ except ImportError:
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
 from ansible_collections.vmware.general.plugins.module_utils.vmware import (
-    PyVmomi, TaskError, vmware_argument_spec,
-    wait_for_task, find_host_by_cluster_datacenter, find_hostsystem_by_name
+    PyVmomi,
+    TaskError,
+    vmware_argument_spec,
+    wait_for_task,
+    find_host_by_cluster_datacenter,
+    find_hostsystem_by_name,
 )
 
 
 class VMwareHost(PyVmomi):
     """Class to manage vCenter connection"""
+
     def __init__(self, module):
         super(VMwareHost, self).__init__(module)
-        self.vcenter = module.params['hostname']
-        self.datacenter_name = module.params['datacenter_name']
-        self.cluster_name = module.params['cluster_name']
-        self.folder_name = module.params['folder']
-        self.esxi_hostname = module.params['esxi_hostname']
-        self.esxi_username = module.params['esxi_username']
-        self.esxi_password = module.params['esxi_password']
-        self.state = module.params['state']
-        self.esxi_ssl_thumbprint = module.params.get('esxi_ssl_thumbprint', '')
-        self.force_connection = module.params.get('force_connection')
-        self.fetch_ssl_thumbprint = module.params.get('fetch_ssl_thumbprint')
-        self.reconnect_disconnected = module.params.get('reconnect_disconnected')
-        self.host_update = self.host = self.cluster = self.folder = self.host_parent_compute_resource = None
+        self.vcenter = module.params["hostname"]
+        self.datacenter_name = module.params["datacenter_name"]
+        self.cluster_name = module.params["cluster_name"]
+        self.folder_name = module.params["folder"]
+        self.esxi_hostname = module.params["esxi_hostname"]
+        self.esxi_username = module.params["esxi_username"]
+        self.esxi_password = module.params["esxi_password"]
+        self.state = module.params["state"]
+        self.esxi_ssl_thumbprint = module.params.get("esxi_ssl_thumbprint", "")
+        self.force_connection = module.params.get("force_connection")
+        self.fetch_ssl_thumbprint = module.params.get("fetch_ssl_thumbprint")
+        self.reconnect_disconnected = module.params.get(
+            "reconnect_disconnected"
+        )
+        self.host_update = (
+            self.host
+        ) = (
+            self.cluster
+        ) = self.folder = self.host_parent_compute_resource = None
 
     def process_state(self):
         """Check the current state"""
         host_states = {
-            'absent': {
-                'present': self.state_remove_host,
-                'update': self.state_remove_host,
-                'absent': self.state_exit_unchanged,
+            "absent": {
+                "present": self.state_remove_host,
+                "update": self.state_remove_host,
+                "absent": self.state_exit_unchanged,
             },
-            'present': {
-                'present': self.state_exit_unchanged,
-                'update': self.state_update_host,
-                'absent': self.state_add_host,
+            "present": {
+                "present": self.state_exit_unchanged,
+                "update": self.state_update_host,
+                "absent": self.state_add_host,
             },
-            'add_or_reconnect': {
-                'present': self.state_reconnect_host,
-                'update': self.state_update_host,
-                'absent': self.state_add_host,
+            "add_or_reconnect": {
+                "present": self.state_reconnect_host,
+                "update": self.state_update_host,
+                "absent": self.state_add_host,
             },
-            'reconnect': {
-                'present': self.state_reconnect_host,
-                'update': self.state_update_host,
-            }
+            "reconnect": {
+                "present": self.state_reconnect_host,
+                "update": self.state_update_host,
+            },
         }
 
         try:
@@ -282,17 +294,21 @@ class VMwareHost(PyVmomi):
     def check_host_state(self):
         """Check current state"""
         # Check if the host is already connected to vCenter
-        self.host_update = find_hostsystem_by_name(self.content, self.esxi_hostname)
+        self.host_update = find_hostsystem_by_name(
+            self.content, self.esxi_hostname
+        )
         if self.host_update:
             # The host name is unique in vCenter; A host with the same name cannot exist in another datacenter
             # However, the module will fail later if the target folder/cluster is in another datacenter as the host
             # Check if the host is connected under the target cluster
             if self.cluster_name:
-                self.host, self.cluster = self.search_cluster(self.datacenter_name, self.cluster_name, self.esxi_hostname)
+                self.host, self.cluster = self.search_cluster(
+                    self.datacenter_name, self.cluster_name, self.esxi_hostname
+                )
                 if self.host:
-                    state = 'present'
+                    state = "present"
                 else:
-                    state = 'update'
+                    state = "update"
             # Check if the host is connected under the target folder
             elif self.folder_name:
                 self.folder = self.search_folder(self.folder_name)
@@ -300,18 +316,21 @@ class VMwareHost(PyVmomi):
                     if not child or not isinstance(child, vim.ComputeResource):
                         continue
                     try:
-                        if isinstance(child.host[0], vim.HostSystem) and child.name == self.esxi_hostname:
+                        if (
+                            isinstance(child.host[0], vim.HostSystem)
+                            and child.name == self.esxi_hostname
+                        ):
                             self.host_parent_compute_resource = child
                             self.host = child.host[0]
                             break
                     except IndexError:
                         continue
                 if self.host:
-                    state = 'present'
+                    state = "present"
                 else:
-                    state = 'update'
+                    state = "update"
         else:
-            state = 'absent'
+            state = "absent"
         return state
 
     def search_folder(self, folder_name):
@@ -331,20 +350,33 @@ class VMwareHost(PyVmomi):
             Returns: host and cluster object
         """
         return find_host_by_cluster_datacenter(
-            self.module, self.content, datacenter_name, cluster_name, esxi_hostname
+            self.module,
+            self.content,
+            datacenter_name,
+            cluster_name,
+            esxi_hostname,
         )
 
     def state_exit_unchanged(self):
         """Exit with status message"""
         if not self.host_update:
             result = "Host already disconnected"
-        elif self.reconnect_disconnected and self.host_update.runtime.connectionState == 'disconnected':
+        elif (
+            self.reconnect_disconnected
+            and self.host_update.runtime.connectionState == "disconnected"
+        ):
             self.state_reconnect_host()
         else:
             if self.folder_name:
-                result = "Host already connected to vCenter '%s' in folder '%s'" % (self.vcenter, self.folder_name)
+                result = (
+                    "Host already connected to vCenter '%s' in folder '%s'"
+                    % (self.vcenter, self.folder_name)
+                )
             elif self.cluster_name:
-                result = "Host already connected to vCenter '%s' in cluster '%s'" % (self.vcenter, self.cluster_name)
+                result = (
+                    "Host already connected to vCenter '%s' in cluster '%s'"
+                    % (self.vcenter, self.cluster_name)
+                )
         self.module.exit_json(changed=False, result=str(result))
 
     def state_add_host(self):
@@ -356,7 +388,7 @@ class VMwareHost(PyVmomi):
             result = "Host would be connected to vCenter '%s'" % self.vcenter
         else:
             host_connect_spec = self.get_host_connect_spec()
-            as_connected = self.params.get('add_connected')
+            as_connected = self.params.get("add_connected")
             esxi_license = None
             resource_pool = None
             task = None
@@ -364,125 +396,145 @@ class VMwareHost(PyVmomi):
                 self.folder = self.search_folder(self.folder_name)
                 try:
                     task = self.folder.AddStandaloneHost(
-                        spec=host_connect_spec, compResSpec=resource_pool,
-                        addConnected=as_connected, license=esxi_license
+                        spec=host_connect_spec,
+                        compResSpec=resource_pool,
+                        addConnected=as_connected,
+                        license=esxi_license,
                     )
                 except vim.fault.InvalidLogin as invalid_login:
                     self.module.fail_json(
-                        msg="Cannot authenticate with the host : %s" % to_native(invalid_login)
+                        msg="Cannot authenticate with the host : %s"
+                        % to_native(invalid_login)
                     )
                 except vim.fault.HostConnectFault as connect_fault:
                     self.module.fail_json(
-                        msg="An error occurred during connect : %s" % to_native(connect_fault)
+                        msg="An error occurred during connect : %s"
+                        % to_native(connect_fault)
                     )
                 except vim.fault.DuplicateName as duplicate_name:
                     self.module.fail_json(
-                        msg="The folder already contains a host with the same name : %s" %
-                        to_native(duplicate_name)
+                        msg="The folder already contains a host with the same name : %s"
+                        % to_native(duplicate_name)
                     )
                 except vmodl.fault.InvalidArgument as invalid_argument:
                     self.module.fail_json(
-                        msg="An argument was specified incorrectly : %s" % to_native(invalid_argument)
+                        msg="An argument was specified incorrectly : %s"
+                        % to_native(invalid_argument)
                     )
                 except vim.fault.AlreadyBeingManaged as already_managed:
                     self.module.fail_json(
-                        msg="The host is already being managed by another vCenter server : %s" %
-                        to_native(already_managed)
+                        msg="The host is already being managed by another vCenter server : %s"
+                        % to_native(already_managed)
                     )
                 except vmodl.fault.NotEnoughLicenses as not_enough_licenses:
                     self.module.fail_json(
-                        msg="There are not enough licenses to add this host : %s" % to_native(not_enough_licenses)
+                        msg="There are not enough licenses to add this host : %s"
+                        % to_native(not_enough_licenses)
                     )
                 except vim.fault.NoHost as no_host:
                     self.module.fail_json(
-                        msg="Unable to contact the host : %s" % to_native(no_host)
+                        msg="Unable to contact the host : %s"
+                        % to_native(no_host)
                     )
                 except vmodl.fault.NotSupported as not_supported:
                     self.module.fail_json(
-                        msg="The folder is not a host folder : %s" % to_native(not_supported)
+                        msg="The folder is not a host folder : %s"
+                        % to_native(not_supported)
                     )
                 except vim.fault.NotSupportedHost as host_not_supported:
                     self.module.fail_json(
-                        msg="The host is running a software version that is not supported : %s" %
-                        to_native(host_not_supported)
+                        msg="The host is running a software version that is not supported : %s"
+                        % to_native(host_not_supported)
                     )
                 except vim.fault.AgentInstallFailed as agent_install:
                     self.module.fail_json(
-                        msg="Error during vCenter agent installation : %s" % to_native(agent_install)
+                        msg="Error during vCenter agent installation : %s"
+                        % to_native(agent_install)
                     )
                 except vim.fault.AlreadyConnected as already_connected:
                     self.module.fail_json(
-                        msg="The host is already connected to the vCenter server : %s" % to_native(already_connected)
+                        msg="The host is already connected to the vCenter server : %s"
+                        % to_native(already_connected)
                     )
                 except vim.fault.SSLVerifyFault as ssl_fault:
                     self.module.fail_json(
-                        msg="The host certificate could not be authenticated : %s" % to_native(ssl_fault)
+                        msg="The host certificate could not be authenticated : %s"
+                        % to_native(ssl_fault)
                     )
             elif self.cluster_name:
                 self.host, self.cluster = self.search_cluster(
-                    self.datacenter_name,
-                    self.cluster_name,
-                    self.esxi_hostname
+                    self.datacenter_name, self.cluster_name, self.esxi_hostname
                 )
                 try:
                     task = self.cluster.AddHost_Task(
-                        spec=host_connect_spec, asConnected=as_connected,
-                        resourcePool=resource_pool, license=esxi_license
+                        spec=host_connect_spec,
+                        asConnected=as_connected,
+                        resourcePool=resource_pool,
+                        license=esxi_license,
                     )
                 except vim.fault.InvalidLogin as invalid_login:
                     self.module.fail_json(
-                        msg="Cannot authenticate with the host : %s" % to_native(invalid_login)
+                        msg="Cannot authenticate with the host : %s"
+                        % to_native(invalid_login)
                     )
                 except vim.fault.HostConnectFault as connect_fault:
                     self.module.fail_json(
-                        msg="An error occurred during connect : %s" % to_native(connect_fault)
+                        msg="An error occurred during connect : %s"
+                        % to_native(connect_fault)
                     )
                 except vim.fault.DuplicateName as duplicate_name:
                     self.module.fail_json(
-                        msg="The cluster already contains a host with the same name : %s" %
-                        to_native(duplicate_name)
+                        msg="The cluster already contains a host with the same name : %s"
+                        % to_native(duplicate_name)
                     )
                 except vim.fault.AlreadyBeingManaged as already_managed:
                     self.module.fail_json(
-                        msg="The host is already being managed by another vCenter server : %s" %
-                        to_native(already_managed)
+                        msg="The host is already being managed by another vCenter server : %s"
+                        % to_native(already_managed)
                     )
                 except vmodl.fault.NotEnoughLicenses as not_enough_licenses:
                     self.module.fail_json(
-                        msg="There are not enough licenses to add this host : %s" % to_native(not_enough_licenses)
+                        msg="There are not enough licenses to add this host : %s"
+                        % to_native(not_enough_licenses)
                     )
                 except vim.fault.NoHost as no_host:
                     self.module.fail_json(
-                        msg="Unable to contact the host : %s" % to_native(no_host)
+                        msg="Unable to contact the host : %s"
+                        % to_native(no_host)
                     )
                 except vim.fault.NotSupportedHost as host_not_supported:
                     self.module.fail_json(
                         msg="The host is running a software version that is not supported; "
-                        "It may still be possible to add the host as a stand-alone host : %s" %
-                        to_native(host_not_supported)
+                        "It may still be possible to add the host as a stand-alone host : %s"
+                        % to_native(host_not_supported)
                     )
                 except vim.fault.TooManyHosts as too_many_hosts:
                     self.module.fail_json(
-                        msg="No additional hosts can be added to the cluster : %s" % to_native(too_many_hosts)
+                        msg="No additional hosts can be added to the cluster : %s"
+                        % to_native(too_many_hosts)
                     )
                 except vim.fault.AgentInstallFailed as agent_install:
                     self.module.fail_json(
-                        msg="Error during vCenter agent installation : %s" % to_native(agent_install)
+                        msg="Error during vCenter agent installation : %s"
+                        % to_native(agent_install)
                     )
                 except vim.fault.AlreadyConnected as already_connected:
                     self.module.fail_json(
-                        msg="The host is already connected to the vCenter server : %s" % to_native(already_connected)
+                        msg="The host is already connected to the vCenter server : %s"
+                        % to_native(already_connected)
                     )
                 except vim.fault.SSLVerifyFault as ssl_fault:
                     self.module.fail_json(
-                        msg="The host certificate could not be authenticated : %s" % to_native(ssl_fault)
+                        msg="The host certificate could not be authenticated : %s"
+                        % to_native(ssl_fault)
                     )
             try:
                 changed, result = wait_for_task(task)
                 result = "Host connected to vCenter '%s'" % self.vcenter
             except TaskError as task_error:
                 self.module.fail_json(
-                    msg="Failed to add host to vCenter '%s' : %s" % (self.vcenter, to_native(task_error))
+                    msg="Failed to add host to vCenter '%s' : %s"
+                    % (self.vcenter, to_native(task_error))
                 )
 
         self.module.exit_json(changed=changed, result=result)
@@ -493,34 +545,45 @@ class VMwareHost(PyVmomi):
         Returns: host connection specification
         """
         # Get the thumbprint of the SSL certificate
-        if self.fetch_ssl_thumbprint and self.esxi_ssl_thumbprint == '':
+        if self.fetch_ssl_thumbprint and self.esxi_ssl_thumbprint == "":
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(1)
-            if self.module.params['proxy_host']:
-                sock.connect((
-                    self.module.params['proxy_host'],
-                    self.module.params['proxy_port']))
-                command = "CONNECT %s:443 HTTP/1.0\r\n\r\n" % (self.esxi_hostname)
+            if self.module.params["proxy_host"]:
+                sock.connect(
+                    (
+                        self.module.params["proxy_host"],
+                        self.module.params["proxy_port"],
+                    )
+                )
+                command = "CONNECT %s:443 HTTP/1.0\r\n\r\n" % (
+                    self.esxi_hostname
+                )
                 sock.send(command.encode())
                 buf = sock.recv(8192).decode()
-                if buf.split()[1] != '200':
+                if buf.split()[1] != "200":
                     self.module.fail_json(msg="Failed to connect to the proxy")
                 ctx = ssl.create_default_context()
                 ctx.check_hostname = False
                 ctx.verify_mode = ssl.CERT_NONE
-                der_cert_bin = ctx.wrap_socket(sock, server_hostname=self.esxi_hostname).getpeercert(True)
+                der_cert_bin = ctx.wrap_socket(
+                    sock, server_hostname=self.esxi_hostname
+                ).getpeercert(True)
                 sock.close()
             else:
                 wrapped_socket = ssl.wrap_socket(sock)
                 try:
                     wrapped_socket.connect((self.esxi_hostname, 443))
                 except socket.error as socket_error:
-                    self.module.fail_json(msg="Cannot connect to host : %s" % socket_error)
+                    self.module.fail_json(
+                        msg="Cannot connect to host : %s" % socket_error
+                    )
                 else:
                     der_cert_bin = wrapped_socket.getpeercert(True)
                     wrapped_socket.close()
 
-            thumb_sha1 = self.format_number(hashlib.sha1(der_cert_bin).hexdigest())
+            thumb_sha1 = self.format_number(
+                hashlib.sha1(der_cert_bin).hexdigest()
+            )
             sslThumbprint = thumb_sha1
         else:
             sslThumbprint = self.esxi_ssl_thumbprint
@@ -537,7 +600,7 @@ class VMwareHost(PyVmomi):
     def format_number(number):
         """Format number"""
         string = str(number)
-        return ':'.join(a + b for a, b in zip(string[::2], string[1::2]))
+        return ":".join(a + b for a, b in zip(string[::2], string[1::2]))
 
     def state_reconnect_host(self):
         """Reconnect host to vCenter"""
@@ -554,22 +617,24 @@ class VMwareHost(PyVmomi):
     def reconnect_host(self, host_object):
         """Reconnect host to vCenter"""
         reconnecthost_args = {}
-        reconnecthost_args['reconnectSpec'] = vim.HostSystem.ReconnectSpec()
-        reconnecthost_args['reconnectSpec'].syncState = True
+        reconnecthost_args["reconnectSpec"] = vim.HostSystem.ReconnectSpec()
+        reconnecthost_args["reconnectSpec"].syncState = True
 
         if self.esxi_username and self.esxi_password:
             # Build the connection spec as well and fetch thumbprint if enabled
             # Useful if you reinstalled a host and it uses a new self-signed certificate
-            reconnecthost_args['cnxSpec'] = self.get_host_connect_spec()
+            reconnecthost_args["cnxSpec"] = self.get_host_connect_spec()
         try:
             task = host_object.ReconnectHost_Task(**reconnecthost_args)
         except vim.fault.InvalidLogin as invalid_login:
             self.module.fail_json(
-                msg="Cannot authenticate with the host : %s" % to_native(invalid_login)
+                msg="Cannot authenticate with the host : %s"
+                % to_native(invalid_login)
             )
         except vim.fault.InvalidState as invalid_state:
             self.module.fail_json(
-                msg="The host is not disconnected : %s" % to_native(invalid_state)
+                msg="The host is not disconnected : %s"
+                % to_native(invalid_state)
             )
         except vim.fault.InvalidName as invalid_name:
             self.module.fail_json(
@@ -577,19 +642,23 @@ class VMwareHost(PyVmomi):
             )
         except vim.fault.HostConnectFault as connect_fault:
             self.module.fail_json(
-                msg="An error occurred during reconnect : %s" % to_native(connect_fault)
+                msg="An error occurred during reconnect : %s"
+                % to_native(connect_fault)
             )
         except vmodl.fault.NotSupported as not_supported:
             self.module.fail_json(
-                msg="No host can be added to this group : %s" % to_native(not_supported)
+                msg="No host can be added to this group : %s"
+                % to_native(not_supported)
             )
         except vim.fault.AlreadyBeingManaged as already_managed:
             self.module.fail_json(
-                msg="The host is already being managed by another vCenter server : %s" % to_native(already_managed)
+                msg="The host is already being managed by another vCenter server : %s"
+                % to_native(already_managed)
             )
         except vmodl.fault.NotEnoughLicenses as not_enough_licenses:
             self.module.fail_json(
-                msg="There are not enough licenses to add this host : %s" % to_native(not_enough_licenses)
+                msg="There are not enough licenses to add this host : %s"
+                % to_native(not_enough_licenses)
             )
         except vim.fault.NoHost as no_host:
             self.module.fail_json(
@@ -597,19 +666,20 @@ class VMwareHost(PyVmomi):
             )
         except vim.fault.NotSupportedHost as host_not_supported:
             self.module.fail_json(
-                msg="The host is running a software version that is not supported : %s" %
-                to_native(host_not_supported)
+                msg="The host is running a software version that is not supported : %s"
+                % to_native(host_not_supported)
             )
         except vim.fault.SSLVerifyFault as ssl_fault:
             self.module.fail_json(
-                msg="The host certificate could not be authenticated : %s" % to_native(ssl_fault)
+                msg="The host certificate could not be authenticated : %s"
+                % to_native(ssl_fault)
             )
         try:
             changed, result = wait_for_task(task)
         except TaskError as task_error:
             self.module.fail_json(
-                msg="Failed to reconnect host to vCenter '%s' due to %s" %
-                (self.vcenter, to_native(task_error))
+                msg="Failed to reconnect host to vCenter '%s' due to %s"
+                % (self.vcenter, to_native(task_error))
             )
 
     def state_remove_host(self):
@@ -621,7 +691,7 @@ class VMwareHost(PyVmomi):
         else:
             # Check parent type
             parent_type = self.get_parent_type(self.host_update)
-            if parent_type == 'cluster':
+            if parent_type == "cluster":
                 self.put_host_in_maintenance_mode(self.host_update)
             try:
                 if self.folder_name:
@@ -635,7 +705,8 @@ class VMwareHost(PyVmomi):
                 result = "Host removed from vCenter '%s'" % self.vcenter
             except TaskError as task_error:
                 self.module.fail_json(
-                    msg="Failed to remove the host from vCenter '%s' : %s" % (self.vcenter, to_native(task_error))
+                    msg="Failed to remove the host from vCenter '%s' : %s"
+                    % (self.vcenter, to_native(task_error))
                 )
         self.module.exit_json(changed=changed, result=str(result))
 
@@ -644,23 +715,29 @@ class VMwareHost(PyVmomi):
         if not host_object.runtime.inMaintenanceMode:
             try:
                 try:
-                    maintenance_mode_task = host_object.EnterMaintenanceMode_Task(300, True, None)
+                    maintenance_mode_task = host_object.EnterMaintenanceMode_Task(
+                        300, True, None
+                    )
                 except vim.fault.InvalidState as invalid_state:
                     self.module.fail_json(
-                        msg="The host is already in maintenance mode : %s" % to_native(invalid_state)
+                        msg="The host is already in maintenance mode : %s"
+                        % to_native(invalid_state)
                     )
                 except vim.fault.Timedout as timed_out:
                     self.module.fail_json(
-                        msg="The maintenance mode operation timed out : %s" % to_native(timed_out)
+                        msg="The maintenance mode operation timed out : %s"
+                        % to_native(timed_out)
                     )
                 except vim.fault.Timedout as timed_out:
                     self.module.fail_json(
-                        msg="The maintenance mode operation was canceled : %s" % to_native(timed_out)
+                        msg="The maintenance mode operation was canceled : %s"
+                        % to_native(timed_out)
                     )
                 wait_for_task(maintenance_mode_task)
             except TaskError as task_err:
                 self.module.fail_json(
-                    msg="Failed to put the host in maintenance mode : %s" % to_native(task_err)
+                    msg="Failed to put the host in maintenance mode : %s"
+                    % to_native(task_err)
                 )
 
     def get_parent_type(self, host_object):
@@ -672,9 +749,9 @@ class VMwareHost(PyVmomi):
         # check 'vim.ClusterComputeResource' first because it's also an
         # instance of 'vim.ComputeResource'
         if isinstance(host_object.parent, vim.ClusterComputeResource):
-            object_type = 'cluster'
+            object_type = "cluster"
         elif isinstance(host_object.parent, vim.ComputeResource):
-            object_type = 'folder'
+            object_type = "folder"
         return object_type
 
     def state_update_host(self):
@@ -684,7 +761,10 @@ class VMwareHost(PyVmomi):
         reconnect = False
 
         # Check if the host is disconnected if reconnect disconnected hosts is true
-        if self.reconnect_disconnected and self.host_update.runtime.connectionState == 'disconnected':
+        if (
+            self.reconnect_disconnected
+            and self.host_update.runtime.connectionState == "disconnected"
+        ):
             reconnect = True
 
         # Check parent type
@@ -692,70 +772,101 @@ class VMwareHost(PyVmomi):
 
         if self.folder_name:
             if self.module.check_mode:
-                if reconnect or self.state == 'add_or_reconnect' or self.state == 'reconnect':
-                    result = "Host would be reconnected and moved to folder '%s'" % self.folder_name
+                if (
+                    reconnect
+                    or self.state == "add_or_reconnect"
+                    or self.state == "reconnect"
+                ):
+                    result = (
+                        "Host would be reconnected and moved to folder '%s'"
+                        % self.folder_name
+                    )
                 else:
-                    result = "Host would be moved to folder '%s'" % self.folder_name
+                    result = (
+                        "Host would be moved to folder '%s'" % self.folder_name
+                    )
             else:
                 # Reconnect the host if disconnected or if specified by state
-                if reconnect or self.state == 'add_or_reconnect' or self.state == 'reconnect':
+                if (
+                    reconnect
+                    or self.state == "add_or_reconnect"
+                    or self.state == "reconnect"
+                ):
                     self.reconnect_host(self.host_update)
                 try:
                     try:
-                        if parent_type == 'folder':
+                        if parent_type == "folder":
                             # Move ESXi host from folder to folder
-                            task = self.folder.MoveIntoFolder_Task([self.host_update.parent])
-                        elif parent_type == 'cluster':
+                            task = self.folder.MoveIntoFolder_Task(
+                                [self.host_update.parent]
+                            )
+                        elif parent_type == "cluster":
                             self.put_host_in_maintenance_mode(self.host_update)
                             # Move ESXi host from cluster to folder
-                            task = self.folder.MoveIntoFolder_Task([self.host_update])
+                            task = self.folder.MoveIntoFolder_Task(
+                                [self.host_update]
+                            )
                     except vim.fault.DuplicateName as duplicate_name:
                         self.module.fail_json(
-                            msg="The folder already contains an object with the specified name : %s" %
-                            to_native(duplicate_name)
+                            msg="The folder already contains an object with the specified name : %s"
+                            % to_native(duplicate_name)
                         )
                     except vim.fault.InvalidFolder as invalid_folder:
                         self.module.fail_json(
-                            msg="The parent of this folder is in the list of objects : %s" %
-                            to_native(invalid_folder)
+                            msg="The parent of this folder is in the list of objects : %s"
+                            % to_native(invalid_folder)
                         )
                     except vim.fault.InvalidState as invalid_state:
                         self.module.fail_json(
                             msg="Failed to move host, this can be due to either of following :"
-                            " 1. The host is not part of the same datacenter, 2. The host is not in maintenance mode : %s" %
-                            to_native(invalid_state)
+                            " 1. The host is not part of the same datacenter, 2. The host is not in maintenance mode : %s"
+                            % to_native(invalid_state)
                         )
                     except vmodl.fault.NotSupported as not_supported:
                         self.module.fail_json(
-                            msg="The target folder is not a host folder : %s" %
-                            to_native(not_supported)
+                            msg="The target folder is not a host folder : %s"
+                            % to_native(not_supported)
                         )
                     except vim.fault.DisallowedOperationOnFailoverHost as failover_host:
                         self.module.fail_json(
-                            msg="The host is configured as a failover host : %s" %
-                            to_native(failover_host)
+                            msg="The host is configured as a failover host : %s"
+                            % to_native(failover_host)
                         )
                     except vim.fault.VmAlreadyExistsInDatacenter as already_exists:
                         self.module.fail_json(
                             msg="The host's virtual machines are already registered to a host in "
-                            "the destination datacenter : %s" % to_native(already_exists)
+                            "the destination datacenter : %s"
+                            % to_native(already_exists)
                         )
                     changed, result = wait_for_task(task)
                 except TaskError as task_error_exception:
                     task_error = task_error_exception.args[0]
                     self.module.fail_json(
-                        msg="Failed to move host %s to folder %s due to %s" %
-                        (self.esxi_hostname, self.folder_name, to_native(task_error))
+                        msg="Failed to move host %s to folder %s due to %s"
+                        % (
+                            self.esxi_hostname,
+                            self.folder_name,
+                            to_native(task_error),
+                        )
                     )
-                if reconnect or self.state == 'add_or_reconnect' or self.state == 'reconnect':
-                    result = "Host reconnected and moved to folder '%s'" % self.folder_name
+                if (
+                    reconnect
+                    or self.state == "add_or_reconnect"
+                    or self.state == "reconnect"
+                ):
+                    result = (
+                        "Host reconnected and moved to folder '%s'"
+                        % self.folder_name
+                    )
                 else:
                     result = "Host moved to folder '%s'" % self.folder_name
         elif self.cluster_name:
             if self.module.check_mode:
-                result = "Host would be moved to cluster '%s'" % self.cluster_name
+                result = (
+                    "Host would be moved to cluster '%s'" % self.cluster_name
+                )
             else:
-                if parent_type == 'cluster':
+                if parent_type == "cluster":
                     # Put host in maintenance mode if moved from another cluster
                     self.put_host_in_maintenance_mode(self.host_update)
                 resource_pool = None
@@ -766,29 +877,37 @@ class VMwareHost(PyVmomi):
                         )
                     except vim.fault.TooManyHosts as too_many_hosts:
                         self.module.fail_json(
-                            msg="No additional hosts can be added to the cluster : %s" % to_native(too_many_hosts)
+                            msg="No additional hosts can be added to the cluster : %s"
+                            % to_native(too_many_hosts)
                         )
                     except vim.fault.InvalidState as invalid_state:
                         self.module.fail_json(
-                            msg="The host is already part of a cluster and is not in maintenance mode : %s" %
-                            to_native(invalid_state)
+                            msg="The host is already part of a cluster and is not in maintenance mode : %s"
+                            % to_native(invalid_state)
                         )
                     except vmodl.fault.InvalidArgument as invalid_argument:
                         self.module.fail_json(
                             msg="Failed to move host, this can be due to either of following :"
                             " 1. The host is is not a part of the same datacenter as the cluster,"
-                            " 2. The source and destination clusters are the same : %s" %
-                            to_native(invalid_argument)
+                            " 2. The source and destination clusters are the same : %s"
+                            % to_native(invalid_argument)
                         )
                     changed, result = wait_for_task(task)
                 except TaskError as task_error_exception:
                     task_error = task_error_exception.args[0]
                     self.module.fail_json(
-                        msg="Failed to move host to cluster '%s' due to : %s" %
-                        (self.cluster_name, to_native(task_error))
+                        msg="Failed to move host to cluster '%s' due to : %s"
+                        % (self.cluster_name, to_native(task_error))
                     )
-                if reconnect or self.state == 'add_or_reconnect' or self.state == 'reconnect':
-                    result = "Host reconnected and moved to cluster '%s'" % self.cluster_name
+                if (
+                    reconnect
+                    or self.state == "add_or_reconnect"
+                    or self.state == "reconnect"
+                ):
+                    result = (
+                        "Host reconnected and moved to cluster '%s'"
+                        % self.cluster_name
+                    )
                 else:
                     result = "Host moved to cluster '%s'" % self.cluster_name
 
@@ -799,40 +918,42 @@ def main():
     """Main"""
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        datacenter_name=dict(type='str', required=True, aliases=['datacenter']),
-        cluster_name=dict(type='str', aliases=['cluster']),
-        esxi_hostname=dict(type='str', required=True),
-        esxi_username=dict(type='str'),
-        esxi_password=dict(type='str', no_log=True),
-        esxi_ssl_thumbprint=dict(type='str', default='', aliases=['ssl_thumbprint']),
-        fetch_ssl_thumbprint=dict(type='bool', default=True),
-        state=dict(default='present',
-                   choices=['present', 'absent', 'add_or_reconnect', 'reconnect'],
-                   type='str'),
-        folder=dict(type='str', aliases=['folder_name']),
-        add_connected=dict(type='bool', default=True),
-        force_connection=dict(type='bool', default=True),
-        reconnect_disconnected=dict(type='bool', default=True),
+        datacenter_name=dict(
+            type="str", required=True, aliases=["datacenter"]
+        ),
+        cluster_name=dict(type="str", aliases=["cluster"]),
+        esxi_hostname=dict(type="str", required=True),
+        esxi_username=dict(type="str"),
+        esxi_password=dict(type="str", no_log=True),
+        esxi_ssl_thumbprint=dict(
+            type="str", default="", aliases=["ssl_thumbprint"]
+        ),
+        fetch_ssl_thumbprint=dict(type="bool", default=True),
+        state=dict(
+            default="present",
+            choices=["present", "absent", "add_or_reconnect", "reconnect"],
+            type="str",
+        ),
+        folder=dict(type="str", aliases=["folder_name"]),
+        add_connected=dict(type="bool", default=True),
+        force_connection=dict(type="bool", default=True),
+        reconnect_disconnected=dict(type="bool", default=True),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'present', ['esxi_username', 'esxi_password']],
-            ['state', 'add_or_reconnect', ['esxi_username', 'esxi_password']]
+            ["state", "present", ["esxi_username", "esxi_password"]],
+            ["state", "add_or_reconnect", ["esxi_username", "esxi_password"]],
         ],
-        required_one_of=[
-            ['cluster_name', 'folder'],
-        ],
-        mutually_exclusive=[
-            ['cluster_name', 'folder'],
-        ]
+        required_one_of=[["cluster_name", "folder"]],
+        mutually_exclusive=[["cluster_name", "folder"]],
     )
 
     vmware_host = VMwareHost(module)
     vmware_host.process_state()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_content_library_info
 short_description: Gather information about VMWare Content Library
@@ -39,9 +40,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware_rest_client.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Get List of Content Libraries
   vmware_content_library_info:
     hostname: '{{ vcenter_hostname }}'
@@ -57,9 +58,9 @@ EXAMPLES = r'''
     library_id: '13b0f060-f4d3-4f84-b61f-0fe1b0c0a5a8'
     validate_certs: no
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 content_lib_details:
   description: list of content library metadata
   returned: on success
@@ -90,10 +91,12 @@ content_libs:
         "ded9c4d5-0dcd-4837-b1d8-af7398511e33",
         "36b72549-14ed-4b5f-94cb-6213fecacc02"
     ]
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import (
+    VmwareRestClient,
+)
 
 
 class VmwareContentLibInfo(VmwareRestClient):
@@ -105,20 +108,27 @@ class VmwareContentLibInfo(VmwareRestClient):
 
     def get_all_content_libs(self):
         """Method to retrieve List of content libraries."""
-        self.module.exit_json(changed=False, content_libs=self.content_service.content.LocalLibrary.list())
+        self.module.exit_json(
+            changed=False,
+            content_libs=self.content_service.content.LocalLibrary.list(),
+        )
 
     def get_content_lib_details(self, library_id):
         """Method to retrieve Details of contentlib with library_id"""
         try:
-            lib_details = self.content_service.content.LocalLibrary.get(library_id)
+            lib_details = self.content_service.content.LocalLibrary.get(
+                library_id
+            )
         except Exception as e:
-            self.module.fail_json(exists=False, msg="%s" % self.get_error_message(e))
+            self.module.fail_json(
+                exists=False, msg="%s" % self.get_error_message(e)
+            )
         lib_publish_info = dict(
             persist_json_enabled=lib_details.publish_info.persist_json_enabled,
             authentication_method=lib_details.publish_info.authentication_method,
             publish_url=lib_details.publish_info.publish_url,
             published=lib_details.publish_info.published,
-            user_name=lib_details.publish_info.user_name
+            user_name=lib_details.publish_info.user_name,
         )
         self.library_info.append(
             dict(
@@ -129,27 +139,30 @@ class VmwareContentLibInfo(VmwareRestClient):
                 library_creation_time=lib_details.creation_time,
                 library_server_guid=lib_details.server_guid,
                 library_version=lib_details.version,
-                library_publish_info=lib_publish_info
+                library_publish_info=lib_publish_info,
             )
         )
 
-        self.module.exit_json(exists=False, changed=False, content_lib_details=self.library_info)
+        self.module.exit_json(
+            exists=False, changed=False, content_lib_details=self.library_info
+        )
 
 
 def main():
     argument_spec = VmwareRestClient.vmware_client_argument_spec()
-    argument_spec.update(
-        library_id=dict(type='str', required=False),
+    argument_spec.update(library_id=dict(type="str", required=False))
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
     )
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
 
     vmware_contentlib_info = VmwareContentLibInfo(module)
-    if module.params.get('library_id'):
-        vmware_contentlib_info.get_content_lib_details(module.params['library_id'])
+    if module.params.get("library_id"):
+        vmware_contentlib_info.get_content_lib_details(
+            module.params["library_id"]
+        )
     else:
         vmware_contentlib_info.get_all_content_libs()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

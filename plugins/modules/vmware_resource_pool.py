@@ -5,13 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_resource_pool
 short_description: Add/remove resource pools to/from vCenter
@@ -103,9 +106,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Add resource pool to vCenter
   vmware_resource_pool:
     hostname: '{{ vcenter_hostname }}'
@@ -124,7 +127,7 @@ EXAMPLES = '''
     cpu_expandable_reservations: yes
     state: present
   delegate_to: localhost
-'''
+"""
 
 RETURN = """
 instance:
@@ -136,36 +139,45 @@ instance:
 
 try:
     from pyVmomi import vim, vmodl
+
     HAS_PYVMOMI = True
 except ImportError:
     HAS_PYVMOMI = False
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware import get_all_objs, connect_to_api, vmware_argument_spec, find_datacenter_by_name, \
-    find_cluster_by_name, wait_for_task, find_host_by_cluster_datacenter
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    get_all_objs,
+    connect_to_api,
+    vmware_argument_spec,
+    find_datacenter_by_name,
+    find_cluster_by_name,
+    wait_for_task,
+    find_host_by_cluster_datacenter,
+)
 from ansible.module_utils.basic import AnsibleModule
 
 
 class VMwareResourcePool(object):
-
     def __init__(self, module):
         self.module = module
-        self.datacenter = module.params['datacenter']
-        self.cluster = module.params['cluster']
-        self.resource_pool = module.params['resource_pool']
-        self.hostname = module.params['hostname']
-        self.username = module.params['username']
-        self.password = module.params['password']
-        self.state = module.params['state']
-        self.mem_shares = module.params['mem_shares']
-        self.mem_limit = module.params['mem_limit']
-        self.mem_reservation = module.params['mem_reservation']
+        self.datacenter = module.params["datacenter"]
+        self.cluster = module.params["cluster"]
+        self.resource_pool = module.params["resource_pool"]
+        self.hostname = module.params["hostname"]
+        self.username = module.params["username"]
+        self.password = module.params["password"]
+        self.state = module.params["state"]
+        self.mem_shares = module.params["mem_shares"]
+        self.mem_limit = module.params["mem_limit"]
+        self.mem_reservation = module.params["mem_reservation"]
         self.mem_expandable_reservations = module.params[
-            'cpu_expandable_reservations']
-        self.cpu_shares = module.params['cpu_shares']
-        self.cpu_limit = module.params['cpu_limit']
-        self.cpu_reservation = module.params['cpu_reservation']
+            "cpu_expandable_reservations"
+        ]
+        self.cpu_shares = module.params["cpu_shares"]
+        self.cpu_limit = module.params["cpu_limit"]
+        self.cpu_reservation = module.params["cpu_reservation"]
         self.cpu_expandable_reservations = module.params[
-            'cpu_expandable_reservations']
+            "cpu_expandable_reservations"
+        ]
         self.dc_obj = None
         self.cluster_obj = None
         self.host_obj = None
@@ -178,9 +190,7 @@ class VMwareResourcePool(object):
         resource_pools = get_all_objs(self.content, [vim.ResourcePool])
 
         pool_selections = self.get_obj(
-            [vim.ResourcePool],
-            self.resource_pool,
-            return_all=True
+            [vim.ResourcePool], self.resource_pool, return_all=True
         )
         if pool_selections:
             for p in pool_selections:
@@ -192,7 +202,8 @@ class VMwareResourcePool(object):
     def get_obj(self, vimtype, name, return_all=False):
         obj = list()
         container = self.content.viewManager.CreateContainerView(
-            self.content.rootFolder, vimtype, True)
+            self.content.rootFolder, vimtype, True
+        )
 
         for c in container.view:
             if name in [c.name, c._GetMoId()]:
@@ -210,14 +221,14 @@ class VMwareResourcePool(object):
     def process_state(self):
         try:
             rp_states = {
-                'absent': {
-                    'present': self.state_remove_rp,
-                    'absent': self.state_exit_unchanged,
+                "absent": {
+                    "present": self.state_remove_rp,
+                    "absent": self.state_exit_unchanged,
                 },
-                'present': {
-                    'present': self.state_exit_unchanged,
-                    'absent': self.state_add_rp,
-                }
+                "present": {
+                    "present": self.state_exit_unchanged,
+                    "absent": self.state_add_rp,
+                },
             }
 
             rp_states[self.state][self.check_rp_state()]()
@@ -241,8 +252,10 @@ class VMwareResourcePool(object):
             success, result = wait_for_task(task)
 
         except Exception:
-            self.module.fail_json(msg="Failed to remove resource pool '%s' '%s'" % (
-                self.resource_pool, resource_pool))
+            self.module.fail_json(
+                msg="Failed to remove resource pool '%s' '%s'"
+                % (self.resource_pool, resource_pool)
+            )
         self.module.exit_json(changed=changed, result=str(result))
 
     def state_add_rp(self):
@@ -268,11 +281,17 @@ class VMwareResourcePool(object):
 
         self.dc_obj = find_datacenter_by_name(self.content, self.datacenter)
         if self.dc_obj is None:
-            self.module.fail_json(msg="Unable to find datacenter with name %s" % self.datacenter)
+            self.module.fail_json(
+                msg="Unable to find datacenter with name %s" % self.datacenter
+            )
 
-        self.cluster_obj = find_cluster_by_name(self.content, self.cluster, datacenter=self.dc_obj)
+        self.cluster_obj = find_cluster_by_name(
+            self.content, self.cluster, datacenter=self.dc_obj
+        )
         if self.cluster_obj is None:
-            self.module.fail_json(msg="Unable to find cluster with name %s" % self.cluster)
+            self.module.fail_json(
+                msg="Unable to find cluster with name %s" % self.cluster
+            )
         rootResourcePool = self.cluster_obj.resourcePool
         rootResourcePool.CreateResourcePool(self.resource_pool, rp_spec)
 
@@ -280,44 +299,60 @@ class VMwareResourcePool(object):
 
     def check_rp_state(self):
 
-        self.host_obj, self.cluster_obj = find_host_by_cluster_datacenter(self.module, self.content, self.datacenter,
-                                                                          self.cluster, self.hostname)
+        self.host_obj, self.cluster_obj = find_host_by_cluster_datacenter(
+            self.module,
+            self.content,
+            self.datacenter,
+            self.cluster,
+            self.hostname,
+        )
         self.resource_pool_obj = self.select_resource_pool(self.host_obj)
 
         if self.resource_pool_obj is None:
-            return 'absent'
+            return "absent"
         else:
-            return 'present'
+            return "present"
 
 
 def main():
     argument_spec = vmware_argument_spec()
-    argument_spec.update(dict(datacenter=dict(required=True, type='str'),
-                              cluster=dict(required=True, type='str'),
-                              resource_pool=dict(required=True, type='str'),
-                              mem_shares=dict(type='str', default="normal", choices=[
-                                              'high', 'custom', 'normal', 'low']),
-                              mem_limit=dict(type='int', default=-1),
-                              mem_reservation=dict(type='int', default=0),
-                              mem_expandable_reservations=dict(
-                                  type='bool', default="True"),
-                              cpu_shares=dict(type='str', default="normal", choices=[
-                                              'high', 'custom', 'normal', 'low']),
-                              cpu_limit=dict(type='int', default=-1),
-                              cpu_reservation=dict(type='int', default=0),
-                              cpu_expandable_reservations=dict(
-                                  type='bool', default="True"),
-                              state=dict(default='present', choices=['present', 'absent'], type='str')))
+    argument_spec.update(
+        dict(
+            datacenter=dict(required=True, type="str"),
+            cluster=dict(required=True, type="str"),
+            resource_pool=dict(required=True, type="str"),
+            mem_shares=dict(
+                type="str",
+                default="normal",
+                choices=["high", "custom", "normal", "low"],
+            ),
+            mem_limit=dict(type="int", default=-1),
+            mem_reservation=dict(type="int", default=0),
+            mem_expandable_reservations=dict(type="bool", default="True"),
+            cpu_shares=dict(
+                type="str",
+                default="normal",
+                choices=["high", "custom", "normal", "low"],
+            ),
+            cpu_limit=dict(type="int", default=-1),
+            cpu_reservation=dict(type="int", default=0),
+            cpu_expandable_reservations=dict(type="bool", default="True"),
+            state=dict(
+                default="present", choices=["present", "absent"], type="str"
+            ),
+        )
+    )
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
     if not HAS_PYVMOMI:
-        module.fail_json(msg='pyvmomi is required for this module')
+        module.fail_json(msg="pyvmomi is required for this module")
 
     vmware_rp = VMwareResourcePool(module)
     vmware_rp.process_state()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

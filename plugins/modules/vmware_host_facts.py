@@ -7,15 +7,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_host_facts
 short_description: Gathers facts about remote ESXi hostsystem
@@ -71,9 +72,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather vmware host facts
   vmware_host_facts:
     hostname: "{{ esxi_server }}"
@@ -123,9 +124,9 @@ EXAMPLES = r'''
       - config.product.apiVersion
       - overallStatus
   register: host_facts
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 ansible_facts:
   description: system info about the host machine
   returned: always
@@ -186,30 +187,40 @@ ansible_facts:
             }
         ],
     }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.common.text.formatters import bytes_to_human
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_obj
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+    find_obj,
+)
 
 try:
     from pyVmomi import vim
 except ImportError:
     pass
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import (
+    VmwareRestClient,
+)
 
 
 class VMwareHostFactManager(PyVmomi):
     def __init__(self, module):
         super(VMwareHostFactManager, self).__init__(module)
-        esxi_host_name = self.params.get('esxi_hostname', None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
         if self.is_vcenter():
             if esxi_host_name is None:
-                self.module.fail_json(msg="Connected to a vCenter system without specifying esxi_hostname")
+                self.module.fail_json(
+                    msg="Connected to a vCenter system without specifying esxi_hostname"
+                )
             self.host = self.get_all_host_objs(esxi_host_name=esxi_host_name)
             if len(self.host) > 1:
-                self.module.fail_json(msg="esxi_hostname matched multiple hosts")
+                self.module.fail_json(
+                    msg="esxi_hostname matched multiple hosts"
+                )
             self.host = self.host[0]
         else:
             self.host = find_obj(self.content, [vim.HostSystem], None)
@@ -226,18 +237,22 @@ class VMwareHostFactManager(PyVmomi):
         ansible_facts.update(self.get_system_facts())
         ansible_facts.update(self.get_vsan_facts())
         ansible_facts.update(self.get_cluster_facts())
-        if self.params.get('show_tag'):
+        if self.params.get("show_tag"):
             vmware_client = VmwareRestClient(self.module)
             tag_info = {
-                'tags': vmware_client.get_tags_for_hostsystem(hostsystem_mid=self.host._moId)
+                "tags": vmware_client.get_tags_for_hostsystem(
+                    hostsystem_mid=self.host._moId
+                )
             }
             ansible_facts.update(tag_info)
 
         self.module.exit_json(changed=False, ansible_facts=ansible_facts)
 
     def get_cluster_facts(self):
-        cluster_facts = {'cluster': None}
-        if self.host.parent and isinstance(self.host.parent, vim.ClusterComputeResource):
+        cluster_facts = {"cluster": None}
+        if self.host.parent and isinstance(
+            self.host.parent, vim.ClusterComputeResource
+        ):
             cluster_facts.update(cluster=self.host.parent.name)
         return cluster_facts
 
@@ -245,92 +260,97 @@ class VMwareHostFactManager(PyVmomi):
         config_mgr = self.host.configManager.vsanSystem
         if config_mgr is None:
             return {
-                'vsan_cluster_uuid': None,
-                'vsan_node_uuid': None,
-                'vsan_health': "unknown",
+                "vsan_cluster_uuid": None,
+                "vsan_node_uuid": None,
+                "vsan_health": "unknown",
             }
 
         status = config_mgr.QueryHostStatus()
         return {
-            'vsan_cluster_uuid': status.uuid,
-            'vsan_node_uuid': status.nodeUuid,
-            'vsan_health': status.health,
+            "vsan_cluster_uuid": status.uuid,
+            "vsan_node_uuid": status.nodeUuid,
+            "vsan_health": status.health,
         }
 
     def get_cpu_facts(self):
         return {
-            'ansible_processor': self.host.summary.hardware.cpuModel,
-            'ansible_processor_cores': self.host.summary.hardware.numCpuCores,
-            'ansible_processor_count': self.host.summary.hardware.numCpuPkgs,
-            'ansible_processor_vcpus': self.host.summary.hardware.numCpuThreads,
+            "ansible_processor": self.host.summary.hardware.cpuModel,
+            "ansible_processor_cores": self.host.summary.hardware.numCpuCores,
+            "ansible_processor_count": self.host.summary.hardware.numCpuPkgs,
+            "ansible_processor_vcpus": self.host.summary.hardware.numCpuThreads,
         }
 
     def get_memory_facts(self):
         return {
-            'ansible_memfree_mb': self.host.hardware.memorySize // 1024 // 1024 - self.host.summary.quickStats.overallMemoryUsage,
-            'ansible_memtotal_mb': self.host.hardware.memorySize // 1024 // 1024,
+            "ansible_memfree_mb": self.host.hardware.memorySize // 1024 // 1024
+            - self.host.summary.quickStats.overallMemoryUsage,
+            "ansible_memtotal_mb": self.host.hardware.memorySize
+            // 1024
+            // 1024,
         }
 
     def get_datastore_facts(self):
         facts = dict()
-        facts['ansible_datastore'] = []
+        facts["ansible_datastore"] = []
         for store in self.host.datastore:
             _tmp = {
-                'name': store.summary.name,
-                'total': bytes_to_human(store.summary.capacity),
-                'free': bytes_to_human(store.summary.freeSpace),
+                "name": store.summary.name,
+                "total": bytes_to_human(store.summary.capacity),
+                "free": bytes_to_human(store.summary.freeSpace),
             }
-            facts['ansible_datastore'].append(_tmp)
+            facts["ansible_datastore"].append(_tmp)
         return facts
 
     def get_network_facts(self):
         facts = dict()
-        facts['ansible_interfaces'] = []
-        facts['ansible_all_ipv4_addresses'] = []
+        facts["ansible_interfaces"] = []
+        facts["ansible_all_ipv4_addresses"] = []
         for nic in self.host.config.network.vnic:
             device = nic.device
-            facts['ansible_interfaces'].append(device)
-            facts['ansible_all_ipv4_addresses'].append(nic.spec.ip.ipAddress)
+            facts["ansible_interfaces"].append(device)
+            facts["ansible_all_ipv4_addresses"].append(nic.spec.ip.ipAddress)
             _tmp = {
-                'device': device,
-                'ipv4': {
-                    'address': nic.spec.ip.ipAddress,
-                    'netmask': nic.spec.ip.subnetMask,
+                "device": device,
+                "ipv4": {
+                    "address": nic.spec.ip.ipAddress,
+                    "netmask": nic.spec.ip.subnetMask,
                 },
-                'macaddress': nic.spec.mac,
-                'mtu': nic.spec.mtu,
+                "macaddress": nic.spec.mac,
+                "mtu": nic.spec.mtu,
             }
-            facts['ansible_' + device] = _tmp
+            facts["ansible_" + device] = _tmp
         return facts
 
     def get_system_facts(self):
-        sn = 'NA'
+        sn = "NA"
         for info in self.host.hardware.systemInfo.otherIdentifyingInfo:
-            if info.identifierType.key == 'ServiceTag':
+            if info.identifierType.key == "ServiceTag":
                 sn = info.identifierValue
         facts = {
-            'ansible_distribution': self.host.config.product.name,
-            'ansible_distribution_version': self.host.config.product.version,
-            'ansible_distribution_build': self.host.config.product.build,
-            'ansible_os_type': self.host.config.product.osType,
-            'ansible_system_vendor': self.host.hardware.systemInfo.vendor,
-            'ansible_hostname': self.host.summary.config.name,
-            'ansible_product_name': self.host.hardware.systemInfo.model,
-            'ansible_product_serial': sn,
-            'ansible_bios_date': self.host.hardware.biosInfo.releaseDate,
-            'ansible_bios_version': self.host.hardware.biosInfo.biosVersion,
-            'ansible_uptime': self.host.summary.quickStats.uptime,
-            'ansible_in_maintenance_mode': self.host.runtime.inMaintenanceMode,
-            'ansible_uuid': self.host.hardware.systemInfo.uuid,
+            "ansible_distribution": self.host.config.product.name,
+            "ansible_distribution_version": self.host.config.product.version,
+            "ansible_distribution_build": self.host.config.product.build,
+            "ansible_os_type": self.host.config.product.osType,
+            "ansible_system_vendor": self.host.hardware.systemInfo.vendor,
+            "ansible_hostname": self.host.summary.config.name,
+            "ansible_product_name": self.host.hardware.systemInfo.model,
+            "ansible_product_serial": sn,
+            "ansible_bios_date": self.host.hardware.biosInfo.releaseDate,
+            "ansible_bios_version": self.host.hardware.biosInfo.biosVersion,
+            "ansible_uptime": self.host.summary.quickStats.uptime,
+            "ansible_in_maintenance_mode": self.host.runtime.inMaintenanceMode,
+            "ansible_uuid": self.host.hardware.systemInfo.uuid,
         }
         return facts
 
     def properties_facts(self):
-        ansible_facts = self.to_json(self.host, self.params.get('properties'))
-        if self.params.get('show_tag'):
+        ansible_facts = self.to_json(self.host, self.params.get("properties"))
+        if self.params.get("show_tag"):
             vmware_client = VmwareRestClient(self.module)
             tag_info = {
-                'tags': vmware_client.get_tags_for_hostsystem(hostsystem_mid=self.host._moId)
+                "tags": vmware_client.get_tags_for_hostsystem(
+                    hostsystem_mid=self.host._moId
+                )
             }
             ansible_facts.update(tag_info)
 
@@ -340,21 +360,24 @@ class VMwareHostFactManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        esxi_hostname=dict(type='str', required=False),
-        show_tag=dict(type='bool', default=False),
-        schema=dict(type='str', choices=['summary', 'vsphere'], default='summary'),
-        properties=dict(type='list')
+        esxi_hostname=dict(type="str", required=False),
+        show_tag=dict(type="bool", default=False),
+        schema=dict(
+            type="str", choices=["summary", "vsphere"], default="summary"
+        ),
+        properties=dict(type="list"),
     )
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
     vm_host_manager = VMwareHostFactManager(module)
 
-    if module.params['schema'] == 'summary':
+    if module.params["schema"] == "summary":
         vm_host_manager.all_facts()
     else:
         vm_host_manager.properties_facts()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

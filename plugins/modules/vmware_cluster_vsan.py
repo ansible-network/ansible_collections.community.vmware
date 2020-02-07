@@ -7,15 +7,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_cluster_vsan
 short_description: Manages virtual storage area network (vSAN) configuration on VMware vSphere clusters
@@ -54,7 +55,7 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
 EXAMPLES = r"""
 - name: Enable vSAN
@@ -89,27 +90,40 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, TaskError, find_datacenter_by_name,
-                                         vmware_argument_spec, wait_for_task)
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    TaskError,
+    find_datacenter_by_name,
+    vmware_argument_spec,
+    wait_for_task,
+)
 from ansible.module_utils._text import to_native
 
 
 class VMwareCluster(PyVmomi):
     def __init__(self, module):
         super(VMwareCluster, self).__init__(module)
-        self.cluster_name = module.params['cluster_name']
-        self.datacenter_name = module.params['datacenter']
-        self.enable_vsan = module.params['enable_vsan']
+        self.cluster_name = module.params["cluster_name"]
+        self.datacenter_name = module.params["datacenter"]
+        self.enable_vsan = module.params["enable_vsan"]
         self.datacenter = None
         self.cluster = None
 
-        self.datacenter = find_datacenter_by_name(self.content, self.datacenter_name)
+        self.datacenter = find_datacenter_by_name(
+            self.content, self.datacenter_name
+        )
         if self.datacenter is None:
-            self.module.fail_json(msg="Datacenter %s does not exist." % self.datacenter_name)
+            self.module.fail_json(
+                msg="Datacenter %s does not exist." % self.datacenter_name
+            )
 
-        self.cluster = self.find_cluster_by_name(cluster_name=self.cluster_name)
+        self.cluster = self.find_cluster_by_name(
+            cluster_name=self.cluster_name
+        )
         if self.cluster is None:
-            self.module.fail_json(msg="Cluster %s does not exist." % self.cluster_name)
+            self.module.fail_json(
+                msg="Cluster %s does not exist." % self.cluster_name
+            )
 
     def check_vsan_config_diff(self):
         """
@@ -119,8 +133,11 @@ class VMwareCluster(PyVmomi):
         """
         vsan_config = self.cluster.configurationEx.vsanConfigInfo
 
-        if vsan_config.enabled != self.enable_vsan or \
-                vsan_config.defaultConfig.autoClaimStorage != self.params.get('vsan_auto_claim_storage'):
+        if (
+            vsan_config.enabled != self.enable_vsan
+            or vsan_config.defaultConfig.autoClaimStorage
+            != self.params.get("vsan_auto_claim_storage")
+        ):
             return True
         return False
 
@@ -136,10 +153,16 @@ class VMwareCluster(PyVmomi):
                 cluster_config_spec = vim.cluster.ConfigSpecEx()
                 cluster_config_spec.vsanConfig = vim.vsan.cluster.ConfigInfo()
                 cluster_config_spec.vsanConfig.enabled = self.enable_vsan
-                cluster_config_spec.vsanConfig.defaultConfig = vim.vsan.cluster.ConfigInfo.HostDefaultInfo()
-                cluster_config_spec.vsanConfig.defaultConfig.autoClaimStorage = self.params.get('vsan_auto_claim_storage')
+                cluster_config_spec.vsanConfig.defaultConfig = (
+                    vim.vsan.cluster.ConfigInfo.HostDefaultInfo()
+                )
+                cluster_config_spec.vsanConfig.defaultConfig.autoClaimStorage = self.params.get(
+                    "vsan_auto_claim_storage"
+                )
                 try:
-                    task = self.cluster.ReconfigureComputeResource_Task(cluster_config_spec, True)
+                    task = self.cluster.ReconfigureComputeResource_Task(
+                        cluster_config_spec, True
+                    )
                     changed, result = wait_for_task(task)
                 except vmodl.RuntimeFault as runtime_fault:
                     self.module.fail_json(msg=to_native(runtime_fault.msg))
@@ -148,8 +171,10 @@ class VMwareCluster(PyVmomi):
                 except TaskError as task_e:
                     self.module.fail_json(msg=to_native(task_e))
                 except Exception as generic_exc:
-                    self.module.fail_json(msg="Failed to update cluster"
-                                              " due to generic exception %s" % to_native(generic_exc))
+                    self.module.fail_json(
+                        msg="Failed to update cluster"
+                        " due to generic exception %s" % to_native(generic_exc)
+                    )
             else:
                 changed = True
 
@@ -158,22 +183,25 @@ class VMwareCluster(PyVmomi):
 
 def main():
     argument_spec = vmware_argument_spec()
-    argument_spec.update(dict(
-        cluster_name=dict(type='str', required=True),
-        datacenter=dict(type='str', required=True, aliases=['datacenter_name']),
-        # VSAN
-        enable_vsan=dict(type='bool', default=False),
-        vsan_auto_claim_storage=dict(type='bool', default=False),
-    ))
+    argument_spec.update(
+        dict(
+            cluster_name=dict(type="str", required=True),
+            datacenter=dict(
+                type="str", required=True, aliases=["datacenter_name"]
+            ),
+            # VSAN
+            enable_vsan=dict(type="bool", default=False),
+            vsan_auto_claim_storage=dict(type="bool", default=False),
+        )
+    )
 
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True,
+        argument_spec=argument_spec, supports_check_mode=True
     )
 
     vmware_cluster_vsan = VMwareCluster(module)
     vmware_cluster_vsan.configure_vsan()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

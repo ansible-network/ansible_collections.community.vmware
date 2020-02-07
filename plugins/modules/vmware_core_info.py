@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_core_info
 short_description: Gathers info about various VMware inventory objects using REST API
@@ -53,9 +54,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.VmwareRestModule_filters.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Get All VM without any filters
   block:
   - name: Get VMs
@@ -75,9 +76,9 @@ EXAMPLES = r'''
     filters:
       - datacenters: "{{ datacenter_obj }}"
   register: clusters_result
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 object_info:
     description: information about the given VMware object
     returned: always
@@ -92,21 +93,23 @@ object_info:
             }
         ]
     }
-'''
+"""
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware_httpapi.VmwareRestModule import VmwareRestModule
+from ansible_collections.vmware.general.plugins.module_utils.vmware_httpapi.VmwareRestModule import (
+    VmwareRestModule,
+)
 
 
 def main():
     argument_spec = VmwareRestModule.create_argument_spec(use_filters=True)
-    argument_spec.update(
-        object_type=dict(type='str', default='datacenter'),
-    )
+    argument_spec.update(object_type=dict(type="str", default="datacenter"))
 
-    module = VmwareRestModule(argument_spec=argument_spec,
-                              supports_check_mode=True,
-                              use_object_handler=True)
-    object_type = module.params['object_type']
+    module = VmwareRestModule(
+        argument_spec=argument_spec,
+        supports_check_mode=True,
+        use_object_handler=True,
+    )
+    object_type = module.params["object_type"]
 
     url = module.get_url_with_filter(object_type)
 
@@ -114,5 +117,5 @@ def main():
     module.exit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

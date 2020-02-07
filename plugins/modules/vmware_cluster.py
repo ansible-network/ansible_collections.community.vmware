@@ -7,15 +7,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_cluster
 short_description: Manage VMware vSphere clusters
@@ -179,7 +180,7 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
 EXAMPLES = r"""
 - name: Create Cluster
@@ -233,23 +234,28 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, TaskError, find_datacenter_by_name,
-                                         vmware_argument_spec, wait_for_task)
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    TaskError,
+    find_datacenter_by_name,
+    vmware_argument_spec,
+    wait_for_task,
+)
 from ansible.module_utils._text import to_native
 
 
 class VMwareCluster(PyVmomi):
     def __init__(self, module):
         super(VMwareCluster, self).__init__(module)
-        self.cluster_name = module.params['cluster_name']
-        self.datacenter_name = module.params['datacenter']
-        self.ignore_drs = module.params['ignore_drs']
-        self.ignore_ha = module.params['ignore_ha']
-        self.ignore_vsan = module.params['ignore_vsan']
-        self.enable_drs = module.params['enable_drs']
-        self.enable_ha = module.params['enable_ha']
-        self.enable_vsan = module.params['enable_vsan']
-        self.desired_state = module.params['state']
+        self.cluster_name = module.params["cluster_name"]
+        self.datacenter_name = module.params["datacenter"]
+        self.ignore_drs = module.params["ignore_drs"]
+        self.ignore_ha = module.params["ignore_ha"]
+        self.ignore_vsan = module.params["ignore_vsan"]
+        self.enable_drs = module.params["enable_drs"]
+        self.enable_ha = module.params["enable_ha"]
+        self.enable_vsan = module.params["enable_vsan"]
+        self.desired_state = module.params["state"]
         self.datacenter = None
         self.cluster = None
 
@@ -258,14 +264,14 @@ class VMwareCluster(PyVmomi):
         Manage internal states of cluster
         """
         cluster_states = {
-            'absent': {
-                'present': self.state_destroy_cluster,
-                'absent': self.state_exit_unchanged,
+            "absent": {
+                "present": self.state_destroy_cluster,
+                "absent": self.state_exit_unchanged,
             },
-            'present': {
-                'present': self.state_update_cluster,
-                'absent': self.state_create_cluster,
-            }
+            "present": {
+                "present": self.state_update_cluster,
+                "absent": self.state_create_cluster,
+            },
         }
         current_state = self.check_cluster_configuration()
         # Based on the desired_state and the current_state call
@@ -278,34 +284,48 @@ class VMwareCluster(PyVmomi):
         Returns: Cluster DAS configuration spec
 
         """
-        msg = 'Configuring HA using vmware_cluster module is deprecated and will be removed in version 2.12. ' \
-              'Please use vmware_cluster_ha module for the new functionality.'
-        self.module.deprecate(msg, '2.12')
+        msg = (
+            "Configuring HA using vmware_cluster module is deprecated and will be removed in version 2.12. "
+            "Please use vmware_cluster_ha module for the new functionality."
+        )
+        self.module.deprecate(msg, "2.12")
 
         das_config = vim.cluster.DasConfigInfo()
         das_config.enabled = self.enable_ha
-        das_config.admissionControlPolicy = vim.cluster.FailoverLevelAdmissionControlPolicy()
-        das_config.admissionControlPolicy.failoverLevel = self.params.get('ha_failover_level')
+        das_config.admissionControlPolicy = (
+            vim.cluster.FailoverLevelAdmissionControlPolicy()
+        )
+        das_config.admissionControlPolicy.failoverLevel = self.params.get(
+            "ha_failover_level"
+        )
 
-        ha_vm_monitoring = self.params.get('ha_vm_monitoring')
+        ha_vm_monitoring = self.params.get("ha_vm_monitoring")
         das_vm_config = None
-        if ha_vm_monitoring in ['vmMonitoringOnly', 'vmAndAppMonitoring']:
+        if ha_vm_monitoring in ["vmMonitoringOnly", "vmAndAppMonitoring"]:
             vm_tool_spec = vim.cluster.VmToolsMonitoringSettings()
             vm_tool_spec.enabled = True
             vm_tool_spec.vmMonitoring = ha_vm_monitoring
-            vm_tool_spec.failureInterval = self.params.get('ha_vm_failure_interval')
-            vm_tool_spec.minUpTime = self.params.get('ha_vm_min_up_time')
-            vm_tool_spec.maxFailures = self.params.get('ha_vm_max_failures')
-            vm_tool_spec.maxFailureWindow = self.params.get('ha_vm_max_failure_window')
+            vm_tool_spec.failureInterval = self.params.get(
+                "ha_vm_failure_interval"
+            )
+            vm_tool_spec.minUpTime = self.params.get("ha_vm_min_up_time")
+            vm_tool_spec.maxFailures = self.params.get("ha_vm_max_failures")
+            vm_tool_spec.maxFailureWindow = self.params.get(
+                "ha_vm_max_failure_window"
+            )
 
             das_vm_config = vim.cluster.DasVmSettings()
-            das_vm_config.restartPriority = self.params.get('ha_restart_priority')
+            das_vm_config.restartPriority = self.params.get(
+                "ha_restart_priority"
+            )
             das_vm_config.isolationResponse = None
             das_vm_config.vmToolsMonitoringSettings = vm_tool_spec
 
-        das_config.admissionControlEnabled = self.params.get('ha_admission_control_enabled')
+        das_config.admissionControlEnabled = self.params.get(
+            "ha_admission_control_enabled"
+        )
 
-        das_config.hostMonitoring = self.params.get('ha_host_monitoring')
+        das_config.hostMonitoring = self.params.get("ha_host_monitoring")
         das_config.vmMonitoring = ha_vm_monitoring
         das_config.defaultVmSettings = das_vm_config
 
@@ -317,16 +337,22 @@ class VMwareCluster(PyVmomi):
         Returns: Cluster DRS configuration spec
 
         """
-        msg = 'Configuring DRS using vmware_cluster module is deprecated and will be removed in version 2.12. ' \
-              'Please use vmware_cluster_drs module for the new functionality.'
-        self.module.deprecate(msg, '2.12')
+        msg = (
+            "Configuring DRS using vmware_cluster module is deprecated and will be removed in version 2.12. "
+            "Please use vmware_cluster_drs module for the new functionality."
+        )
+        self.module.deprecate(msg, "2.12")
 
         drs_config = vim.cluster.DrsConfigInfo()
 
         drs_config.enabled = self.enable_drs
-        drs_config.enableVmBehaviorOverrides = self.params.get('drs_enable_vm_behavior_overrides')
-        drs_config.defaultVmBehavior = self.params.get('drs_default_vm_behavior')
-        drs_config.vmotionRate = self.params.get('drs_vmotion_rate')
+        drs_config.enableVmBehaviorOverrides = self.params.get(
+            "drs_enable_vm_behavior_overrides"
+        )
+        drs_config.defaultVmBehavior = self.params.get(
+            "drs_default_vm_behavior"
+        )
+        drs_config.vmotionRate = self.params.get("drs_vmotion_rate")
 
         return drs_config
 
@@ -336,14 +362,20 @@ class VMwareCluster(PyVmomi):
         Returns: Cluster VSAN configuration spec
 
         """
-        msg = 'Configuring VSAN using vmware_cluster module is deprecated and will be removed in version 2.12. ' \
-              'Please use vmware_cluster_vsan module for the new functionality.'
-        self.module.deprecate(msg, '2.12')
+        msg = (
+            "Configuring VSAN using vmware_cluster module is deprecated and will be removed in version 2.12. "
+            "Please use vmware_cluster_vsan module for the new functionality."
+        )
+        self.module.deprecate(msg, "2.12")
 
         vsan_config = vim.vsan.cluster.ConfigInfo()
         vsan_config.enabled = self.enable_vsan
-        vsan_config.defaultConfig = vim.vsan.cluster.ConfigInfo.HostDefaultInfo()
-        vsan_config.defaultConfig.autoClaimStorage = self.params.get('vsan_auto_claim_storage')
+        vsan_config.defaultConfig = (
+            vim.vsan.cluster.ConfigInfo.HostDefaultInfo()
+        )
+        vsan_config.defaultConfig.autoClaimStorage = self.params.get(
+            "vsan_auto_claim_storage"
+        )
         return vsan_config
 
     def state_create_cluster(self):
@@ -359,30 +391,40 @@ class VMwareCluster(PyVmomi):
             if self.enable_vsan and not self.ignore_vsan:
                 cluster_config_spec.vsanConfig = self.configure_vsan()
             if not self.module.check_mode:
-                self.datacenter.hostFolder.CreateClusterEx(self.cluster_name, cluster_config_spec)
+                self.datacenter.hostFolder.CreateClusterEx(
+                    self.cluster_name, cluster_config_spec
+                )
             self.module.exit_json(changed=True)
         except vim.fault.DuplicateName:
             # To match other vmware_* modules
             pass
         except vmodl.fault.InvalidArgument as invalid_args:
-            self.module.fail_json(msg="Cluster configuration specification"
-                                      " parameter is invalid : %s" % to_native(invalid_args.msg))
+            self.module.fail_json(
+                msg="Cluster configuration specification"
+                " parameter is invalid : %s" % to_native(invalid_args.msg)
+            )
         except vim.fault.InvalidName as invalid_name:
-            self.module.fail_json(msg="'%s' is an invalid name for a"
-                                      " cluster : %s" % (self.cluster_name,
-                                                         to_native(invalid_name.msg)))
+            self.module.fail_json(
+                msg="'%s' is an invalid name for a"
+                " cluster : %s"
+                % (self.cluster_name, to_native(invalid_name.msg))
+            )
         except vmodl.fault.NotSupported as not_supported:
             # This should never happen
-            self.module.fail_json(msg="Trying to create a cluster on an incorrect"
-                                      " folder object : %s" % to_native(not_supported.msg))
+            self.module.fail_json(
+                msg="Trying to create a cluster on an incorrect"
+                " folder object : %s" % to_native(not_supported.msg)
+            )
         except vmodl.RuntimeFault as runtime_fault:
             self.module.fail_json(msg=to_native(runtime_fault.msg))
         except vmodl.MethodFault as method_fault:
             # This should never happen either
             self.module.fail_json(msg=to_native(method_fault.msg))
         except Exception as generic_exc:
-            self.module.fail_json(msg="Failed to create cluster"
-                                      " due to generic exception %s" % to_native(generic_exc))
+            self.module.fail_json(
+                msg="Failed to create cluster"
+                " due to generic exception %s" % to_native(generic_exc)
+            )
 
     def state_destroy_cluster(self):
         """
@@ -402,8 +444,10 @@ class VMwareCluster(PyVmomi):
         except vmodl.MethodFault as method_fault:
             self.module.fail_json(msg=to_native(method_fault.msg))
         except Exception as generic_exc:
-            self.module.fail_json(msg="Failed to destroy cluster"
-                                      " due to generic exception %s" % to_native(generic_exc))
+            self.module.fail_json(
+                msg="Failed to destroy cluster"
+                " due to generic exception %s" % to_native(generic_exc)
+            )
 
     def state_exit_unchanged(self):
         """
@@ -430,7 +474,9 @@ class VMwareCluster(PyVmomi):
 
         try:
             if not self.module.check_mode and diff:
-                task = self.cluster.ReconfigureComputeResource_Task(cluster_config_spec, True)
+                task = self.cluster.ReconfigureComputeResource_Task(
+                    cluster_config_spec, True
+                )
                 changed, result = wait_for_task(task)
             self.module.exit_json(changed=changed, result=result)
         except vmodl.RuntimeFault as runtime_fault:
@@ -440,8 +486,10 @@ class VMwareCluster(PyVmomi):
         except TaskError as task_e:
             self.module.fail_json(msg=to_native(task_e))
         except Exception as generic_exc:
-            self.module.fail_json(msg="Failed to update cluster"
-                                      " due to generic exception %s" % to_native(generic_exc))
+            self.module.fail_json(
+                msg="Failed to update cluster"
+                " due to generic exception %s" % to_native(generic_exc)
+            )
 
     def check_ha_config_diff(self):
         """
@@ -450,18 +498,30 @@ class VMwareCluster(PyVmomi):
 
         """
         das_config = self.cluster.configurationEx.dasConfig
-        if das_config.enabled != self.enable_ha or \
-                das_config.admissionControlPolicy.failoverLevel != self.params.get('ha_failover_level') or \
-                das_config.vmMonitoring != self.params.get('ha_vm_monitoring') or \
-                das_config.hostMonitoring != self.params.get('ha_host_monitoring') or \
-                das_config.admissionControlPolicy.failoverLevel != self.params.get('ha_failover_level') or \
-                das_config.admissionControlEnabled != self.params.get('ha_admission_control_enabled') or \
-                das_config.defaultVmSettings.restartPriority != self.params.get('ha_restart_priority') or \
-                das_config.defaultVmSettings.vmToolsMonitoringSettings.vmMonitoring != self.params.get('ha_vm_monitoring') or \
-                das_config.defaultVmSettings.vmToolsMonitoringSettings.failureInterval != self.params.get('ha_vm_failure_interval') or \
-                das_config.defaultVmSettings.vmToolsMonitoringSettings.minUpTime != self.params.get('ha_vm_min_up_time') or \
-                das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailures != self.params.get('ha_vm_max_failures') or \
-                das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailureWindow != self.params.get('ha_vm_max_failure_window'):
+        if (
+            das_config.enabled != self.enable_ha
+            or das_config.admissionControlPolicy.failoverLevel
+            != self.params.get("ha_failover_level")
+            or das_config.vmMonitoring != self.params.get("ha_vm_monitoring")
+            or das_config.hostMonitoring
+            != self.params.get("ha_host_monitoring")
+            or das_config.admissionControlPolicy.failoverLevel
+            != self.params.get("ha_failover_level")
+            or das_config.admissionControlEnabled
+            != self.params.get("ha_admission_control_enabled")
+            or das_config.defaultVmSettings.restartPriority
+            != self.params.get("ha_restart_priority")
+            or das_config.defaultVmSettings.vmToolsMonitoringSettings.vmMonitoring
+            != self.params.get("ha_vm_monitoring")
+            or das_config.defaultVmSettings.vmToolsMonitoringSettings.failureInterval
+            != self.params.get("ha_vm_failure_interval")
+            or das_config.defaultVmSettings.vmToolsMonitoringSettings.minUpTime
+            != self.params.get("ha_vm_min_up_time")
+            or das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailures
+            != self.params.get("ha_vm_max_failures")
+            or das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailureWindow
+            != self.params.get("ha_vm_max_failure_window")
+        ):
             return True
         return False
 
@@ -473,10 +533,14 @@ class VMwareCluster(PyVmomi):
         """
         drs_config = self.cluster.configurationEx.drsConfig
 
-        if drs_config.enabled != self.enable_drs or \
-                drs_config.enableVmBehaviorOverrides != self.params.get('drs_enable_vm_behavior_overrides') or \
-                drs_config.defaultVmBehavior != self.params.get('drs_default_vm_behavior') or \
-                drs_config.vmotionRate != self.params.get('drs_vmotion_rate'):
+        if (
+            drs_config.enabled != self.enable_drs
+            or drs_config.enableVmBehaviorOverrides
+            != self.params.get("drs_enable_vm_behavior_overrides")
+            or drs_config.defaultVmBehavior
+            != self.params.get("drs_default_vm_behavior")
+            or drs_config.vmotionRate != self.params.get("drs_vmotion_rate")
+        ):
             return True
         return False
 
@@ -488,8 +552,11 @@ class VMwareCluster(PyVmomi):
         """
         vsan_config = self.cluster.configurationEx.vsanConfigInfo
 
-        if vsan_config.enabled != self.enable_vsan or \
-                vsan_config.defaultConfig.autoClaimStorage != self.params.get('vsan_auto_claim_storage'):
+        if (
+            vsan_config.enabled != self.enable_vsan
+            or vsan_config.defaultConfig.autoClaimStorage
+            != self.params.get("vsan_auto_claim_storage")
+        ):
             return True
         return False
 
@@ -500,76 +567,94 @@ class VMwareCluster(PyVmomi):
 
         """
         try:
-            self.datacenter = find_datacenter_by_name(self.content, self.datacenter_name)
+            self.datacenter = find_datacenter_by_name(
+                self.content, self.datacenter_name
+            )
             if self.datacenter is None:
-                self.module.fail_json(msg="Datacenter %s does not exist." % self.datacenter_name)
-            self.cluster = self.find_cluster_by_name(cluster_name=self.cluster_name)
+                self.module.fail_json(
+                    msg="Datacenter %s does not exist." % self.datacenter_name
+                )
+            self.cluster = self.find_cluster_by_name(
+                cluster_name=self.cluster_name
+            )
 
             if self.cluster is None:
-                return 'absent'
+                return "absent"
 
-            return 'present'
+            return "present"
         except vmodl.RuntimeFault as runtime_fault:
             self.module.fail_json(msg=to_native(runtime_fault.msg))
         except vmodl.MethodFault as method_fault:
             self.module.fail_json(msg=to_native(method_fault.msg))
         except Exception as generic_exc:
-            self.module.fail_json(msg="Failed to check configuration"
-                                      " due to generic exception %s" % to_native(generic_exc))
+            self.module.fail_json(
+                msg="Failed to check configuration"
+                " due to generic exception %s" % to_native(generic_exc)
+            )
 
 
 def main():
     argument_spec = vmware_argument_spec()
-    argument_spec.update(dict(
-        cluster_name=dict(type='str', required=True),
-        datacenter=dict(type='str', required=True, aliases=['datacenter_name']),
-        state=dict(type='str',
-                   default='present',
-                   choices=['absent', 'present']),
-        # DRS
-        ignore_drs=dict(type='bool', default=False),
-        enable_drs=dict(type='bool', default=False),
-        drs_enable_vm_behavior_overrides=dict(type='bool', default=True),
-        drs_default_vm_behavior=dict(type='str',
-                                     choices=['fullyAutomated', 'manual', 'partiallyAutomated'],
-                                     default='fullyAutomated'),
-        drs_vmotion_rate=dict(type='int',
-                              choices=range(1, 6),
-                              default=3),
-        # HA
-        ignore_ha=dict(type='bool', default=False),
-        enable_ha=dict(type='bool', default=False),
-        ha_failover_level=dict(type='int', default=2),
-        ha_host_monitoring=dict(type='str',
-                                default='enabled',
-                                choices=['enabled', 'disabled']),
-        # HA VM Monitoring related parameters
-        ha_vm_monitoring=dict(type='str',
-                              choices=['vmAndAppMonitoring', 'vmMonitoringOnly', 'vmMonitoringDisabled'],
-                              default='vmMonitoringDisabled'),
-        ha_vm_failure_interval=dict(type='int', default=30),
-        ha_vm_min_up_time=dict(type='int', default=120),
-        ha_vm_max_failures=dict(type='int', default=3),
-        ha_vm_max_failure_window=dict(type='int', default=-1),
-
-        ha_restart_priority=dict(type='str',
-                                 choices=['high', 'low', 'medium', 'disabled'],
-                                 default='medium'),
-        ha_admission_control_enabled=dict(type='bool', default=True),
-        # VSAN
-        ignore_vsan=dict(type='bool', default=False),
-        enable_vsan=dict(type='bool', default=False),
-        vsan_auto_claim_storage=dict(type='bool', default=False),
-    ))
+    argument_spec.update(
+        dict(
+            cluster_name=dict(type="str", required=True),
+            datacenter=dict(
+                type="str", required=True, aliases=["datacenter_name"]
+            ),
+            state=dict(
+                type="str", default="present", choices=["absent", "present"]
+            ),
+            # DRS
+            ignore_drs=dict(type="bool", default=False),
+            enable_drs=dict(type="bool", default=False),
+            drs_enable_vm_behavior_overrides=dict(type="bool", default=True),
+            drs_default_vm_behavior=dict(
+                type="str",
+                choices=["fullyAutomated", "manual", "partiallyAutomated"],
+                default="fullyAutomated",
+            ),
+            drs_vmotion_rate=dict(type="int", choices=range(1, 6), default=3),
+            # HA
+            ignore_ha=dict(type="bool", default=False),
+            enable_ha=dict(type="bool", default=False),
+            ha_failover_level=dict(type="int", default=2),
+            ha_host_monitoring=dict(
+                type="str", default="enabled", choices=["enabled", "disabled"]
+            ),
+            # HA VM Monitoring related parameters
+            ha_vm_monitoring=dict(
+                type="str",
+                choices=[
+                    "vmAndAppMonitoring",
+                    "vmMonitoringOnly",
+                    "vmMonitoringDisabled",
+                ],
+                default="vmMonitoringDisabled",
+            ),
+            ha_vm_failure_interval=dict(type="int", default=30),
+            ha_vm_min_up_time=dict(type="int", default=120),
+            ha_vm_max_failures=dict(type="int", default=3),
+            ha_vm_max_failure_window=dict(type="int", default=-1),
+            ha_restart_priority=dict(
+                type="str",
+                choices=["high", "low", "medium", "disabled"],
+                default="medium",
+            ),
+            ha_admission_control_enabled=dict(type="bool", default=True),
+            # VSAN
+            ignore_vsan=dict(type="bool", default=False),
+            enable_vsan=dict(type="bool", default=False),
+            vsan_auto_claim_storage=dict(type="bool", default=False),
+        )
+    )
 
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True,
+        argument_spec=argument_spec, supports_check_mode=True
     )
 
     vmware_cluster = VMwareCluster(module)
     vmware_cluster.process_state()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -5,16 +5,17 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_tools_info
 short_description: Gather info about VMware tools installed in VM
@@ -77,9 +78,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Gather VMware tools info installed in VM specified by uuid
   vmware_guest_tools_info:
     hostname: "{{ vcenter_hostname }}"
@@ -99,7 +100,7 @@ EXAMPLES = '''
     name: "{{ vm_name }}"
   delegate_to: localhost
   register: vmtools_info
-'''
+"""
 
 RETURN = """
 vmtools_info:
@@ -133,16 +134,19 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+)
 
 
 class PyVmomiHelper(PyVmomi):
     def __init__(self, module):
         super(PyVmomiHelper, self).__init__(module)
-        self.name = self.params['name']
-        self.uuid = self.params['uuid']
-        self.moid = self.params['moid']
-        self.use_instance_uuid = self.params['use_instance_uuid']
+        self.name = self.params["name"]
+        self.uuid = self.params["uuid"]
+        self.moid = self.params["moid"]
+        self.use_instance_uuid = self.params["use_instance_uuid"]
 
     def gather_vmtools_info(self):
         vmtools_info = dict(
@@ -164,44 +168,49 @@ class PyVmomiHelper(PyVmomi):
             vm_tools_last_install_count=self.current_vm_obj.config.tools.lastInstallInfo.counter,
         )
 
-        return {'changed': False, 'failed': False, 'vmtools_info': vmtools_info}
+        return {
+            "changed": False,
+            "failed": False,
+            "vmtools_info": vmtools_info,
+        }
 
 
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        use_instance_uuid=dict(type='bool', default=False),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        use_instance_uuid=dict(type="bool", default=False),
         name_match=dict(
-            choices=['first', 'last'],
-            default='first',
-            type='str'
+            choices=["first", "last"], default="first", type="str"
         ),
-        folder=dict(type='str'),
-        datacenter=dict(type='str'),
+        folder=dict(type="str"),
+        datacenter=dict(type="str"),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ],
-        mutually_exclusive=[
-            ['name', 'uuid', 'moid']
-        ],
+        required_one_of=[["name", "uuid", "moid"]],
+        mutually_exclusive=[["name", "uuid", "moid"]],
         supports_check_mode=True,
     )
 
     pyv = PyVmomiHelper(module)
     vm = pyv.get_vm()
     if not vm:
-        vm_id = (module.params.get('uuid') or module.params.get('name') or module.params.get('moid'))
-        module.fail_json(msg='Unable to find the specified virtual machine using: %s' % vm_id)
+        vm_id = (
+            module.params.get("uuid")
+            or module.params.get("name")
+            or module.params.get("moid")
+        )
+        module.fail_json(
+            msg="Unable to find the specified virtual machine using: %s"
+            % vm_id
+        )
     results = pyv.gather_vmtools_info()
     module.exit_json(**results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_target_canonical_info
 short_description: Return canonical (NAA) from an ESXi host system
@@ -48,9 +49,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Get Canonical name of particular target on particular ESXi host system
   vmware_target_canonical_info:
     hostname: '{{ vcenter_hostname }}'
@@ -75,7 +76,7 @@ EXAMPLES = '''
     password: '{{ vcenter_password }}'
     cluster_name: '{{ cluster_name }}'
   delegate_to: localhost
-'''
+"""
 
 RETURN = r"""
 canonical:
@@ -111,15 +112,20 @@ scsi_tgt_info:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+)
 
 
 class ScsiTargetInfoManager(PyVmomi):
     def __init__(self, module):
         super(ScsiTargetInfoManager, self).__init__(module)
-        cluster_name = self.module.params.get('cluster_name')
-        self.esxi_hostname = self.module.params.get('esxi_hostname')
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=self.esxi_hostname)
+        cluster_name = self.module.params.get("cluster_name")
+        self.esxi_hostname = self.module.params.get("esxi_hostname")
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=self.esxi_hostname
+        )
 
     def gather_scsi_device_info(self):
         """
@@ -129,7 +135,7 @@ class ScsiTargetInfoManager(PyVmomi):
         scsi_tgt_info = {}
         target_lun_uuid = {}
         scsilun_canonical = {}
-        target_id = self.module.params['target_id']
+        target_id = self.module.params["target_id"]
 
         for host in self.hosts:
             # Associate the scsiLun key with the canonicalName (NAA)
@@ -137,20 +143,29 @@ class ScsiTargetInfoManager(PyVmomi):
                 scsilun_canonical[scsilun.key] = scsilun.canonicalName
 
             # Associate target number with LUN uuid
-            for target in host.config.storageDevice.scsiTopology.adapter[0].target:
+            for target in host.config.storageDevice.scsiTopology.adapter[
+                0
+            ].target:
                 for lun in target.lun:
                     target_lun_uuid[target.target] = lun.scsiLun
 
             scsi_tgt_info[host.name] = dict(
                 scsilun_canonical=scsilun_canonical,
-                target_lun_uuid=target_lun_uuid)
+                target_lun_uuid=target_lun_uuid,
+            )
 
         if target_id is not None and self.esxi_hostname is not None:
-            canonical = ''
-            temp_lun_data = scsi_tgt_info[self.esxi_hostname]['target_lun_uuid']
-            if self.esxi_hostname in scsi_tgt_info and \
-                    target_id in temp_lun_data:
-                temp_scsi_data = scsi_tgt_info[self.esxi_hostname]['scsilun_canonical']
+            canonical = ""
+            temp_lun_data = scsi_tgt_info[self.esxi_hostname][
+                "target_lun_uuid"
+            ]
+            if (
+                self.esxi_hostname in scsi_tgt_info
+                and target_id in temp_lun_data
+            ):
+                temp_scsi_data = scsi_tgt_info[self.esxi_hostname][
+                    "scsilun_canonical"
+                ]
                 temp_target = temp_lun_data[target_id]
                 canonical = temp_scsi_data[temp_target]
             self.module.exit_json(changed=False, canonical=canonical)
@@ -162,17 +177,15 @@ def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
         dict(
-            target_id=dict(required=False, type='int'),
-            cluster_name=dict(type='str', required=False),
-            esxi_hostname=dict(type='str', required=False),
+            target_id=dict(required=False, type="int"),
+            cluster_name=dict(type="str", required=False),
+            esxi_hostname=dict(type="str", required=False),
         )
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
+        required_one_of=[["cluster_name", "esxi_hostname"]],
         supports_check_mode=True,
     )
 
@@ -180,5 +193,5 @@ def main():
     scsi_tgt_manager.gather_scsi_device_info()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

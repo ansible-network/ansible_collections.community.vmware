@@ -5,16 +5,17 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vsphere_copy
 short_description: Copy a file to a VMware datastore
@@ -61,9 +62,9 @@ notes:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Copy file to datastore using delegate_to
   vsphere_copy:
     hostname: '{{ vcenter_hostname }}'
@@ -96,7 +97,7 @@ EXAMPLES = '''
     datastore: datastore2
     path: other/remote/file
   delegate_to: other_system
-'''
+"""
 
 import atexit
 import errno
@@ -109,11 +110,13 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six.moves.urllib.parse import urlencode, quote
 from ansible.module_utils._text import to_native
 from ansible.module_utils.urls import open_url
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+)
 
 
 def vmware_path(datastore, datacenter, path):
-    ''' Constructs a URL path that vSphere accepts reliably '''
+    """ Constructs a URL path that vSphere accepts reliably """
     path = "/folder/%s" % quote(path.lstrip("/"))
     # Due to a software bug in vSphere, it fails to handle ampersand in datacenter names
     # The solution is to do what vSphere does (when browsing) and double-encode ampersands, maybe others ?
@@ -121,7 +124,7 @@ def vmware_path(datastore, datacenter, path):
         path = "/" + path
     params = dict(dsName=datastore)
     if datacenter:
-        datacenter = datacenter.replace('&', '%26')
+        datacenter = datacenter.replace("&", "%26")
         params["dcPath"] = datacenter
     params = urlencode(params)
     return "%s?%s" % (path, params)
@@ -129,14 +132,16 @@ def vmware_path(datastore, datacenter, path):
 
 def main():
     argument_spec = vmware_argument_spec()
-    argument_spec.update(dict(
-        hostname=dict(required=False, aliases=['host']),
-        username=dict(required=False, aliases=['login']),
-        src=dict(required=True, aliases=['name']),
-        datacenter=dict(required=False),
-        datastore=dict(required=True),
-        dest=dict(required=True, aliases=['path']),
-        timeout=dict(default=10, type='int'))
+    argument_spec.update(
+        dict(
+            hostname=dict(required=False, aliases=["host"]),
+            username=dict(required=False, aliases=["login"]),
+            src=dict(required=True, aliases=["name"]),
+            datacenter=dict(required=False),
+            datastore=dict(required=True),
+            dest=dict(required=True, aliases=["path"]),
+            timeout=dict(default=10, type="int"),
+        )
     )
 
     module = AnsibleModule(
@@ -145,20 +150,25 @@ def main():
         supports_check_mode=False,
     )
 
-    if module.params.get('host'):
-        module.deprecate("The 'host' option is being replaced by 'hostname'", version='2.12')
-    if module.params.get('login'):
-        module.deprecate("The 'login' option is being replaced by 'username'", version='2.12')
+    if module.params.get("host"):
+        module.deprecate(
+            "The 'host' option is being replaced by 'hostname'", version="2.12"
+        )
+    if module.params.get("login"):
+        module.deprecate(
+            "The 'login' option is being replaced by 'username'",
+            version="2.12",
+        )
 
-    hostname = module.params['hostname']
-    username = module.params['username']
-    password = module.params.get('password')
-    src = module.params.get('src')
-    datacenter = module.params.get('datacenter')
-    datastore = module.params.get('datastore')
-    dest = module.params.get('dest')
-    validate_certs = module.params.get('validate_certs')
-    timeout = module.params.get('timeout')
+    hostname = module.params["hostname"]
+    username = module.params["username"]
+    password = module.params.get("password")
+    src = module.params.get("src")
+    datacenter = module.params.get("datacenter")
+    datastore = module.params.get("datastore")
+    dest = module.params.get("dest")
+    validate_certs = module.params.get("validate_certs")
+    timeout = module.params.get("timeout")
 
     try:
         fd = open(src, "rb")
@@ -167,7 +177,7 @@ def main():
         module.fail_json(msg="Failed to open src file %s" % to_native(e))
 
     if os.stat(src).st_size == 0:
-        data = ''
+        data = ""
     else:
         data = mmap.mmap(fd.fileno(), 0, access=mmap.ACCESS_READ)
         atexit.register(data.close)
@@ -175,8 +185,10 @@ def main():
     remote_path = vmware_path(datastore, datacenter, dest)
 
     if not all([hostname, username, password]):
-        module.fail_json(msg="One of following parameter is missing - hostname, username, password")
-    url = 'https://%s%s' % (hostname, remote_path)
+        module.fail_json(
+            msg="One of following parameter is missing - hostname, username, password"
+        )
+    url = "https://%s%s" % (hostname, remote_path)
 
     headers = {
         "Content-Type": "application/octet-stream",
@@ -184,20 +196,40 @@ def main():
     }
 
     try:
-        r = open_url(url, data=data, headers=headers, method='PUT', timeout=timeout,
-                     url_username=username, url_password=password, validate_certs=validate_certs,
-                     force_basic_auth=True)
+        r = open_url(
+            url,
+            data=data,
+            headers=headers,
+            method="PUT",
+            timeout=timeout,
+            url_username=username,
+            url_password=password,
+            validate_certs=validate_certs,
+            force_basic_auth=True,
+        )
     except socket.error as e:
         if isinstance(e.args, tuple):
             if len(e.args) > 0:
                 if e[0] == errno.ECONNRESET:
                     # vSphere resets connection if the file is in use and cannot be replaced
-                    module.fail_json(msg='Failed to upload, image probably in use', status=None, errno=e[0], reason=to_native(e), url=url)
+                    module.fail_json(
+                        msg="Failed to upload, image probably in use",
+                        status=None,
+                        errno=e[0],
+                        reason=to_native(e),
+                        url=url,
+                    )
             else:
                 module.fail_json(msg=to_native(e))
         else:
-            module.fail_json(msg=str(e), status=None, errno=e[0], reason=str(e),
-                             url=url, exception=traceback.format_exc())
+            module.fail_json(
+                msg=str(e),
+                status=None,
+                errno=e[0],
+                reason=str(e),
+                url=url,
+                exception=traceback.format_exc(),
+            )
     except Exception as e:
         error_code = -1
         try:
@@ -205,21 +237,36 @@ def main():
                 error_code = e[0]
         except (KeyError, TypeError):
             pass
-        module.fail_json(msg=to_native(e), status=None, errno=error_code,
-                         reason=to_native(e), url=url, exception=traceback.format_exc())
+        module.fail_json(
+            msg=to_native(e),
+            status=None,
+            errno=error_code,
+            reason=to_native(e),
+            url=url,
+            exception=traceback.format_exc(),
+        )
 
     status = r.getcode()
     if 200 <= status < 300:
         module.exit_json(changed=True, status=status, reason=r.msg, url=url)
     else:
-        length = r.headers.get('content-length', None)
-        if r.headers.get('transfer-encoding', '').lower() == 'chunked':
+        length = r.headers.get("content-length", None)
+        if r.headers.get("transfer-encoding", "").lower() == "chunked":
             chunked = 1
         else:
             chunked = 0
 
-        module.fail_json(msg='Failed to upload', errno=None, status=status, reason=r.msg, length=length, headers=dict(r.headers), chunked=chunked, url=url)
+        module.fail_json(
+            msg="Failed to upload",
+            errno=None,
+            status=status,
+            reason=r.msg,
+            length=length,
+            headers=dict(r.headers),
+            chunked=chunked,
+            url=url,
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

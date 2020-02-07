@@ -4,15 +4,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_vswitch_info
 short_description: Gathers info about an ESXi host's vswitch configurations
@@ -43,9 +44,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather vswitch info about all ESXi Host in given Cluster
   vmware_vswitch_info:
     hostname: '{{ vcenter_hostname }}'
@@ -63,9 +64,9 @@ EXAMPLES = r'''
     esxi_hostname: '{{ esxi_hostname }}'
     delegate_to: localhost
   register: all_vswitch_info
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 hosts_vswitch_info:
     description: metadata about host's vswitch configuration
     returned: on success
@@ -89,19 +90,25 @@ hosts_vswitch_info:
             },
         },
     }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class VswitchInfoManager(PyVmomi):
     """Class to gather vSwitch info"""
+
     def __init__(self, module):
         super(VswitchInfoManager, self).__init__(module)
-        cluster_name = self.params.get('cluster_name', None)
-        esxi_host_name = self.params.get('esxi_hostname', None)
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=esxi_host_name)
+        cluster_name = self.params.get("cluster_name", None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=esxi_host_name
+        )
         if not self.hosts:
             self.module.fail_json(msg="Failed to find host system.")
 
@@ -128,7 +135,7 @@ class VswitchInfoManager(PyVmomi):
                         # we need to use the spec to get the ports
                         # otherwise, the output might be different compared to the vswitch config module
                         # (e.g. 5632 ports instead of 128)
-                        num_ports=available_vswitch.spec.numPorts
+                        num_ports=available_vswitch.spec.numPorts,
                     )
                 hosts_vswitch_info[host.name] = temp_switch_dict
         return hosts_vswitch_info
@@ -138,20 +145,21 @@ def main():
     """Main"""
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        cluster_name=dict(type='str', required=False),
-        esxi_hostname=dict(type='str', required=False),
+        cluster_name=dict(type="str", required=False),
+        esxi_hostname=dict(type="str", required=False),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
-        supports_check_mode=True
+        required_one_of=[["cluster_name", "esxi_hostname"]],
+        supports_check_mode=True,
     )
 
     vmware_vswitch_mgr = VswitchInfoManager(module)
-    module.exit_json(changed=False, hosts_vswitch_info=vmware_vswitch_mgr.gather_vswitch_info())
+    module.exit_json(
+        changed=False,
+        hosts_vswitch_info=vmware_vswitch_mgr.gather_vswitch_info(),
+    )
 
 
 if __name__ == "__main__":

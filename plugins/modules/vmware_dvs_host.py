@@ -8,15 +8,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_dvs_host
 short_description: Add or remove a host from distributed virtual switch
@@ -65,9 +66,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Add Host to dVS
   vmware_dvs_host:
     hostname: '{{ vcenter_hostname }}'
@@ -96,10 +97,11 @@ EXAMPLES = '''
         - vmnic1
     state: present
   delegate_to: localhost
-'''
+"""
 
 try:
     from collections import Counter
+
     HAS_COLLECTIONS_COUNTER = True
 except ImportError as e:
     HAS_COLLECTIONS_COUNTER = False
@@ -110,8 +112,13 @@ except ImportError as e:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_dvs_by_name, find_hostsystem_by_name,
-                                         vmware_argument_spec, wait_for_task)
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    find_dvs_by_name,
+    find_hostsystem_by_name,
+    vmware_argument_spec,
+    wait_for_task,
+)
 from ansible.module_utils._text import to_native
 
 
@@ -123,23 +130,25 @@ class VMwareDvsHost(PyVmomi):
         self.host = None
         self.dv_switch = None
         self.nic = None
-        self.state = self.module.params['state']
-        self.switch_name = self.module.params['switch_name']
-        self.esxi_hostname = self.module.params['esxi_hostname']
-        self.vmnics = self.module.params['vmnics']
-        self.vendor_specific_config = self.module.params['vendor_specific_config']
+        self.state = self.module.params["state"]
+        self.switch_name = self.module.params["switch_name"]
+        self.esxi_hostname = self.module.params["esxi_hostname"]
+        self.vmnics = self.module.params["vmnics"]
+        self.vendor_specific_config = self.module.params[
+            "vendor_specific_config"
+        ]
 
     def process_state(self):
         dvs_host_states = {
-            'absent': {
-                'present': self.state_destroy_dvs_host,
-                'absent': self.state_exit_unchanged,
+            "absent": {
+                "present": self.state_destroy_dvs_host,
+                "absent": self.state_exit_unchanged,
             },
-            'present': {
-                'update': self.state_update_dvs_host,
-                'present': self.state_exit_unchanged,
-                'absent': self.state_create_dvs_host,
-            }
+            "present": {
+                "update": self.state_update_dvs_host,
+                "present": self.state_exit_unchanged,
+                "absent": self.state_create_dvs_host,
+            },
         }
 
         try:
@@ -154,7 +163,11 @@ class VMwareDvsHost(PyVmomi):
     def find_dvs_uplink_pg(self):
         # There should only always be a single uplink port group on
         # a distributed virtual switch
-        dvs_uplink_pg = self.dv_switch.config.uplinkPortgroup[0] if len(self.dv_switch.config.uplinkPortgroup) else None
+        dvs_uplink_pg = (
+            self.dv_switch.config.uplinkPortgroup[0]
+            if len(self.dv_switch.config.uplinkPortgroup)
+            else None
+        )
         return dvs_uplink_pg
 
     # operation should be edit, add and remove
@@ -168,7 +181,11 @@ class VMwareDvsHost(PyVmomi):
         if self.vendor_specific_config:
             config = list()
             for item in self.vendor_specific_config:
-                config.append(vim.dvs.KeyedOpaqueBlob(key=item['key'], opaqueData=item['value']))
+                config.append(
+                    vim.dvs.KeyedOpaqueBlob(
+                        key=item["key"], opaqueData=item["value"]
+                    )
+                )
             spec.host[0].vendorSpecificConfig = config
 
         if operation in ("edit", "add"):
@@ -176,18 +193,24 @@ class VMwareDvsHost(PyVmomi):
             count = 0
 
             for nic in self.vmnics:
-                spec.host[0].backing.pnicSpec.append(vim.dvs.HostMember.PnicSpec())
+                spec.host[0].backing.pnicSpec.append(
+                    vim.dvs.HostMember.PnicSpec()
+                )
                 spec.host[0].backing.pnicSpec[count].pnicDevice = nic
-                spec.host[0].backing.pnicSpec[count].uplinkPortgroupKey = self.uplink_portgroup.key
+                spec.host[0].backing.pnicSpec[
+                    count
+                ].uplinkPortgroupKey = self.uplink_portgroup.key
                 count += 1
 
         try:
             task = self.dv_switch.ReconfigureDvs_Task(spec)
             changed, result = wait_for_task(task)
         except vmodl.fault.NotSupported as not_supported:
-            self.module.fail_json(msg="Failed to configure DVS host %s as it is not"
-                                      " compatible with the VDS version." % self.esxi_hostname,
-                                  details=to_native(not_supported.msg))
+            self.module.fail_json(
+                msg="Failed to configure DVS host %s as it is not"
+                " compatible with the VDS version." % self.esxi_hostname,
+                details=to_native(not_supported.msg),
+            )
         return changed, result
 
     def state_destroy_dvs_host(self):
@@ -235,61 +258,74 @@ class VMwareDvsHost(PyVmomi):
         self.dv_switch = find_dvs_by_name(self.content, self.switch_name)
 
         if self.dv_switch is None:
-            self.module.fail_json(msg="A distributed virtual switch %s "
-                                      "does not exist" % self.switch_name)
+            self.module.fail_json(
+                msg="A distributed virtual switch %s "
+                "does not exist" % self.switch_name
+            )
 
         self.uplink_portgroup = self.find_dvs_uplink_pg()
 
         if self.uplink_portgroup is None:
-            self.module.fail_json(msg="An uplink portgroup does not exist on"
-                                      " the distributed virtual switch %s" % self.switch_name)
+            self.module.fail_json(
+                msg="An uplink portgroup does not exist on"
+                " the distributed virtual switch %s" % self.switch_name
+            )
 
         self.host = self.find_host_attached_dvs()
 
         if self.host is None:
             # We still need the HostSystem object to add the host
             # to the distributed vswitch
-            self.host = find_hostsystem_by_name(self.content, self.esxi_hostname)
+            self.host = find_hostsystem_by_name(
+                self.content, self.esxi_hostname
+            )
             if self.host is None:
-                self.module.fail_json(msg="The esxi_hostname %s does not exist "
-                                          "in vCenter" % self.esxi_hostname)
-            return 'absent'
+                self.module.fail_json(
+                    msg="The esxi_hostname %s does not exist "
+                    "in vCenter" % self.esxi_hostname
+                )
+            return "absent"
         else:
             if self.check_uplinks():
-                return 'present'
+                return "present"
             else:
-                return 'update'
+                return "update"
 
 
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
         dict(
-            esxi_hostname=dict(required=True, type='str'),
-            switch_name=dict(required=True, type='str'),
-            vmnics=dict(required=True, type='list'),
-            state=dict(default='present', choices=['present', 'absent'], type='str'),
+            esxi_hostname=dict(required=True, type="str"),
+            switch_name=dict(required=True, type="str"),
+            vmnics=dict(required=True, type="list"),
+            state=dict(
+                default="present", choices=["present", "absent"], type="str"
+            ),
             vendor_specific_config=dict(
-                type='list',
-                elements='dict',
+                type="list",
+                elements="dict",
                 required=False,
                 options=dict(
-                    key=dict(type='str', required=True),
-                    value=dict(type='str', required=True),
+                    key=dict(type="str", required=True),
+                    value=dict(type="str", required=True),
                 ),
             ),
         )
     )
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
     if not HAS_COLLECTIONS_COUNTER:
-        module.fail_json(msg='collections.Counter from Python-2.7 is required for this module')
+        module.fail_json(
+            msg="collections.Counter from Python-2.7 is required for this module"
+        )
 
     vmware_dvs_host = VMwareDvsHost(module)
     vmware_dvs_host.process_state()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -4,15 +4,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_appliance_access_info
 short_description: Gathers info about modes of access to the vCenter appliance using REST API.
@@ -37,9 +38,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.VmwareRestModule.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - hosts: all
   connection: httpapi
   gather_facts: false
@@ -58,9 +59,9 @@ EXAMPLES = r'''
   - name: Get ssh access mode information
     vmware_appliance_access_info:
       access_mode: ssh
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 access_mode:
     description: facts about the specified access mode
     returned: always
@@ -68,26 +69,31 @@ access_mode:
     sample: {
         "value": true
     }
-'''
+"""
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware_httpapi.VmwareRestModule import API, VmwareRestModule
+from ansible_collections.vmware.general.plugins.module_utils.vmware_httpapi.VmwareRestModule import (
+    API,
+    VmwareRestModule,
+)
 
 
 SLUG = dict(
-    consolecli='/access/consolecli',
-    dcui='/access/dcui',
-    shell='/access/shell',
-    ssh='/access/ssh',
+    consolecli="/access/consolecli",
+    dcui="/access/dcui",
+    shell="/access/shell",
+    ssh="/access/ssh",
 )
 
 
 def get_mode(module, mode):
     try:
-        url = API['appliance']['base'] + SLUG[mode]
+        url = API["appliance"]["base"] + SLUG[mode]
     except KeyError:
-        module.fail(msg='[%s] is not a valid access mode. '
-                    'Please specify correct mode, valid choices are '
-                    '[%s].' % (mode, ", ".join(list(SLUG.keys()))))
+        module.fail(
+            msg="[%s] is not a valid access mode. "
+            "Please specify correct mode, valid choices are "
+            "[%s]." % (mode, ", ".join(list(SLUG.keys())))
+        )
 
     module.get(url=url, key=mode)
 
@@ -95,14 +101,20 @@ def get_mode(module, mode):
 def main():
     argument_spec = VmwareRestModule.create_argument_spec()
     argument_spec.update(
-        access_mode=dict(type='str', choices=['consolecli', 'dcui', 'shell', 'ssh'], default=None),
+        access_mode=dict(
+            type="str",
+            choices=["consolecli", "dcui", "shell", "ssh"],
+            default=None,
+        )
     )
 
-    module = VmwareRestModule(argument_spec=argument_spec,
-                              supports_check_mode=True,
-                              is_multipart=True,
-                              use_object_handler=True)
-    access_mode = module.params['access_mode']
+    module = VmwareRestModule(
+        argument_spec=argument_spec,
+        supports_check_mode=True,
+        is_multipart=True,
+        use_object_handler=True,
+    )
+    access_mode = module.params["access_mode"]
 
     if access_mode is None:
         access_mode = SLUG.keys()
@@ -114,5 +126,5 @@ def main():
     module.exit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
