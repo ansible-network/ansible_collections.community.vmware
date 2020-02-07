@@ -1,0 +1,16 @@
+- import_role:
+    name: prepare_vmware_tests
+  vars:
+    setup_attach_host: true
+    setup_datastore: true
+    setup_virtualmachines: true
+- name: Power on VM1
+  vmware_guest:
+    validate_certs: false
+    hostname: '{{ vcenter_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    name: '{{ virtual_machines[0].name }}'
+    folder: '{{ virtual_machines[0].folder }}'
+    datacenter: '{{ dc1 }}'
+    state: poweredon
