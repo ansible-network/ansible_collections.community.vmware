@@ -5,16 +5,17 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_host_dns_info
 short_description: Gathers info about an ESXi host's DNS configuration information
@@ -42,9 +43,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather DNS info about all ESXi Hosts in given Cluster
   vmware_host_dns_info:
     hostname: '{{ vcenter_hostname }}'
@@ -60,9 +61,9 @@ EXAMPLES = r'''
     password: '{{ vcenter_password }}'
     esxi_hostname: '{{ esxi_hostname }}'
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 hosts_dns_info:
     description: metadata about DNS config from given cluster / host system
     returned: always
@@ -81,30 +82,37 @@ hosts_dns_info:
                     "virtual_nic_device": "vmk0"
                 }
             }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class VmwareDnsInfoManager(PyVmomi):
     def __init__(self, module):
         super(VmwareDnsInfoManager, self).__init__(module)
-        cluster_name = self.params.get('cluster_name', None)
-        esxi_host_name = self.params.get('esxi_hostname', None)
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=esxi_host_name)
+        cluster_name = self.params.get("cluster_name", None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=esxi_host_name
+        )
 
     def gather_dns_info(self):
         hosts_info = {}
         for host in self.hosts:
             host_info = {}
             dns_config = host.config.network.dnsConfig
-            host_info['dhcp'] = dns_config.dhcp
-            host_info['virtual_nic_device'] = dns_config.virtualNicDevice
-            host_info['host_name'] = dns_config.hostName
-            host_info['domain_name'] = dns_config.domainName
-            host_info['ip_address'] = [ip for ip in dns_config.address]
-            host_info['search_domain'] = [domain for domain in dns_config.searchDomain]
+            host_info["dhcp"] = dns_config.dhcp
+            host_info["virtual_nic_device"] = dns_config.virtualNicDevice
+            host_info["host_name"] = dns_config.hostName
+            host_info["domain_name"] = dns_config.domainName
+            host_info["ip_address"] = [ip for ip in dns_config.address]
+            host_info["search_domain"] = [
+                domain for domain in dns_config.searchDomain
+            ]
             hosts_info[host.name] = host_info
         return hosts_info
 
@@ -112,20 +120,20 @@ class VmwareDnsInfoManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        cluster_name=dict(type='str', required=False),
-        esxi_hostname=dict(type='str', required=False),
+        cluster_name=dict(type="str", required=False),
+        esxi_hostname=dict(type="str", required=False),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
-        supports_check_mode=True
+        required_one_of=[["cluster_name", "esxi_hostname"]],
+        supports_check_mode=True,
     )
 
     vmware_dns_config = VmwareDnsInfoManager(module)
-    module.exit_json(changed=False, hosts_dns_info=vmware_dns_config.gather_dns_info())
+    module.exit_json(
+        changed=False, hosts_dns_info=vmware_dns_config.gather_dns_info()
+    )
 
 
 if __name__ == "__main__":

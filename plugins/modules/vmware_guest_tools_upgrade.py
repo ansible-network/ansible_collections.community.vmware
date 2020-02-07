@@ -4,17 +4,18 @@
 # Copyright: (c) 2018, Mike Klebolt  <michael.klebolt@centurylink.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_tools_upgrade
 short_description: Module to upgrade VMTools
@@ -73,9 +74,9 @@ author:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Upgrade VMware Tools using uuid
   vmware_guest_tools_upgrade:
     hostname: "{{ vcenter_hostname }}"
@@ -93,13 +94,17 @@ EXAMPLES = '''
     datacenter: "{{ datacenter_name }}"
     moid: vm-42
   delegate_to: localhost
-'''
+"""
 
-RETURN = ''' # '''
+RETURN = """ # """
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+    wait_for_task,
+)
 from ansible.module_utils._text import to_native
 
 
@@ -108,20 +113,18 @@ class PyVmomiHelper(PyVmomi):
         super(PyVmomiHelper, self).__init__(module)
 
     def upgrade_tools(self, vm):
-        result = {'failed': False, 'changed': False, 'msg': ''}
+        result = {"failed": False, "changed": False, "msg": ""}
         # Exit if VMware tools is already up to date
         if vm.guest.toolsStatus == "toolsOk":
             result.update(
-                changed=False,
-                msg="VMware tools is already up to date",
+                changed=False, msg="VMware tools is already up to date"
             )
             return result
 
         # Fail if VM is not powered on
         elif vm.summary.runtime.powerState != "poweredOn":
             result.update(
-                failed=True,
-                msg="VM must be powered on to upgrade tools",
+                failed=True, msg="VM must be powered on to upgrade tools"
             )
             return result
 
@@ -142,18 +145,20 @@ class PyVmomiHelper(PyVmomi):
                     changed, err_msg = wait_for_task(task)
                     result.update(changed=changed, msg=to_native(err_msg))
                 else:
-                    result.update(msg='Guest Operating System is other than Linux and Windows.')
+                    result.update(
+                        msg="Guest Operating System is other than Linux and Windows."
+                    )
                 return result
             except Exception as exc:
                 result.update(
                     failed=True,
-                    msg='Error while upgrading VMware tools %s' % to_native(exc),
+                    msg="Error while upgrading VMware tools %s"
+                    % to_native(exc),
                 )
                 return result
         else:
             result.update(
-                failed=True,
-                msg="VMware tools could not be upgraded",
+                failed=True, msg="VMware tools could not be upgraded"
             )
             return result
 
@@ -161,24 +166,23 @@ class PyVmomiHelper(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        name_match=dict(type='str', choices=['first', 'last'], default='first'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        folder=dict(type='str'),
-        datacenter=dict(type='str', required=True),
+        name=dict(type="str"),
+        name_match=dict(
+            type="str", choices=["first", "last"], default="first"
+        ),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        folder=dict(type="str"),
+        datacenter=dict(type="str", required=True),
     )
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ]
+        argument_spec=argument_spec, required_one_of=[["name", "uuid", "moid"]]
     )
 
-    if module.params['folder']:
+    if module.params["folder"]:
         # FindByInventoryPath() does not require an absolute path
         # so we should leave the input folder path unmodified
-        module.params['folder'] = module.params['folder'].rstrip('/')
+        module.params["folder"] = module.params["folder"].rstrip("/")
 
     pyv = PyVmomiHelper(module)
     # Check if the VM exists before continuing
@@ -188,18 +192,22 @@ def main():
     if vm:
         try:
             result = pyv.upgrade_tools(vm)
-            if result['changed']:
-                module.exit_json(changed=result['changed'])
-            elif result['failed']:
-                module.fail_json(msg=result['msg'])
+            if result["changed"]:
+                module.exit_json(changed=result["changed"])
+            elif result["failed"]:
+                module.fail_json(msg=result["msg"])
             else:
-                module.exit_json(msg=result['msg'], changed=result['changed'])
+                module.exit_json(msg=result["msg"], changed=result["changed"])
         except Exception as exc:
-            module.fail_json(msg='Unknown error: %s' % to_native(exc))
+            module.fail_json(msg="Unknown error: %s" % to_native(exc))
     else:
-        vm_id = module.params.get('uuid') or module.params.get('name') or module.params.get('moid')
-        module.fail_json(msg='Unable to find VM %s' % vm_id)
+        vm_id = (
+            module.params.get("uuid")
+            or module.params.get("name")
+            or module.params.get("moid")
+        )
+        module.fail_json(msg="Unable to find VM %s" % vm_id)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

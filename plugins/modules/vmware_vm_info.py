@@ -7,15 +7,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_vm_info
 short_description: Return basic info pertaining to a VMware machine guest
@@ -70,9 +71,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather all registered virtual machines
   vmware_vm_info:
     hostname: '{{ vcenter_hostname }}'
@@ -152,9 +153,9 @@ EXAMPLES = r'''
     folder: "/Asia-Datacenter1/vm/prod"
   delegate_to: localhost
   register: vm_info
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 virtual_machines:
   description: list of dictionary of virtual machines and their information
   returned: success
@@ -193,7 +194,7 @@ virtual_machines:
         ]
     }
   ]
-'''
+"""
 
 try:
     from pyVmomi import vim
@@ -201,8 +202,15 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, get_all_objs, vmware_argument_spec, _get_vm_prop
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    get_all_objs,
+    vmware_argument_spec,
+    _get_vm_prop,
+)
+from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import (
+    VmwareRestClient,
+)
 
 
 class VmwareVmInfo(PyVmomi):
@@ -214,22 +222,31 @@ class VmwareVmInfo(PyVmomi):
         return vmware_client.get_tags_for_vm(vm_mid=vm_dynamic_obj._moId)
 
     def get_vm_attributes(self, vm):
-        return dict((x.name, v.value) for x in self.custom_field_mgr
-                    for v in vm.customValue if x.key == v.key)
+        return dict(
+            (x.name, v.value)
+            for x in self.custom_field_mgr
+            for v in vm.customValue
+            if x.key == v.key
+        )
 
     # https://github.com/vmware/pyvmomi-community-samples/blob/master/samples/getallvms.py
     def get_all_virtual_machines(self):
         """
         Get all virtual machines and related configurations information
         """
-        folder = self.params.get('folder')
+        folder = self.params.get("folder")
         folder_obj = None
         if folder:
             folder_obj = self.content.searchIndex.FindByInventoryPath(folder)
             if not folder_obj:
-                self.module.fail_json(msg="Failed to find folder specified by %(folder)s" % self.params)
+                self.module.fail_json(
+                    msg="Failed to find folder specified by %(folder)s"
+                    % self.params
+                )
 
-        virtual_machines = get_all_objs(self.content, [vim.VirtualMachine], folder=folder_obj)
+        virtual_machines = get_all_objs(
+            self.content, [vim.VirtualMachine], folder=folder_obj
+        )
         _virtual_machines = []
 
         for vm in virtual_machines:
@@ -240,24 +257,24 @@ class VmwareVmInfo(PyVmomi):
                 if _ip_address is None:
                     _ip_address = ""
             _mac_address = []
-            all_devices = _get_vm_prop(vm, ('config', 'hardware', 'device'))
+            all_devices = _get_vm_prop(vm, ("config", "hardware", "device"))
             if all_devices:
                 for dev in all_devices:
                     if isinstance(dev, vim.vm.device.VirtualEthernetCard):
                         _mac_address.append(dev.macAddress)
 
             net_dict = {}
-            vmnet = _get_vm_prop(vm, ('guest', 'net'))
+            vmnet = _get_vm_prop(vm, ("guest", "net"))
             if vmnet:
                 for device in vmnet:
                     net_dict[device.macAddress] = dict()
-                    net_dict[device.macAddress]['ipv4'] = []
-                    net_dict[device.macAddress]['ipv6'] = []
+                    net_dict[device.macAddress]["ipv4"] = []
+                    net_dict[device.macAddress]["ipv6"] = []
                     for ip_addr in device.ipAddress:
                         if "::" in ip_addr:
-                            net_dict[device.macAddress]['ipv6'].append(ip_addr)
+                            net_dict[device.macAddress]["ipv6"].append(ip_addr)
                         else:
-                            net_dict[device.macAddress]['ipv4'].append(ip_addr)
+                            net_dict[device.macAddress]["ipv4"].append(ip_addr)
 
             esxi_hostname = None
             esxi_parent = None
@@ -266,15 +283,17 @@ class VmwareVmInfo(PyVmomi):
                 esxi_parent = summary.runtime.host.parent
 
             cluster_name = None
-            if esxi_parent and isinstance(esxi_parent, vim.ClusterComputeResource):
+            if esxi_parent and isinstance(
+                esxi_parent, vim.ClusterComputeResource
+            ):
                 cluster_name = summary.runtime.host.parent.name
 
             vm_attributes = dict()
-            if self.module.params.get('show_attribute'):
+            if self.module.params.get("show_attribute"):
                 vm_attributes = self.get_vm_attributes(vm)
 
             vm_tags = list()
-            if self.module.params.get('show_tag'):
+            if self.module.params.get("show_tag"):
                 vm_tags = self.get_tag_info(vm)
 
             virtual_machine = {
@@ -288,16 +307,16 @@ class VmwareVmInfo(PyVmomi):
                 "esxi_hostname": esxi_hostname,
                 "cluster": cluster_name,
                 "attributes": vm_attributes,
-                "tags": vm_tags
+                "tags": vm_tags,
             }
 
-            vm_type = self.module.params.get('vm_type')
-            is_template = _get_vm_prop(vm, ('config', 'template'))
-            if vm_type == 'vm' and not is_template:
+            vm_type = self.module.params.get("vm_type")
+            is_template = _get_vm_prop(vm, ("config", "template"))
+            if vm_type == "vm" and not is_template:
                 _virtual_machines.append(virtual_machine)
-            elif vm_type == 'template' and is_template:
+            elif vm_type == "template" and is_template:
                 _virtual_machines.append(virtual_machine)
-            elif vm_type == 'all':
+            elif vm_type == "all":
                 _virtual_machines.append(virtual_machine)
         return _virtual_machines
 
@@ -305,18 +324,22 @@ class VmwareVmInfo(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        vm_type=dict(type='str', choices=['vm', 'all', 'template'], default='all'),
-        show_attribute=dict(type='bool', default='no'),
-        show_tag=dict(type='bool', default=False),
-        folder=dict(type='str'),
+        vm_type=dict(
+            type="str", choices=["vm", "all", "template"], default="all"
+        ),
+        show_attribute=dict(type="bool", default="no"),
+        show_tag=dict(type="bool", default=False),
+        folder=dict(type="str"),
     )
 
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True
+        argument_spec=argument_spec, supports_check_mode=True
     )
-    if module._name == 'vmware_vm_facts':
-        module.deprecate("The 'vmware_vm_facts' module has been renamed to 'vmware_vm_info'", version='2.13')
+    if module._name == "vmware_vm_facts":
+        module.deprecate(
+            "The 'vmware_vm_facts' module has been renamed to 'vmware_vm_info'",
+            version="2.13",
+        )
 
     vmware_vm_info = VmwareVmInfo(module)
     _virtual_machines = vmware_vm_info.get_all_virtual_machines()
@@ -324,5 +347,5 @@ def main():
     module.exit_json(changed=False, virtual_machines=_virtual_machines)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

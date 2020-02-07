@@ -4,6 +4,7 @@
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 try:
@@ -12,7 +13,9 @@ try:
 except ImportError:
     pass
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+)
 
 
 class SPBM(PyVmomi):
@@ -31,13 +34,20 @@ class SPBM(PyVmomi):
             session_cookie = client_stub.cookie.split('"')[1]
         except IndexError:
             self.module.fail_json(msg="Failed to get session cookie")
-        ssl_context = client_stub.schemeArgs.get('context')
-        additional_headers = {'vcSessionCookie': session_cookie}
-        hostname = self.module.params['hostname']
+        ssl_context = client_stub.schemeArgs.get("context")
+        additional_headers = {"vcSessionCookie": session_cookie}
+        hostname = self.module.params["hostname"]
         if not hostname:
-            self.module.fail_json(msg="Please specify required parameter - hostname")
-        stub = SoapStubAdapter(host=hostname, path="/pbm/sdk", version=self.version,
-                               sslContext=ssl_context, requestContext=additional_headers)
+            self.module.fail_json(
+                msg="Please specify required parameter - hostname"
+            )
+        stub = SoapStubAdapter(
+            host=hostname,
+            path="/pbm/sdk",
+            version=self.version,
+            sslContext=ssl_context,
+            requestContext=additional_headers,
+        )
 
         self.spbm_si = pbm.ServiceInstance("ServiceInstance", stub)
         self.spbm_content = self.spbm_si.PbmRetrieveServiceContent()

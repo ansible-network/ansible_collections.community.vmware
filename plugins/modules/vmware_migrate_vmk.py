@@ -5,13 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_migrate_vmk
 short_description: Migrate a VMK interface from VSS to VDS
@@ -59,9 +62,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Migrate Management vmk
   vmware_migrate_vmk:
     hostname: "{{ vcenter_hostname }}"
@@ -74,37 +77,46 @@ EXAMPLES = '''
     migrate_switch_name: dvSwitch
     migrate_portgroup_name: Management
   delegate_to: localhost
-'''
+"""
 try:
     from pyVmomi import vim, vmodl
+
     HAS_PYVMOMI = True
 except ImportError:
     HAS_PYVMOMI = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (vmware_argument_spec, find_dvs_by_name, find_hostsystem_by_name,
-                                         connect_to_api, find_dvspg_by_name)
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    find_dvs_by_name,
+    find_hostsystem_by_name,
+    connect_to_api,
+    find_dvspg_by_name,
+)
 
 
 class VMwareMigrateVmk(object):
-
     def __init__(self, module):
         self.module = module
         self.host_system = None
-        self.migrate_switch_name = self.module.params['migrate_switch_name']
-        self.migrate_portgroup_name = self.module.params['migrate_portgroup_name']
-        self.device = self.module.params['device']
-        self.esxi_hostname = self.module.params['esxi_hostname']
-        self.current_portgroup_name = self.module.params['current_portgroup_name']
-        self.current_switch_name = self.module.params['current_switch_name']
+        self.migrate_switch_name = self.module.params["migrate_switch_name"]
+        self.migrate_portgroup_name = self.module.params[
+            "migrate_portgroup_name"
+        ]
+        self.device = self.module.params["device"]
+        self.esxi_hostname = self.module.params["esxi_hostname"]
+        self.current_portgroup_name = self.module.params[
+            "current_portgroup_name"
+        ]
+        self.current_switch_name = self.module.params["current_switch_name"]
         self.content = connect_to_api(module)
 
     def process_state(self):
         try:
             vmk_migration_states = {
-                'migrate_vss_vds': self.state_migrate_vss_vds,
-                'migrate_vds_vss': self.state_migrate_vds_vss,
-                'migrated': self.state_exit_unchanged
+                "migrate_vss_vds": self.state_migrate_vss_vds,
+                "migrate_vds_vss": self.state_migrate_vds_vss,
+                "migrated": self.state_exit_unchanged,
             }
 
             vmk_migration_states[self.check_vmk_current_state()]()
@@ -130,8 +142,12 @@ class VMwareMigrateVmk(object):
         host_vnic_config.device = self.device
         host_vnic_config.portgroup = ""
         host_vnic_config.spec.distributedVirtualPort = vim.dvs.PortConnection()
-        host_vnic_config.spec.distributedVirtualPort.switchUuid = dv_switch_uuid
-        host_vnic_config.spec.distributedVirtualPort.portgroupKey = portgroup_key
+        host_vnic_config.spec.distributedVirtualPort.switchUuid = (
+            dv_switch_uuid
+        )
+        host_vnic_config.spec.distributedVirtualPort.portgroupKey = (
+            portgroup_key
+        )
 
         return host_vnic_config
 
@@ -160,16 +176,22 @@ class VMwareMigrateVmk(object):
         self.module.exit_json(changed=True)
 
     def check_vmk_current_state(self):
-        self.host_system = find_hostsystem_by_name(self.content, self.esxi_hostname)
+        self.host_system = find_hostsystem_by_name(
+            self.content, self.esxi_hostname
+        )
 
-        for vnic in self.host_system.configManager.networkSystem.networkInfo.vnic:
+        for (
+            vnic
+        ) in self.host_system.configManager.networkSystem.networkInfo.vnic:
             if vnic.device == self.device:
                 # self.vnic = vnic
                 if vnic.spec.distributedVirtualPort is None:
                     if vnic.portgroup == self.current_portgroup_name:
                         return "migrate_vss_vds"
                 else:
-                    dvs = find_dvs_by_name(self.content, self.current_switch_name)
+                    dvs = find_dvs_by_name(
+                        self.content, self.current_switch_name
+                    )
                     if dvs is None:
                         return "migrated"
                     if vnic.spec.distributedVirtualPort.switchUuid == dvs.uuid:
@@ -179,21 +201,27 @@ class VMwareMigrateVmk(object):
 def main():
 
     argument_spec = vmware_argument_spec()
-    argument_spec.update(dict(esxi_hostname=dict(required=True, type='str'),
-                              device=dict(required=True, type='str'),
-                              current_switch_name=dict(required=True, type='str'),
-                              current_portgroup_name=dict(required=True, type='str'),
-                              migrate_switch_name=dict(required=True, type='str'),
-                              migrate_portgroup_name=dict(required=True, type='str')))
+    argument_spec.update(
+        dict(
+            esxi_hostname=dict(required=True, type="str"),
+            device=dict(required=True, type="str"),
+            current_switch_name=dict(required=True, type="str"),
+            current_portgroup_name=dict(required=True, type="str"),
+            migrate_switch_name=dict(required=True, type="str"),
+            migrate_portgroup_name=dict(required=True, type="str"),
+        )
+    )
 
-    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=False)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=False
+    )
 
     if not HAS_PYVMOMI:
-        module.fail_json(msg='pyvmomi required for this module')
+        module.fail_json(msg="pyvmomi required for this module")
 
     vmware_migrate_vmk = VMwareMigrateVmk(module)
     vmware_migrate_vmk.process_state()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

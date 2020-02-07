@@ -8,7 +8,7 @@
 
 class ModuleDocFragment(object):
     # Parameters for VMware modules
-    DOCUMENTATION = r'''
+    DOCUMENTATION = r"""
 options:
     hostname:
       description:
@@ -59,10 +59,10 @@ options:
       - If the value is not specified in the task, the value of environment variable C(VMWARE_PROXY_PORT) will be used instead.
       type: int
       required: False
-'''
+"""
 
     # This doc fragment is specific to vcenter modules like vcenter_license
-    VCENTER_DOCUMENTATION = r'''
+    VCENTER_DOCUMENTATION = r"""
 options:
     hostname:
       description:
@@ -115,4 +115,4 @@ options:
       type: int
       version_added: '2.9'
       required: False
-    '''
+    """

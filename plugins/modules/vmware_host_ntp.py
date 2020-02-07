@@ -6,15 +6,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_host_ntp
 short_description: Manage NTP server configuration of an ESXi host
@@ -64,9 +65,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Configure NTP servers for an ESXi Host
   vmware_host_ntp:
     hostname: vcenter01.example.local
@@ -112,9 +113,9 @@ EXAMPLES = r'''
     ntp_servers:
         - bad.server.ntp.org
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 host_ntp_status:
     description: metadata about host system's NTP configuration
     returned: always
@@ -132,7 +133,7 @@ host_ntp_status:
             "ntp_servers_previous": ["time1.example.local", "time2.example.local"],
         },
     }
-'''
+"""
 
 try:
     from pyVmomi import vim
@@ -140,7 +141,10 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 from ansible.module_utils._text import to_native
 
 
@@ -149,28 +153,36 @@ class VmwareNtpConfigManager(PyVmomi):
 
     def __init__(self, module):
         super(VmwareNtpConfigManager, self).__init__(module)
-        cluster_name = self.params.get('cluster_name', None)
-        esxi_host_name = self.params.get('esxi_hostname', None)
-        self.ntp_servers = self.params.get('ntp_servers', list())
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=esxi_host_name)
+        cluster_name = self.params.get("cluster_name", None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
+        self.ntp_servers = self.params.get("ntp_servers", list())
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=esxi_host_name
+        )
         if not self.hosts:
             self.module.fail_json(msg="Failed to find host system.")
         self.results = {}
-        self.desired_state = self.params.get('state', None)
-        self.verbose = module.params.get('verbose', False)
+        self.desired_state = self.params.get("state", None)
+        self.verbose = module.params.get("verbose", False)
 
-    def update_ntp_servers(self, host, ntp_servers_configured, ntp_servers_to_change, operation='overwrite'):
+    def update_ntp_servers(
+        self,
+        host,
+        ntp_servers_configured,
+        ntp_servers_to_change,
+        operation="overwrite",
+    ):
         """Update NTP server configuration"""
         host_date_time_manager = host.configManager.dateTimeSystem
         if host_date_time_manager:
             # Prepare new NTP server list
-            if operation == 'overwrite':
+            if operation == "overwrite":
                 new_ntp_servers = list(ntp_servers_to_change)
             else:
                 new_ntp_servers = list(ntp_servers_configured)
-                if operation == 'add':
+                if operation == "add":
                     new_ntp_servers = new_ntp_servers + ntp_servers_to_change
-                elif operation == 'delete':
+                elif operation == "delete":
                     for server in ntp_servers_to_change:
                         if server in new_ntp_servers:
                             new_ntp_servers.remove(server)
@@ -181,7 +193,7 @@ class VmwareNtpConfigManager(PyVmomi):
                     ntp_servers_configured,
                     new_ntp_servers,
                     ntp_servers_to_change,
-                    operation
+                    operation,
                 )
 
             ntp_config_spec = vim.host.NtpConfig()
@@ -190,13 +202,15 @@ class VmwareNtpConfigManager(PyVmomi):
             date_config_spec.ntpConfig = ntp_config_spec
             try:
                 if not self.module.check_mode:
-                    host_date_time_manager.UpdateDateTimeConfig(date_config_spec)
+                    host_date_time_manager.UpdateDateTimeConfig(
+                        date_config_spec
+                    )
                 if self.verbose:
-                    self.results[host.name]['msg'] = message
+                    self.results[host.name]["msg"] = message
             except vim.fault.HostConfigFault as config_fault:
                 self.module.fail_json(
-                    msg="Failed to configure NTP for host '%s' due to : %s" %
-                    (host.name, to_native(config_fault.msg))
+                    msg="Failed to configure NTP for host '%s' due to : %s"
+                    % (host.name, to_native(config_fault.msg))
                 )
 
             return new_ntp_servers
@@ -207,51 +221,65 @@ class VmwareNtpConfigManager(PyVmomi):
         changed = False
         for host in self.hosts:
             self.results[host.name] = dict()
-            ntp_servers_configured, ntp_servers_to_change = self.check_ntp_servers(host=host)
+            ntp_servers_configured, ntp_servers_to_change = self.check_ntp_servers(
+                host=host
+            )
             # add/remove NTP servers
             if self.desired_state:
-                self.results[host.name]['state'] = self.desired_state
+                self.results[host.name]["state"] = self.desired_state
                 if ntp_servers_to_change:
-                    self.results[host.name]['ntp_servers_changed'] = ntp_servers_to_change
-                    operation = 'add' if self.desired_state == 'present' else 'delete'
+                    self.results[host.name][
+                        "ntp_servers_changed"
+                    ] = ntp_servers_to_change
+                    operation = (
+                        "add" if self.desired_state == "present" else "delete"
+                    )
                     new_ntp_servers = self.update_ntp_servers(
                         host=host,
                         ntp_servers_configured=ntp_servers_configured,
                         ntp_servers_to_change=ntp_servers_to_change,
-                        operation=operation
+                        operation=operation,
                     )
-                    self.results[host.name]['ntp_servers_current'] = new_ntp_servers
-                    self.results[host.name]['changed'] = True
+                    self.results[host.name][
+                        "ntp_servers_current"
+                    ] = new_ntp_servers
+                    self.results[host.name]["changed"] = True
                     change_list.append(True)
                 else:
-                    self.results[host.name]['ntp_servers_current'] = ntp_servers_configured
+                    self.results[host.name][
+                        "ntp_servers_current"
+                    ] = ntp_servers_configured
                     if self.verbose:
-                        self.results[host.name]['msg'] = (
-                            "NTP servers already added" if self.desired_state == 'present'
+                        self.results[host.name]["msg"] = (
+                            "NTP servers already added"
+                            if self.desired_state == "present"
                             else "NTP servers already removed"
                         )
-                    self.results[host.name]['changed'] = False
+                    self.results[host.name]["changed"] = False
                     change_list.append(False)
             # overwrite NTP servers
             else:
-                self.results[host.name]['ntp_servers'] = self.ntp_servers
+                self.results[host.name]["ntp_servers"] = self.ntp_servers
                 if ntp_servers_to_change:
-                    self.results[host.name]['ntp_servers_changed'] = self.get_differt_entries(
-                        ntp_servers_configured,
-                        ntp_servers_to_change
+                    self.results[host.name][
+                        "ntp_servers_changed"
+                    ] = self.get_differt_entries(
+                        ntp_servers_configured, ntp_servers_to_change
                     )
                     self.update_ntp_servers(
                         host=host,
                         ntp_servers_configured=ntp_servers_configured,
                         ntp_servers_to_change=ntp_servers_to_change,
-                        operation='overwrite'
+                        operation="overwrite",
                     )
-                    self.results[host.name]['changed'] = True
+                    self.results[host.name]["changed"] = True
                     change_list.append(True)
                 else:
                     if self.verbose:
-                        self.results[host.name]['msg'] = "NTP servers already configured"
-                    self.results[host.name]['changed'] = False
+                        self.results[host.name][
+                            "msg"
+                        ] = "NTP servers already configured"
+                    self.results[host.name]["changed"] = False
                     change_list.append(False)
 
         if any(change_list):
@@ -263,13 +291,21 @@ class VmwareNtpConfigManager(PyVmomi):
         update_ntp_list = []
         host_datetime_system = host.configManager.dateTimeSystem
         if host_datetime_system:
-            ntp_servers_configured = host_datetime_system.dateTimeInfo.ntpConfig.server
+            ntp_servers_configured = (
+                host_datetime_system.dateTimeInfo.ntpConfig.server
+            )
             # add/remove NTP servers
             if self.desired_state:
                 for ntp_server in self.ntp_servers:
-                    if self.desired_state == 'present' and ntp_server not in ntp_servers_configured:
+                    if (
+                        self.desired_state == "present"
+                        and ntp_server not in ntp_servers_configured
+                    ):
                         update_ntp_list.append(ntp_server)
-                    if self.desired_state == 'absent' and ntp_server in ntp_servers_configured:
+                    if (
+                        self.desired_state == "absent"
+                        and ntp_server in ntp_servers_configured
+                    ):
                         update_ntp_list.append(ntp_server)
             # overwrite NTP servers
             else:
@@ -277,17 +313,29 @@ class VmwareNtpConfigManager(PyVmomi):
                     for ntp_server in self.ntp_servers:
                         update_ntp_list.append(ntp_server)
             if update_ntp_list:
-                self.results[host.name]['ntp_servers_previous'] = ntp_servers_configured
+                self.results[host.name][
+                    "ntp_servers_previous"
+                ] = ntp_servers_configured
 
         return ntp_servers_configured, update_ntp_list
 
-    def build_changed_message(self, ntp_servers_configured, new_ntp_servers, ntp_servers_to_change, operation):
+    def build_changed_message(
+        self,
+        ntp_servers_configured,
+        new_ntp_servers,
+        ntp_servers_to_change,
+        operation,
+    ):
         """Build changed message"""
-        check_mode = 'would be ' if self.module.check_mode else ''
-        if operation == 'overwrite':
+        check_mode = "would be " if self.module.check_mode else ""
+        if operation == "overwrite":
             # get differences
-            add = self.get_not_in_list_one(new_ntp_servers, ntp_servers_configured)
-            remove = self.get_not_in_list_one(ntp_servers_configured, new_ntp_servers)
+            add = self.get_not_in_list_one(
+                new_ntp_servers, ntp_servers_configured
+            )
+            remove = self.get_not_in_list_one(
+                ntp_servers_configured, new_ntp_servers
+            )
             diff_servers = list(ntp_servers_configured)
             if add and remove:
                 for server in add:
@@ -296,46 +344,71 @@ class VmwareNtpConfigManager(PyVmomi):
                     diff_servers.remove(server)
                 if new_ntp_servers != diff_servers:
                     message = (
-                        "NTP server %s %sadded and %s %sremoved and the server sequence %schanged as well" %
-                        (self.array_to_string(add), check_mode, self.array_to_string(remove), check_mode, check_mode)
+                        "NTP server %s %sadded and %s %sremoved and the server sequence %schanged as well"
+                        % (
+                            self.array_to_string(add),
+                            check_mode,
+                            self.array_to_string(remove),
+                            check_mode,
+                            check_mode,
+                        )
                     )
                 else:
                     if new_ntp_servers != ntp_servers_configured:
-                        message = (
-                            "NTP server %s %sreplaced with %s" %
-                            (self.array_to_string(remove), check_mode, self.array_to_string(add))
+                        message = "NTP server %s %sreplaced with %s" % (
+                            self.array_to_string(remove),
+                            check_mode,
+                            self.array_to_string(add),
                         )
                     else:
-                        message = (
-                            "NTP server %s %sremoved and %s %sadded" %
-                            (self.array_to_string(remove), check_mode, self.array_to_string(add), check_mode)
+                        message = "NTP server %s %sremoved and %s %sadded" % (
+                            self.array_to_string(remove),
+                            check_mode,
+                            self.array_to_string(add),
+                            check_mode,
                         )
             elif add:
                 for server in add:
                     diff_servers.append(server)
                 if new_ntp_servers != diff_servers:
                     message = (
-                        "NTP server %s %sadded and the server sequence %schanged as well" %
-                        (self.array_to_string(add), check_mode, check_mode)
+                        "NTP server %s %sadded and the server sequence %schanged as well"
+                        % (self.array_to_string(add), check_mode, check_mode)
                     )
                 else:
-                    message = "NTP server %s %sadded" % (self.array_to_string(add), check_mode)
+                    message = "NTP server %s %sadded" % (
+                        self.array_to_string(add),
+                        check_mode,
+                    )
             elif remove:
                 for server in remove:
                     diff_servers.remove(server)
                 if new_ntp_servers != diff_servers:
                     message = (
-                        "NTP server %s %sremoved and the server sequence %schanged as well" %
-                        (self.array_to_string(remove), check_mode, check_mode)
+                        "NTP server %s %sremoved and the server sequence %schanged as well"
+                        % (
+                            self.array_to_string(remove),
+                            check_mode,
+                            check_mode,
+                        )
                     )
                 else:
-                    message = "NTP server %s %sremoved" % (self.array_to_string(remove), check_mode)
+                    message = "NTP server %s %sremoved" % (
+                        self.array_to_string(remove),
+                        check_mode,
+                    )
             else:
                 message = "NTP server sequence %schanged" % check_mode
-        elif operation == 'add':
-            message = "NTP server %s %sadded" % (self.array_to_string(ntp_servers_to_change), check_mode)
-        elif operation == 'delete':
-            message = "NTP server %s %sremoved" % (self.array_to_string(ntp_servers_to_change), check_mode)
+        elif operation == "add":
+            message = "NTP server %s %sadded" % (
+                self.array_to_string(ntp_servers_to_change),
+                check_mode,
+            )
+        elif operation == "delete":
+            message = "NTP server %s %sremoved" % (
+                self.array_to_string(ntp_servers_to_change),
+                check_mode,
+            )
 
         return message
 
@@ -349,11 +422,12 @@ class VmwareNtpConfigManager(PyVmomi):
         """Return string from array"""
         if len(array) > 2:
             string = (
-                ', '.join("'{0}'".format(element) for element in array[:-1]) + ', and '
+                ", ".join("'{0}'".format(element) for element in array[:-1])
+                + ", and "
                 + "'{0}'".format(str(array[-1]))
             )
         elif len(array) == 2:
-            string = ' and '.join("'{0}'".format(element) for element in array)
+            string = " and ".join("'{0}'".format(element) for element in array)
         elif len(array) == 1:
             string = "'{0}'".format(array[0])
         return string
@@ -361,26 +435,26 @@ class VmwareNtpConfigManager(PyVmomi):
     @staticmethod
     def get_differt_entries(list1, list2):
         """Return different entries of two lists"""
-        return [a for a in list1 + list2 if (a not in list1) or (a not in list2)]
+        return [
+            a for a in list1 + list2 if (a not in list1) or (a not in list2)
+        ]
 
 
 def main():
     """Main"""
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        cluster_name=dict(type='str', required=False),
-        esxi_hostname=dict(type='str', required=False),
-        ntp_servers=dict(type='list', required=True),
-        state=dict(type='str', choices=['absent', 'present']),
-        verbose=dict(type='bool', default=False, required=False)
+        cluster_name=dict(type="str", required=False),
+        esxi_hostname=dict(type="str", required=False),
+        ntp_servers=dict(type="list", required=True),
+        state=dict(type="str", choices=["absent", "present"]),
+        verbose=dict(type="bool", default=False, required=False),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
-        supports_check_mode=True
+        required_one_of=[["cluster_name", "esxi_hostname"]],
+        supports_check_mode=True,
     )
 
     vmware_host_ntp_config = VmwareNtpConfigManager(module)

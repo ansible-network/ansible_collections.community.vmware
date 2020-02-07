@@ -5,13 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_vmkernel_ip_config
 short_description: Configure the VMkernel IP Address
@@ -44,9 +47,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 # Example command from Ansible Playbook
 
 - name: Configure IP address on ESX host
@@ -58,19 +61,27 @@ EXAMPLES = '''
     ip_address: 10.0.0.10
     subnet_mask: 255.255.255.0
   delegate_to: localhost
-'''
+"""
 
 try:
     from pyVmomi import vim, vmodl
+
     HAS_PYVMOMI = True
 except ImportError:
     HAS_PYVMOMI = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import HAS_PYVMOMI, connect_to_api, get_all_objs, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    HAS_PYVMOMI,
+    connect_to_api,
+    get_all_objs,
+    vmware_argument_spec,
+)
 
 
-def configure_vmkernel_ip_address(host_system, vmk_name, ip_address, subnet_mask):
+def configure_vmkernel_ip_address(
+    host_system, vmk_name, ip_address, subnet_mask
+):
 
     host_config_manager = host_system.configManager
     host_network_system = host_config_manager.networkSystem
@@ -90,18 +101,24 @@ def configure_vmkernel_ip_address(host_system, vmk_name, ip_address, subnet_mask
 def main():
 
     argument_spec = vmware_argument_spec()
-    argument_spec.update(dict(vmk_name=dict(required=True, type='str'),
-                              ip_address=dict(required=True, type='str'),
-                              subnet_mask=dict(required=True, type='str')))
+    argument_spec.update(
+        dict(
+            vmk_name=dict(required=True, type="str"),
+            ip_address=dict(required=True, type="str"),
+            subnet_mask=dict(required=True, type="str"),
+        )
+    )
 
-    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=False)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=False
+    )
 
     if not HAS_PYVMOMI:
-        module.fail_json(msg='pyvmomi is required for this module')
+        module.fail_json(msg="pyvmomi is required for this module")
 
-    vmk_name = module.params['vmk_name']
-    ip_address = module.params['ip_address']
-    subnet_mask = module.params['subnet_mask']
+    vmk_name = module.params["vmk_name"]
+    ip_address = module.params["ip_address"]
+    subnet_mask = module.params["subnet_mask"]
 
     try:
         content = connect_to_api(module, False)
@@ -109,7 +126,9 @@ def main():
         if not host:
             module.fail_json(msg="Unable to locate Physical Host.")
         host_system = list(host)[0]
-        changed = configure_vmkernel_ip_address(host_system, vmk_name, ip_address, subnet_mask)
+        changed = configure_vmkernel_ip_address(
+            host_system, vmk_name, ip_address, subnet_mask
+        )
         module.exit_json(changed=changed)
     except vmodl.RuntimeFault as runtime_fault:
         module.fail_json(msg=runtime_fault.msg)
@@ -119,5 +138,5 @@ def main():
         module.fail_json(msg=str(e))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

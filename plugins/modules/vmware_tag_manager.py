@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_tag_manager
 short_description: Manage association of VMware tags with VMware objects
@@ -61,9 +62,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware_rest_client.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Add tags to a virtual machine
   vmware_tag_manager:
     hostname: '{{ vcenter_hostname }}'
@@ -116,9 +117,9 @@ EXAMPLES = r'''
     object_type: DistributedVirtualPortgroup
     state: add
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 tag_status:
     description: metadata about tags related to object configuration
     returned: on success
@@ -136,10 +137,17 @@ tag_status:
             "security"
         ]
     }
-'''
+"""
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_dvs_by_name, find_dvspg_by_name)
+from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import (
+    VmwareRestClient,
+)
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    find_dvs_by_name,
+    find_dvspg_by_name,
+)
+
 try:
     from com.vmware.vapi.std_client import DynamicID
     from com.vmware.vapi.std.errors_client import Error
@@ -155,65 +163,88 @@ class VmwareTagManager(VmwareRestClient):
         super(VmwareTagManager, self).__init__(module)
         self.pyv = PyVmomi(module=module)
 
-        self.object_type = self.params.get('object_type')
-        self.object_name = self.params.get('object_name')
+        self.object_type = self.params.get("object_type")
+        self.object_name = self.params.get("object_name")
         self.managed_object = None
 
-        if self.object_type == 'VirtualMachine':
+        if self.object_type == "VirtualMachine":
             self.managed_object = self.pyv.get_vm_or_template(self.object_name)
 
-        if self.object_type == 'Datacenter':
-            self.managed_object = self.pyv.find_datacenter_by_name(self.object_name)
+        if self.object_type == "Datacenter":
+            self.managed_object = self.pyv.find_datacenter_by_name(
+                self.object_name
+            )
 
-        if self.object_type == 'ClusterComputeResource':
-            self.managed_object = self.pyv.find_cluster_by_name(self.object_name)
+        if self.object_type == "ClusterComputeResource":
+            self.managed_object = self.pyv.find_cluster_by_name(
+                self.object_name
+            )
 
-        if self.object_type == 'HostSystem':
-            self.managed_object = self.pyv.find_hostsystem_by_name(self.object_name)
+        if self.object_type == "HostSystem":
+            self.managed_object = self.pyv.find_hostsystem_by_name(
+                self.object_name
+            )
 
-        if self.object_type == 'DistributedVirtualSwitch':
-            self.managed_object = find_dvs_by_name(self.pyv.content, self.object_name)
-            self.object_type = 'VmwareDistributedVirtualSwitch'
+        if self.object_type == "DistributedVirtualSwitch":
+            self.managed_object = find_dvs_by_name(
+                self.pyv.content, self.object_name
+            )
+            self.object_type = "VmwareDistributedVirtualSwitch"
 
-        if self.object_type == 'DistributedVirtualPortgroup':
+        if self.object_type == "DistributedVirtualPortgroup":
             dvs_name, pg_name = self.object_name.split(":", 1)
             dv_switch = find_dvs_by_name(self.pyv.content, dvs_name)
             if dv_switch is None:
-                self.module.fail_json(msg="A distributed virtual switch with name %s does not exist" % dvs_name)
+                self.module.fail_json(
+                    msg="A distributed virtual switch with name %s does not exist"
+                    % dvs_name
+                )
             self.managed_object = find_dvspg_by_name(dv_switch, pg_name)
 
         if self.managed_object is None:
-            self.module.fail_json(msg="Failed to find the managed object for %s with type %s" % (self.object_name, self.object_type))
+            self.module.fail_json(
+                msg="Failed to find the managed object for %s with type %s"
+                % (self.object_name, self.object_type)
+            )
 
-        if not hasattr(self.managed_object, '_moId'):
-            self.module.fail_json(msg="Unable to find managed object id for %s managed object" % self.object_name)
+        if not hasattr(self.managed_object, "_moId"):
+            self.module.fail_json(
+                msg="Unable to find managed object id for %s managed object"
+                % self.object_name
+            )
 
-        self.dynamic_managed_object = DynamicID(type=self.object_type, id=self.managed_object._moId)
+        self.dynamic_managed_object = DynamicID(
+            type=self.object_type, id=self.managed_object._moId
+        )
 
         self.tag_service = self.api_client.tagging.Tag
         self.category_service = self.api_client.tagging.Category
         self.tag_association_svc = self.api_client.tagging.TagAssociation
 
-        self.tag_names = self.params.get('tag_names')
+        self.tag_names = self.params.get("tag_names")
 
     def ensure_state(self):
         """
         Manage the internal state of tags
 
         """
-        results = dict(
-            changed=False,
-            tag_status=dict(),
-        )
+        results = dict(changed=False, tag_status=dict())
         changed = False
-        action = self.params.get('state')
-        available_tag_obj = self.get_tags_for_object(tag_service=self.tag_service,
-                                                     tag_assoc_svc=self.tag_association_svc,
-                                                     dobj=self.dynamic_managed_object)
+        action = self.params.get("state")
+        available_tag_obj = self.get_tags_for_object(
+            tag_service=self.tag_service,
+            tag_assoc_svc=self.tag_association_svc,
+            dobj=self.dynamic_managed_object,
+        )
 
-        _temp_prev_tags = ["%s:%s" % (tag['category_name'], tag['name']) for tag in self.get_tags_for_dynamic_obj(self.dynamic_managed_object)]
-        results['tag_status']['previous_tags'] = _temp_prev_tags
-        results['tag_status']['desired_tags'] = self.tag_names
+        _temp_prev_tags = [
+            "%s:%s" % (tag["category_name"], tag["name"])
+            for tag in self.get_tags_for_dynamic_obj(
+                self.dynamic_managed_object
+            )
+        ]
+        results["tag_status"]["previous_tags"] = _temp_prev_tags
+        results["tag_status"]["desired_tags"] = self.tag_names
 
         # Check if category and tag combination exists as per user request
         removed_tags_for_set = False
@@ -222,65 +253,109 @@ class VmwareTagManager(VmwareRestClient):
             if ":" in tag:
                 # User specified category
                 category_name, tag_name = tag.split(":", 1)
-                category_obj = self.search_svc_object_by_name(self.category_service, category_name)
+                category_obj = self.search_svc_object_by_name(
+                    self.category_service, category_name
+                )
                 if not category_obj:
-                    self.module.fail_json(msg="Unable to find the category %s" % category_name)
+                    self.module.fail_json(
+                        msg="Unable to find the category %s" % category_name
+                    )
             else:
                 # User specified only tag
                 tag_name = tag
 
             if category_name:
-                tag_obj = self.get_tag_by_category(tag_name=tag_name, category_name=category_name)
+                tag_obj = self.get_tag_by_category(
+                    tag_name=tag_name, category_name=category_name
+                )
             else:
                 tag_obj = self.get_tag_by_name(tag_name=tag_name)
 
             if not tag_obj:
-                self.module.fail_json(msg="Unable to find the tag %s" % tag_name)
+                self.module.fail_json(
+                    msg="Unable to find the tag %s" % tag_name
+                )
 
-            if action in ('add', 'present'):
+            if action in ("add", "present"):
                 if tag_obj not in available_tag_obj:
                     # Tag is not already applied
                     try:
-                        self.tag_association_svc.attach(tag_id=tag_obj.id, object_id=self.dynamic_managed_object)
+                        self.tag_association_svc.attach(
+                            tag_id=tag_obj.id,
+                            object_id=self.dynamic_managed_object,
+                        )
                         changed = True
                     except Error as error:
-                        self.module.fail_json(msg="%s" % self.get_error_message(error))
+                        self.module.fail_json(
+                            msg="%s" % self.get_error_message(error)
+                        )
 
-            elif action == 'set':
+            elif action == "set":
                 # Remove all tags first
                 try:
                     if not removed_tags_for_set:
                         for av_tag in available_tag_obj:
-                            self.tag_association_svc.detach(tag_id=av_tag.id, object_id=self.dynamic_managed_object)
+                            self.tag_association_svc.detach(
+                                tag_id=av_tag.id,
+                                object_id=self.dynamic_managed_object,
+                            )
                         removed_tags_for_set = True
-                    self.tag_association_svc.attach(tag_id=tag_obj.id, object_id=self.dynamic_managed_object)
+                    self.tag_association_svc.attach(
+                        tag_id=tag_obj.id,
+                        object_id=self.dynamic_managed_object,
+                    )
                     changed = True
                 except Error as error:
-                    self.module.fail_json(msg="%s" % self.get_error_message(error))
+                    self.module.fail_json(
+                        msg="%s" % self.get_error_message(error)
+                    )
 
-            elif action in ('remove', 'absent'):
+            elif action in ("remove", "absent"):
                 if tag_obj in available_tag_obj:
                     try:
-                        self.tag_association_svc.detach(tag_id=tag_obj.id, object_id=self.dynamic_managed_object)
+                        self.tag_association_svc.detach(
+                            tag_id=tag_obj.id,
+                            object_id=self.dynamic_managed_object,
+                        )
                         changed = True
                     except Error as error:
-                        self.module.fail_json(msg="%s" % self.get_error_message(error))
+                        self.module.fail_json(
+                            msg="%s" % self.get_error_message(error)
+                        )
 
-        _temp_curr_tags = ["%s:%s" % (tag['category_name'], tag['name']) for tag in self.get_tags_for_dynamic_obj(self.dynamic_managed_object)]
-        results['tag_status']['current_tags'] = _temp_curr_tags
-        results['changed'] = changed
+        _temp_curr_tags = [
+            "%s:%s" % (tag["category_name"], tag["name"])
+            for tag in self.get_tags_for_dynamic_obj(
+                self.dynamic_managed_object
+            )
+        ]
+        results["tag_status"]["current_tags"] = _temp_curr_tags
+        results["changed"] = changed
         self.module.exit_json(**results)
 
 
 def main():
     argument_spec = VmwareRestClient.vmware_client_argument_spec()
     argument_spec.update(
-        tag_names=dict(type='list', required=True),
-        state=dict(type='str', choices=['absent', 'add', 'present', 'remove', 'set'], default='add'),
-        object_name=dict(type='str', required=True),
-        object_type=dict(type='str', required=True, choices=['VirtualMachine', 'Datacenter', 'ClusterComputeResource',
-                                                             'HostSystem', 'DistributedVirtualSwitch',
-                                                             'DistributedVirtualPortgroup']),
+        tag_names=dict(type="list", required=True),
+        state=dict(
+            type="str",
+            choices=["absent", "add", "present", "remove", "set"],
+            default="add",
+        ),
+        object_name=dict(type="str", required=True),
+        object_type=dict(
+            type="str",
+            required=True,
+            choices=[
+                "VirtualMachine",
+                "Datacenter",
+                "ClusterComputeResource",
+                "HostSystem",
+                "DistributedVirtualSwitch",
+                "DistributedVirtualPortgroup",
+            ],
+        ),
     )
     module = AnsibleModule(argument_spec=argument_spec)
 
@@ -288,5 +363,5 @@ def main():
     vmware_tag_manager.ensure_state()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

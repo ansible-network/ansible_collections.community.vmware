@@ -6,17 +6,18 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_info
 short_description: Gather info about a single VM
@@ -113,9 +114,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Gather info from standalone ESXi server having datacenter as 'ha-datacenter'
   vmware_guest_info:
     hostname: "{{ vcenter_hostname }}"
@@ -166,7 +167,7 @@ EXAMPLES = '''
       - _moId
   delegate_to: localhost
   register: moid_info
-'''
+"""
 
 RETURN = """
 instance:
@@ -233,10 +234,17 @@ instance:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_text
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+)
+from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import (
+    VmwareRestClient,
+)
+
 try:
     from com.vmware.vapi.std_client import DynamicID
+
     HAS_VSPHERE = True
 except ImportError:
     HAS_VSPHERE = False
@@ -252,30 +260,43 @@ class VmwareTag(VmwareRestClient):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        name_match=dict(type='str', choices=['first', 'last'], default='first'),
-        uuid=dict(type='str'),
-        use_instance_uuid=dict(type='bool', default=False),
-        moid=dict(type='str'),
-        folder=dict(type='str'),
-        datacenter=dict(type='str', required=True),
-        tags=dict(type='bool', default=False),
-        schema=dict(type='str', choices=['summary', 'vsphere'], default='summary'),
-        properties=dict(type='list')
+        name=dict(type="str"),
+        name_match=dict(
+            type="str", choices=["first", "last"], default="first"
+        ),
+        uuid=dict(type="str"),
+        use_instance_uuid=dict(type="bool", default=False),
+        moid=dict(type="str"),
+        folder=dict(type="str"),
+        datacenter=dict(type="str", required=True),
+        tags=dict(type="bool", default=False),
+        schema=dict(
+            type="str", choices=["summary", "vsphere"], default="summary"
+        ),
+        properties=dict(type="list"),
     )
-    module = AnsibleModule(argument_spec=argument_spec,
-                           required_one_of=[['name', 'uuid', 'moid']],
-                           supports_check_mode=True)
-    if module._name == 'vmware_guest_facts':
-        module.deprecate("The 'vmware_guest_facts' module has been renamed to 'vmware_guest_info'", version='2.13')
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        required_one_of=[["name", "uuid", "moid"]],
+        supports_check_mode=True,
+    )
+    if module._name == "vmware_guest_facts":
+        module.deprecate(
+            "The 'vmware_guest_facts' module has been renamed to 'vmware_guest_info'",
+            version="2.13",
+        )
 
-    if module.params.get('folder'):
+    if module.params.get("folder"):
         # FindByInventoryPath() does not require an absolute path
         # so we should leave the input folder path unmodified
-        module.params['folder'] = module.params['folder'].rstrip('/')
+        module.params["folder"] = module.params["folder"].rstrip("/")
 
-    if module.params['schema'] != 'vsphere' and module.params.get('properties'):
-        module.fail_json(msg="The option 'properties' is only valid when the schema is 'vsphere'")
+    if module.params["schema"] != "vsphere" and module.params.get(
+        "properties"
+    ):
+        module.fail_json(
+            msg="The option 'properties' is only valid when the schema is 'vsphere'"
+        )
 
     pyv = PyVmomi(module)
     # Check if the VM exists before continuing
@@ -284,29 +305,42 @@ def main():
     # VM already exists
     if vm:
         try:
-            if module.params['schema'] == 'summary':
+            if module.params["schema"] == "summary":
                 instance = pyv.gather_facts(vm)
             else:
-                instance = pyv.to_json(vm, module.params['properties'])
-            if module.params.get('tags'):
+                instance = pyv.to_json(vm, module.params["properties"])
+            if module.params.get("tags"):
                 if not HAS_VSPHERE:
-                    module.fail_json(msg="Unable to find 'vCloud Suite SDK' Python library which is required."
-                                         " Please refer this URL for installation steps"
-                                         " - https://code.vmware.com/web/sdk/60/vcloudsuite-python")
+                    module.fail_json(
+                        msg="Unable to find 'vCloud Suite SDK' Python library which is required."
+                        " Please refer this URL for installation steps"
+                        " - https://code.vmware.com/web/sdk/60/vcloudsuite-python"
+                    )
 
                 vm_rest_client = VmwareTag(module)
                 instance.update(
-                    tags=vm_rest_client.get_vm_tags(vm_rest_client.tag_service,
-                                                    vm_rest_client.tag_association_svc,
-                                                    vm_mid=vm._moId)
+                    tags=vm_rest_client.get_vm_tags(
+                        vm_rest_client.tag_service,
+                        vm_rest_client.tag_association_svc,
+                        vm_mid=vm._moId,
+                    )
                 )
             module.exit_json(instance=instance)
         except Exception as exc:
-            module.fail_json(msg="Information gathering failed with exception %s" % to_text(exc))
+            module.fail_json(
+                msg="Information gathering failed with exception %s"
+                % to_text(exc)
+            )
     else:
-        vm_id = (module.params.get('uuid') or module.params.get('name') or module.params.get('moid'))
-        module.fail_json(msg="Unable to gather information for non-existing VM %s" % vm_id)
+        vm_id = (
+            module.params.get("uuid")
+            or module.params.get("name")
+            or module.params.get("moid")
+        )
+        module.fail_json(
+            msg="Unable to gather information for non-existing VM %s" % vm_id
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

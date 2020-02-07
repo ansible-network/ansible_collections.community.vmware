@@ -4,15 +4,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['deprecated'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["deprecated"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_host_feature_facts
 deprecated:
@@ -43,9 +44,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather feature capability facts about all ESXi Hosts in given Cluster
   vmware_host_feature_facts:
     hostname: '{{ vcenter_hostname }}'
@@ -72,9 +73,9 @@ EXAMPLES = r'''
     that:
       - ssbd|int == 1
   when: ssbd is defined
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 hosts_feature_facts:
     description: metadata about host's feature capability information
     returned: always
@@ -93,18 +94,23 @@ hosts_feature_facts:
             },
         ]
     }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class FeatureCapabilityFactsManager(PyVmomi):
     def __init__(self, module):
         super(FeatureCapabilityFactsManager, self).__init__(module)
-        cluster_name = self.params.get('cluster_name', None)
-        esxi_host_name = self.params.get('esxi_hostname', None)
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=esxi_host_name)
+        cluster_name = self.params.get("cluster_name", None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=esxi_host_name
+        )
 
     def gather_host_feature_facts(self):
         host_feature_facts = dict()
@@ -113,9 +119,9 @@ class FeatureCapabilityFactsManager(PyVmomi):
             capability = []
             for fc in host_feature_capabilities:
                 temp_dict = {
-                    'key': fc.key,
-                    'feature_name': fc.featureName,
-                    'value': fc.value,
+                    "key": fc.key,
+                    "feature_name": fc.featureName,
+                    "value": fc.value,
                 }
                 capability.append(temp_dict)
 
@@ -127,21 +133,21 @@ class FeatureCapabilityFactsManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        cluster_name=dict(type='str', required=False),
-        esxi_hostname=dict(type='str', required=False),
+        cluster_name=dict(type="str", required=False),
+        esxi_hostname=dict(type="str", required=False),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
+        required_one_of=[["cluster_name", "esxi_hostname"]],
         supports_check_mode=True,
     )
 
     host_capability_manager = FeatureCapabilityFactsManager(module)
-    module.exit_json(changed=False,
-                     hosts_feature_facts=host_capability_manager.gather_host_feature_facts())
+    module.exit_json(
+        changed=False,
+        hosts_feature_facts=host_capability_manager.gather_host_feature_facts(),
+    )
 
 
 if __name__ == "__main__":

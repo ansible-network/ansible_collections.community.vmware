@@ -5,13 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vcenter_extension
 short_description: Register/deregister vCenter Extensions
@@ -83,9 +86,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
     - name: Register vCenter Extension
       vcenter_extension:
          hostname: "{{ groups['vcsa'][0] }}"
@@ -113,7 +116,7 @@ EXAMPLES = '''
          state: absent
       delegate_to: localhost
       register: deregister_extension
-'''
+"""
 
 RETURN = """
 result:
@@ -131,57 +134,81 @@ except ImportError:
 import datetime
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import connect_to_api, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    connect_to_api,
+    vmware_argument_spec,
+)
 
 
 def main():
     argument_spec = vmware_argument_spec()
-    argument_spec.update(dict(
-        extension_key=dict(type='str', required=True),
-        version=dict(type='str', required=True),
-        email=dict(type='str', required=False),
-        description=dict(type='str', required=False),
-        company=dict(type='str', required=False),
-        name=dict(type='str', required=False),
-        url=dict(type='str', required=False),
-        ssl_thumbprint=dict(type='str', required=False),
-        client_type=dict(type='str', default='vsphere-client-serenity', required=False),
-        server_type=dict(type='str', default='vsphere-client-serenity', required=False),
-        visible=dict(type='bool', default='True', required=False),
-        state=dict(type='str', default='present', choices=['absent', 'present']),
-    ))
+    argument_spec.update(
+        dict(
+            extension_key=dict(type="str", required=True),
+            version=dict(type="str", required=True),
+            email=dict(type="str", required=False),
+            description=dict(type="str", required=False),
+            company=dict(type="str", required=False),
+            name=dict(type="str", required=False),
+            url=dict(type="str", required=False),
+            ssl_thumbprint=dict(type="str", required=False),
+            client_type=dict(
+                type="str", default="vsphere-client-serenity", required=False
+            ),
+            server_type=dict(
+                type="str", default="vsphere-client-serenity", required=False
+            ),
+            visible=dict(type="bool", default="True", required=False),
+            state=dict(
+                type="str", default="present", choices=["absent", "present"]
+            ),
+        )
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=False,
         required_if=[
-            ['state', 'present', ['email', 'description', 'company', 'name', 'url', 'ssl_thumbprint', 'server_type', 'client_type']]
-        ]
+            [
+                "state",
+                "present",
+                [
+                    "email",
+                    "description",
+                    "company",
+                    "name",
+                    "url",
+                    "ssl_thumbprint",
+                    "server_type",
+                    "client_type",
+                ],
+            ]
+        ],
     )
 
-    state = module.params['state']
-    extension_key = module.params['extension_key']
-    version = module.params['version']
-    email = module.params['email']
-    desc = module.params['description']
-    name = module.params['name']
-    company = module.params['company']
-    client_type = module.params['client_type']
-    server_type = module.params['server_type']
-    url = module.params['url']
-    visible = module.params['visible']
-    thumbprint = module.params['ssl_thumbprint']
+    state = module.params["state"]
+    extension_key = module.params["extension_key"]
+    version = module.params["version"]
+    email = module.params["email"]
+    desc = module.params["description"]
+    name = module.params["name"]
+    company = module.params["company"]
+    client_type = module.params["client_type"]
+    server_type = module.params["server_type"]
+    url = module.params["url"]
+    visible = module.params["visible"]
+    thumbprint = module.params["ssl_thumbprint"]
 
     content = connect_to_api(module, False)
     em = content.extensionManager
     key_check = em.FindExtension(extension_key)
     results = dict(changed=False, installed=dict())
 
-    if state == 'present' and key_check:
-        results['changed'] = False
-        results['installed'] = "'%s' is already installed" % (extension_key)
+    if state == "present" and key_check:
+        results["changed"] = False
+        results["installed"] = "'%s' is already installed" % (extension_key)
 
-    elif state == 'present' and not key_check:
+    elif state == "present" and not key_check:
         extension = vim.Extension()
         extension.key = extension_key
         extension.company = company
@@ -211,20 +238,20 @@ def main():
         extension.server = [server]
 
         em.RegisterExtension(extension)
-        results['changed'] = True
-        results['installed'] = "'%s' installed." % (extension_key)
+        results["changed"] = True
+        results["installed"] = "'%s' installed." % (extension_key)
 
-    elif state == 'absent' and key_check:
+    elif state == "absent" and key_check:
         em.UnregisterExtension(extension_key)
-        results['changed'] = True
-        results['installed'] = "'%s' uninstalled." % (extension_key)
+        results["changed"] = True
+        results["installed"] = "'%s' uninstalled." % (extension_key)
 
-    elif state == 'absent' and not key_check:
-        results['changed'] = False
-        results['installed'] = "'%s' is not installed." % (extension_key)
+    elif state == "absent" and not key_check:
+        results["changed"] = False
+        results["installed"] = "'%s' is not installed." % (extension_key)
 
     module.exit_json(**results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

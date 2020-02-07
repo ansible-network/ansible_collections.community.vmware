@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_host_package_info
 short_description: Gathers info about available packages on an ESXi host
@@ -42,9 +43,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather info about all ESXi Host in given Cluster
   vmware_host_package_info:
     hostname: '{{ vcenter_hostname }}'
@@ -62,27 +63,32 @@ EXAMPLES = r'''
     esxi_hostname: '{{ esxi_hostname }}'
   delegate_to: localhost
   register: host_packages
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 hosts_package_info:
     description:
     - dict with hostname as key and dict with package information as value
     returned: hosts_package_info
     type: dict
     sample: { "hosts_package_info": { "localhost.localdomain": []}}
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class VmwarePackageManager(PyVmomi):
     def __init__(self, module):
         super(VmwarePackageManager, self).__init__(module)
-        cluster_name = self.params.get('cluster_name', None)
-        esxi_host_name = self.params.get('esxi_hostname', None)
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=esxi_host_name)
+        cluster_name = self.params.get("cluster_name", None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=esxi_host_name
+        )
 
     def gather_package_info(self):
         hosts_info = {}
@@ -92,16 +98,18 @@ class VmwarePackageManager(PyVmomi):
             if host_pkg_mgr:
                 pkgs = host_pkg_mgr.FetchSoftwarePackages()
                 for pkg in pkgs:
-                    host_package_info.append(dict(
-                        name=pkg.name,
-                        version=pkg.version,
-                        vendor=pkg.vendor,
-                        summary=pkg.summary,
-                        description=pkg.description,
-                        acceptance_level=pkg.acceptanceLevel,
-                        maintenance_mode_required=pkg.maintenanceModeRequired,
-                        creation_date=pkg.creationDate,
-                    ))
+                    host_package_info.append(
+                        dict(
+                            name=pkg.name,
+                            version=pkg.version,
+                            vendor=pkg.vendor,
+                            summary=pkg.summary,
+                            description=pkg.description,
+                            acceptance_level=pkg.acceptanceLevel,
+                            maintenance_mode_required=pkg.maintenanceModeRequired,
+                            creation_date=pkg.creationDate,
+                        )
+                    )
             hosts_info[host.name] = host_package_info
         return hosts_info
 
@@ -109,20 +117,21 @@ class VmwarePackageManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        cluster_name=dict(type='str', required=False),
-        esxi_hostname=dict(type='str', required=False),
+        cluster_name=dict(type="str", required=False),
+        esxi_hostname=dict(type="str", required=False),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
+        required_one_of=[["cluster_name", "esxi_hostname"]],
         supports_check_mode=True,
     )
 
     vmware_host_package_config = VmwarePackageManager(module)
-    module.exit_json(changed=False, hosts_package_info=vmware_host_package_config.gather_package_info())
+    module.exit_json(
+        changed=False,
+        hosts_package_info=vmware_host_package_config.gather_package_info(),
+    )
 
 
 if __name__ == "__main__":

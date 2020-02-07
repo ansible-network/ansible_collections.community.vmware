@@ -7,15 +7,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_category_info
 short_description: Gather info about VMware tag categories
@@ -34,9 +35,9 @@ requirements:
 
 extends_documentation_fragment:
 - vmware.general.vmware_rest_client.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather info about tag categories
   vmware_category_info:
     hostname: "{{ vcenter_hostname }}"
@@ -60,9 +61,9 @@ EXAMPLES = r'''
     query: "[?category_name==`Category0001`]"
 - debug: var=category_id
 
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 tag_category_info:
   description: metadata of tag categories
   returned: always
@@ -87,10 +88,12 @@ tag_category_info:
        "category_used_by": []
     }
   ]
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import (
+    VmwareRestClient,
+)
 
 
 class VmwareCategoryInfoManager(VmwareRestClient):
@@ -114,16 +117,20 @@ class VmwareCategoryInfoManager(VmwareRestClient):
                 )
             )
 
-        self.module.exit_json(changed=False, tag_category_info=global_tag_categories)
+        self.module.exit_json(
+            changed=False, tag_category_info=global_tag_categories
+        )
 
 
 def main():
     argument_spec = VmwareRestClient.vmware_client_argument_spec()
-    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
     vmware_category_info = VmwareCategoryInfoManager(module)
     vmware_category_info.get_all_tag_categories()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

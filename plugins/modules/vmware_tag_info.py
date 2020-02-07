@@ -7,15 +7,16 @@
 #  GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_tag_info
 short_description: Manage VMware tag info
@@ -37,9 +38,9 @@ requirements:
 
 extends_documentation_fragment:
 - vmware.general.vmware_rest_client.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Get info about tag
   vmware_tag_info:
     hostname: '{{ vcenter_hostname }}'
@@ -72,9 +73,9 @@ EXAMPLES = r'''
   vars:
     query: "[?tag_name==`tag0001`]"
 - debug: var=tag_id
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 tag_facts:
   description: dictionary of tag metadata
   returned: on success
@@ -124,10 +125,12 @@ tag_info:
             "tag_used_by": []
         }
     ]
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import (
+    VmwareRestClient,
+)
 
 
 class VmTagInfoManager(VmwareRestClient):
@@ -149,33 +152,37 @@ class VmTagInfoManager(VmwareRestClient):
                 tag_description=tag_obj.description,
                 tag_used_by=tag_obj.used_by,
                 tag_category_id=tag_obj.category_id,
-                tag_id=tag_obj.id
+                tag_id=tag_obj.id,
             )
-            global_tag_info.append(dict(
-                tag_name=tag_obj.name,
-                tag_description=tag_obj.description,
-                tag_used_by=tag_obj.used_by,
-                tag_category_id=tag_obj.category_id,
-                tag_id=tag_obj.id
-            ))
+            global_tag_info.append(
+                dict(
+                    tag_name=tag_obj.name,
+                    tag_description=tag_obj.description,
+                    tag_used_by=tag_obj.used_by,
+                    tag_category_id=tag_obj.category_id,
+                    tag_id=tag_obj.id,
+                )
+            )
 
         self.module.exit_json(
-            changed=False,
-            tag_facts=global_tags,
-            tag_info=global_tag_info
+            changed=False, tag_facts=global_tags, tag_info=global_tag_info
         )
 
 
 def main():
     argument_spec = VmwareRestClient.vmware_client_argument_spec()
-    module = AnsibleModule(argument_spec=argument_spec,
-                           supports_check_mode=True)
-    if module._name == 'vmware_tag_facts':
-        module.deprecate("The 'vmware_tag_facts' module has been renamed to 'vmware_tag_info'", version='2.13')
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
+    if module._name == "vmware_tag_facts":
+        module.deprecate(
+            "The 'vmware_tag_facts' module has been renamed to 'vmware_tag_info'",
+            version="2.13",
+        )
 
     vmware_tag_info = VmTagInfoManager(module)
     vmware_tag_info.get_all_tags()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

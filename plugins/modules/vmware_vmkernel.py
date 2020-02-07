@@ -8,15 +8,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_vmkernel
 short_description: Manages a VMware VMkernel Adapter of an ESXi host.
@@ -152,9 +153,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 -  name: Add Management vmkernel port using static network type
    vmware_vmkernel:
       hostname: '{{ esxi_hostname }}'
@@ -242,9 +243,9 @@ EXAMPLES = '''
         tcpip_stack: vmotion
       state: present
    delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 result:
     description: metadata about VMKernel name
     returned: always
@@ -261,7 +262,7 @@ result:
         "services": "vMotion",
         "switch": "vDS"
     }
-'''
+"""
 
 try:
     from pyVmomi import vim, vmodl
@@ -270,8 +271,13 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.vmware.general.plugins.module_utils.vmware import (
-    PyVmomi, TaskError, vmware_argument_spec, wait_for_task,
-    find_dvspg_by_name, find_dvs_by_name, get_all_objs
+    PyVmomi,
+    TaskError,
+    vmware_argument_spec,
+    wait_for_task,
+    find_dvspg_by_name,
+    find_dvs_by_name,
+    get_all_objs,
 )
 from ansible.module_utils._text import to_native
 
@@ -281,29 +287,33 @@ class PyVmomiHelper(PyVmomi):
 
     def __init__(self, module):
         super(PyVmomiHelper, self).__init__(module)
-        if self.params['network']:
-            self.network_type = self.params['network'].get('type')
-            self.ip_address = self.params['network'].get('ip_address', None)
-            self.subnet_mask = self.params['network'].get('subnet_mask', None)
-            self.default_gateway = self.params['network'].get('default_gateway', None)
-            self.tcpip_stack = self.params['network'].get('tcpip_stack')
-        self.device = self.params['device']
-        if self.network_type == 'dhcp' and not self.device:
-            module.fail_json(msg="device is a required parameter when network type is set to 'dhcp'")
-        self.mtu = self.params['mtu']
-        self.enable_vsan = self.params['enable_vsan']
-        self.enable_vmotion = self.params['enable_vmotion']
-        self.enable_mgmt = self.params['enable_mgmt']
-        self.enable_ft = self.params['enable_ft']
-        self.enable_provisioning = self.params['enable_provisioning']
-        self.enable_replication = self.params['enable_replication']
-        self.enable_replication_nfc = self.params['enable_replication_nfc']
+        if self.params["network"]:
+            self.network_type = self.params["network"].get("type")
+            self.ip_address = self.params["network"].get("ip_address", None)
+            self.subnet_mask = self.params["network"].get("subnet_mask", None)
+            self.default_gateway = self.params["network"].get(
+                "default_gateway", None
+            )
+            self.tcpip_stack = self.params["network"].get("tcpip_stack")
+        self.device = self.params["device"]
+        if self.network_type == "dhcp" and not self.device:
+            module.fail_json(
+                msg="device is a required parameter when network type is set to 'dhcp'"
+            )
+        self.mtu = self.params["mtu"]
+        self.enable_vsan = self.params["enable_vsan"]
+        self.enable_vmotion = self.params["enable_vmotion"]
+        self.enable_mgmt = self.params["enable_mgmt"]
+        self.enable_ft = self.params["enable_ft"]
+        self.enable_provisioning = self.params["enable_provisioning"]
+        self.enable_replication = self.params["enable_replication"]
+        self.enable_replication_nfc = self.params["enable_replication_nfc"]
 
-        self.vswitch_name = self.params['vswitch_name']
-        self.vds_name = self.params['dvswitch_name']
-        self.port_group_name = self.params['portgroup_name']
+        self.vswitch_name = self.params["vswitch_name"]
+        self.vds_name = self.params["dvswitch_name"]
+        self.port_group_name = self.params["portgroup_name"]
 
-        self.esxi_host_name = self.params['esxi_hostname']
+        self.esxi_host_name = self.params["esxi_hostname"]
         hosts = self.get_all_host_objs(esxi_host_name=self.esxi_host_name)
         if hosts:
             self.esxi_host_obj = hosts[0]
@@ -312,42 +322,58 @@ class PyVmomiHelper(PyVmomi):
                 msg="Failed to get details of ESXi server. Please specify esxi_hostname."
             )
 
-        if self.network_type == 'static':
-            if self.module.params['state'] == 'absent':
+        if self.network_type == "static":
+            if self.module.params["state"] == "absent":
                 pass
             elif not self.ip_address:
-                module.fail_json(msg="ip_address is a required parameter when network type is set to 'static'")
+                module.fail_json(
+                    msg="ip_address is a required parameter when network type is set to 'static'"
+                )
             elif not self.subnet_mask:
-                module.fail_json(msg="subnet_mask is a required parameter when network type is set to 'static'")
+                module.fail_json(
+                    msg="subnet_mask is a required parameter when network type is set to 'static'"
+                )
 
         # find Port Group
         if self.vswitch_name:
             self.port_group_obj = self.get_port_group_by_name(
                 host_system=self.esxi_host_obj,
                 portgroup_name=self.port_group_name,
-                vswitch_name=self.vswitch_name
+                vswitch_name=self.vswitch_name,
             )
             if not self.port_group_obj:
-                module.fail_json(msg="Portgroup '%s' not found on vSS '%s'" % (self.port_group_name, self.vswitch_name))
+                module.fail_json(
+                    msg="Portgroup '%s' not found on vSS '%s'"
+                    % (self.port_group_name, self.vswitch_name)
+                )
         elif self.vds_name:
             self.dv_switch_obj = find_dvs_by_name(self.content, self.vds_name)
             if not self.dv_switch_obj:
                 module.fail_json(msg="vDS '%s' not found" % self.vds_name)
-            self.port_group_obj = find_dvspg_by_name(self.dv_switch_obj, self.port_group_name)
+            self.port_group_obj = find_dvspg_by_name(
+                self.dv_switch_obj, self.port_group_name
+            )
             if not self.port_group_obj:
-                module.fail_json(msg="Portgroup '%s' not found on vDS '%s'" % (self.port_group_name, self.vds_name))
+                module.fail_json(
+                    msg="Portgroup '%s' not found on vDS '%s'"
+                    % (self.port_group_name, self.vds_name)
+                )
 
         # find VMkernel Adapter
         if self.device:
             self.vnic = self.get_vmkernel_by_device(device_name=self.device)
         else:
             # config change (e.g. DHCP to static, or vice versa); doesn't work with virtual port change
-            self.vnic = self.get_vmkernel_by_portgroup_new(port_group_name=self.port_group_name)
-            if not self.vnic and self.network_type == 'static':
+            self.vnic = self.get_vmkernel_by_portgroup_new(
+                port_group_name=self.port_group_name
+            )
+            if not self.vnic and self.network_type == "static":
                 # vDS to vSS or vSS to vSS (static IP)
                 self.vnic = self.get_vmkernel_by_ip(ip_address=self.ip_address)
 
-    def get_port_group_by_name(self, host_system, portgroup_name, vswitch_name):
+    def get_port_group_by_name(
+        self, host_system, portgroup_name, vswitch_name
+    ):
         """
         Get specific port group by given name
         Args:
@@ -361,7 +387,10 @@ class PyVmomiHelper(PyVmomi):
         portgroups = self.get_all_port_groups_by_host(host_system=host_system)
 
         for portgroup in portgroups:
-            if portgroup.spec.vswitchName == vswitch_name and portgroup.spec.name == portgroup_name:
+            if (
+                portgroup.spec.vswitchName == vswitch_name
+                and portgroup.spec.name == portgroup_name
+            ):
                 return portgroup
         return None
 
@@ -372,18 +401,18 @@ class PyVmomiHelper(PyVmomi):
 
         """
         host_vmk_states = {
-            'absent': {
-                'present': self.host_vmk_delete,
-                'absent': self.host_vmk_unchange,
+            "absent": {
+                "present": self.host_vmk_delete,
+                "absent": self.host_vmk_unchange,
             },
-            'present': {
-                'present': self.host_vmk_update,
-                'absent': self.host_vmk_create,
-            }
+            "present": {
+                "present": self.host_vmk_update,
+                "absent": self.host_vmk_create,
+            },
         }
 
         try:
-            host_vmk_states[self.module.params['state']][self.check_state()]()
+            host_vmk_states[self.module.params["state"]][self.check_state()]()
         except vmodl.RuntimeFault as runtime_fault:
             self.module.fail_json(msg=to_native(runtime_fault.msg))
         except vmodl.MethodFault as method_fault:
@@ -404,7 +433,10 @@ class PyVmomiHelper(PyVmomi):
                 return vnic
             # check if it's a vDS Port Group
             try:
-                if vnic.spec.distributedVirtualPort.portgroupKey == self.port_group_obj.key:
+                if (
+                    vnic.spec.distributedVirtualPort.portgroupKey
+                    == self.port_group_obj.key
+                ):
                     return vnic
             except AttributeError:
                 pass
@@ -444,7 +476,7 @@ class PyVmomiHelper(PyVmomi):
         Returns: Present if found and absent if not found
 
         """
-        return 'present' if self.vnic else 'absent'
+        return "present" if self.vnic else "absent"
 
     def host_vmk_delete(self):
         """
@@ -452,25 +484,27 @@ class PyVmomiHelper(PyVmomi):
         Returns: NA
 
         """
-        results = dict(changed=False, msg='')
+        results = dict(changed=False, msg="")
         vmk_device = self.vnic.device
         try:
             if self.module.check_mode:
-                results['msg'] = "VMkernel Adapter would be deleted"
+                results["msg"] = "VMkernel Adapter would be deleted"
             else:
-                self.esxi_host_obj.configManager.networkSystem.RemoveVirtualNic(vmk_device)
-                results['msg'] = "VMkernel Adapter deleted"
-            results['changed'] = True
-            results['device'] = vmk_device
+                self.esxi_host_obj.configManager.networkSystem.RemoveVirtualNic(
+                    vmk_device
+                )
+                results["msg"] = "VMkernel Adapter deleted"
+            results["changed"] = True
+            results["device"] = vmk_device
         except vim.fault.NotFound as not_found:
             self.module.fail_json(
-                msg="Failed to find vmk to delete due to %s" %
-                to_native(not_found.msg)
+                msg="Failed to find vmk to delete due to %s"
+                % to_native(not_found.msg)
             )
         except vim.fault.HostConfigFault as host_config_fault:
             self.module.fail_json(
-                msg="Failed to delete vmk due host config issues : %s" %
-                to_native(host_config_fault.msg)
+                msg="Failed to delete vmk due host config issues : %s"
+                % to_native(host_config_fault.msg)
             )
 
         self.module.exit_json(**results)
@@ -489,75 +523,106 @@ class PyVmomiHelper(PyVmomi):
         Returns: NA
 
         """
-        changed = changed_settings = changed_vds = changed_services = \
-            changed_service_vmotion = changed_service_mgmt = changed_service_ft = \
-            changed_service_vsan = changed_service_prov = changed_service_rep = changed_service_rep_nfc = False
+        changed = (
+            changed_settings
+        ) = (
+            changed_vds
+        ) = (
+            changed_services
+        ) = (
+            changed_service_vmotion
+        ) = (
+            changed_service_mgmt
+        ) = (
+            changed_service_ft
+        ) = (
+            changed_service_vsan
+        ) = (
+            changed_service_prov
+        ) = changed_service_rep = changed_service_rep_nfc = False
         changed_list = []
-        results = dict(changed=False, msg='')
+        results = dict(changed=False, msg="")
 
-        results['tcpip_stack'] = self.tcpip_stack
-        net_stack_instance_key = self.get_api_net_stack_instance(self.tcpip_stack)
+        results["tcpip_stack"] = self.tcpip_stack
+        net_stack_instance_key = self.get_api_net_stack_instance(
+            self.tcpip_stack
+        )
         if self.vnic.spec.netStackInstanceKey != net_stack_instance_key:
-            self.module.fail_json(msg="The TCP/IP stack cannot be changed on an existing VMkernel adapter!")
+            self.module.fail_json(
+                msg="The TCP/IP stack cannot be changed on an existing VMkernel adapter!"
+            )
 
         # Check MTU
-        results['mtu'] = self.mtu
+        results["mtu"] = self.mtu
         if self.vnic.spec.mtu != self.mtu:
             changed_settings = True
             changed_list.append("MTU")
-            results['mtu_previous'] = self.vnic.spec.mtu
+            results["mtu_previous"] = self.vnic.spec.mtu
 
         # Check IPv4 settings
-        results['ipv4'] = self.network_type
-        results['ipv4_ip'] = self.ip_address
-        results['ipv4_sm'] = self.subnet_mask
+        results["ipv4"] = self.network_type
+        results["ipv4_ip"] = self.ip_address
+        results["ipv4_sm"] = self.subnet_mask
         if self.default_gateway:
-            results['ipv4_gw'] = self.default_gateway
+            results["ipv4_gw"] = self.default_gateway
         else:
-            results['ipv4_gw'] = "No override"
+            results["ipv4_gw"] = "No override"
         if self.vnic.spec.ip.dhcp:
-            if self.network_type == 'static':
+            if self.network_type == "static":
                 changed_settings = True
                 changed_list.append("IPv4 settings")
-                results['ipv4_previous'] = "DHCP"
+                results["ipv4_previous"] = "DHCP"
         if not self.vnic.spec.ip.dhcp:
-            if self.network_type == 'dhcp':
+            if self.network_type == "dhcp":
                 changed_settings = True
                 changed_list.append("IPv4 settings")
-                results['ipv4_previous'] = "static"
-            elif self.network_type == 'static':
+                results["ipv4_previous"] = "static"
+            elif self.network_type == "static":
                 if self.ip_address != self.vnic.spec.ip.ipAddress:
                     changed_settings = True
                     changed_list.append("IP")
-                    results['ipv4_ip_previous'] = self.vnic.spec.ip.ipAddress
+                    results["ipv4_ip_previous"] = self.vnic.spec.ip.ipAddress
                 if self.subnet_mask != self.vnic.spec.ip.subnetMask:
                     changed_settings = True
                     changed_list.append("SM")
-                    results['ipv4_sm_previous'] = self.vnic.spec.ip.subnetMask
+                    results["ipv4_sm_previous"] = self.vnic.spec.ip.subnetMask
                 if self.default_gateway:
                     try:
-                        if self.default_gateway != self.vnic.spec.ipRouteSpec.ipRouteConfig.defaultGateway:
+                        if (
+                            self.default_gateway
+                            != self.vnic.spec.ipRouteSpec.ipRouteConfig.defaultGateway
+                        ):
                             changed_settings = True
                             changed_list.append("GW override")
-                            results['ipv4_gw_previous'] = self.vnic.spec.ipRouteSpec.ipRouteConfig.defaultGateway
+                            results[
+                                "ipv4_gw_previous"
+                            ] = (
+                                self.vnic.spec.ipRouteSpec.ipRouteConfig.defaultGateway
+                            )
                     except AttributeError:
                         changed_settings = True
                         changed_list.append("GW override")
-                        results['ipv4_gw_previous'] = "No override"
+                        results["ipv4_gw_previous"] = "No override"
                 else:
                     try:
-                        if self.vnic.spec.ipRouteSpec.ipRouteConfig.defaultGateway:
+                        if (
+                            self.vnic.spec.ipRouteSpec.ipRouteConfig.defaultGateway
+                        ):
                             changed_settings = True
                             changed_list.append("GW override")
-                            results['ipv4_gw_previous'] = self.vnic.spec.ipRouteSpec.ipRouteConfig.defaultGateway
+                            results[
+                                "ipv4_gw_previous"
+                            ] = (
+                                self.vnic.spec.ipRouteSpec.ipRouteConfig.defaultGateway
+                            )
                     except AttributeError:
                         pass
 
         # Check virtual port (vSS or vDS)
-        results['portgroup'] = self.port_group_name
+        results["portgroup"] = self.port_group_name
         dvs_uuid = None
         if self.vswitch_name:
-            results['switch'] = self.vswitch_name
+            results["switch"] = self.vswitch_name
             try:
                 if self.vnic.spec.distributedVirtualPort.switchUuid:
                     changed_vds = True
@@ -566,15 +631,21 @@ class PyVmomiHelper(PyVmomi):
             except AttributeError:
                 pass
             if changed_vds:
-                results['switch_previous'] = self.find_dvs_by_uuid(dvs_uuid)
-                self.dv_switch_obj = find_dvs_by_name(self.content, results['switch_previous'])
-                results['portgroup_previous'] = self.find_dvspg_by_key(
-                    self.dv_switch_obj, self.vnic.spec.distributedVirtualPort.portgroupKey
+                results["switch_previous"] = self.find_dvs_by_uuid(dvs_uuid)
+                self.dv_switch_obj = find_dvs_by_name(
+                    self.content, results["switch_previous"]
+                )
+                results["portgroup_previous"] = self.find_dvspg_by_key(
+                    self.dv_switch_obj,
+                    self.vnic.spec.distributedVirtualPort.portgroupKey,
                 )
         elif self.vds_name:
-            results['switch'] = self.vds_name
+            results["switch"] = self.vds_name
             try:
-                if self.vnic.spec.distributedVirtualPort.switchUuid != self.dv_switch_obj.uuid:
+                if (
+                    self.vnic.spec.distributedVirtualPort.switchUuid
+                    != self.dv_switch_obj.uuid
+                ):
                     changed_vds = True
                     changed_list.append("Virtual Port")
                     dvs_uuid = self.vnic.spec.distributedVirtualPort.switchUuid
@@ -582,43 +653,87 @@ class PyVmomiHelper(PyVmomi):
                 changed_vds = True
                 changed_list.append("Virtual Port")
             if changed_vds:
-                results['switch_previous'] = self.find_dvs_by_uuid(dvs_uuid)
-                results['portgroup_previous'] = self.vnic.spec.portgroup
-                portgroups = self.get_all_port_groups_by_host(host_system=self.esxi_host_obj)
+                results["switch_previous"] = self.find_dvs_by_uuid(dvs_uuid)
+                results["portgroup_previous"] = self.vnic.spec.portgroup
+                portgroups = self.get_all_port_groups_by_host(
+                    host_system=self.esxi_host_obj
+                )
                 for portgroup in portgroups:
                     if portgroup.spec.name == self.vnic.spec.portgroup:
-                        results['switch_previous'] = portgroup.spec.vswitchName
+                        results["switch_previous"] = portgroup.spec.vswitchName
 
-        results['services'] = self.create_enabled_services_string()
+        results["services"] = self.create_enabled_services_string()
         # Check configuration of service types (only if default TCP/IP stack is used)
-        if self.vnic.spec.netStackInstanceKey == 'defaultTcpipStack':
+        if self.vnic.spec.netStackInstanceKey == "defaultTcpipStack":
             service_type_vmks = self.get_all_vmks_by_service_type()
-            if (self.enable_vmotion and self.vnic.device not in service_type_vmks['vmotion']) or \
-                    (not self.enable_vmotion and self.vnic.device in service_type_vmks['vmotion']):
+            if (
+                self.enable_vmotion
+                and self.vnic.device not in service_type_vmks["vmotion"]
+            ) or (
+                not self.enable_vmotion
+                and self.vnic.device in service_type_vmks["vmotion"]
+            ):
                 changed_services = changed_service_vmotion = True
 
-            if (self.enable_mgmt and self.vnic.device not in service_type_vmks['management']) or \
-                    (not self.enable_mgmt and self.vnic.device in service_type_vmks['management']):
+            if (
+                self.enable_mgmt
+                and self.vnic.device not in service_type_vmks["management"]
+            ) or (
+                not self.enable_mgmt
+                and self.vnic.device in service_type_vmks["management"]
+            ):
                 changed_services = changed_service_mgmt = True
 
-            if (self.enable_ft and self.vnic.device not in service_type_vmks['faultToleranceLogging']) or \
-                    (not self.enable_ft and self.vnic.device in service_type_vmks['faultToleranceLogging']):
+            if (
+                self.enable_ft
+                and self.vnic.device
+                not in service_type_vmks["faultToleranceLogging"]
+            ) or (
+                not self.enable_ft
+                and self.vnic.device
+                in service_type_vmks["faultToleranceLogging"]
+            ):
                 changed_services = changed_service_ft = True
 
-            if (self.enable_vsan and self.vnic.device not in service_type_vmks['vsan']) or \
-                    (not self.enable_vsan and self.vnic.device in service_type_vmks['vsan']):
+            if (
+                self.enable_vsan
+                and self.vnic.device not in service_type_vmks["vsan"]
+            ) or (
+                not self.enable_vsan
+                and self.vnic.device in service_type_vmks["vsan"]
+            ):
                 changed_services = changed_service_vsan = True
 
-            if (self.enable_provisioning and self.vnic.device not in service_type_vmks['vSphereProvisioning']) or \
-                    (not self.enable_provisioning and self.vnic.device in service_type_vmks['vSphereProvisioning']):
+            if (
+                self.enable_provisioning
+                and self.vnic.device
+                not in service_type_vmks["vSphereProvisioning"]
+            ) or (
+                not self.enable_provisioning
+                and self.vnic.device
+                in service_type_vmks["vSphereProvisioning"]
+            ):
                 changed_services = changed_service_prov = True
 
-            if (self.enable_replication and self.vnic.device not in service_type_vmks['vSphereReplication']) or \
-                    (not self.enable_provisioning and self.vnic.device in service_type_vmks['vSphereReplication']):
+            if (
+                self.enable_replication
+                and self.vnic.device
+                not in service_type_vmks["vSphereReplication"]
+            ) or (
+                not self.enable_provisioning
+                and self.vnic.device in service_type_vmks["vSphereReplication"]
+            ):
                 changed_services = changed_service_rep = True
 
-            if (self.enable_replication_nfc and self.vnic.device not in service_type_vmks['vSphereReplicationNFC']) or \
-                    (not self.enable_provisioning and self.vnic.device in service_type_vmks['vSphereReplicationNFC']):
+            if (
+                self.enable_replication_nfc
+                and self.vnic.device
+                not in service_type_vmks["vSphereReplicationNFC"]
+            ) or (
+                not self.enable_provisioning
+                and self.vnic.device
+                in service_type_vmks["vSphereReplicationNFC"]
+            ):
                 changed_services = changed_service_rep_nfc = True
             if changed_services:
                 changed_list.append("services")
@@ -626,32 +741,46 @@ class PyVmomiHelper(PyVmomi):
         if changed_settings or changed_vds or changed_services:
             changed = True
             if self.module.check_mode:
-                changed_suffix = ' would be updated'
+                changed_suffix = " would be updated"
             else:
-                changed_suffix = ' updated'
+                changed_suffix = " updated"
             if len(changed_list) > 2:
-                message = ', '.join(changed_list[:-1]) + ', and ' + str(changed_list[-1])
+                message = (
+                    ", ".join(changed_list[:-1])
+                    + ", and "
+                    + str(changed_list[-1])
+                )
             elif len(changed_list) == 2:
-                message = ' and '.join(changed_list)
+                message = " and ".join(changed_list)
             elif len(changed_list) == 1:
                 message = changed_list[0]
             message = "VMkernel Adapter " + message + changed_suffix
             if changed_settings or changed_vds:
                 vnic_config = vim.host.VirtualNic.Specification()
                 ip_spec = vim.host.IpConfig()
-                if self.network_type == 'dhcp':
+                if self.network_type == "dhcp":
                     ip_spec.dhcp = True
                 else:
                     ip_spec.dhcp = False
                     ip_spec.ipAddress = self.ip_address
                     ip_spec.subnetMask = self.subnet_mask
                     if self.default_gateway:
-                        vnic_config.ipRouteSpec = vim.host.VirtualNic.IpRouteSpec()
-                        vnic_config.ipRouteSpec.ipRouteConfig = vim.host.IpRouteConfig()
-                        vnic_config.ipRouteSpec.ipRouteConfig.defaultGateway = self.default_gateway
+                        vnic_config.ipRouteSpec = (
+                            vim.host.VirtualNic.IpRouteSpec()
+                        )
+                        vnic_config.ipRouteSpec.ipRouteConfig = (
+                            vim.host.IpRouteConfig()
+                        )
+                        vnic_config.ipRouteSpec.ipRouteConfig.defaultGateway = (
+                            self.default_gateway
+                        )
                     else:
-                        vnic_config.ipRouteSpec = vim.host.VirtualNic.IpRouteSpec()
-                        vnic_config.ipRouteSpec.ipRouteConfig = vim.host.IpRouteConfig()
+                        vnic_config.ipRouteSpec = (
+                            vim.host.VirtualNic.IpRouteSpec()
+                        )
+                        vnic_config.ipRouteSpec.ipRouteConfig = (
+                            vim.host.IpRouteConfig()
+                        )
 
                 vnic_config.ip = ip_spec
                 vnic_config.mtu = self.mtu
@@ -660,104 +789,154 @@ class PyVmomiHelper(PyVmomi):
                     if self.vswitch_name:
                         vnic_config.portgroup = self.port_group_name
                     elif self.vds_name:
-                        vnic_config.distributedVirtualPort = vim.dvs.PortConnection()
-                        vnic_config.distributedVirtualPort.switchUuid = self.dv_switch_obj.uuid
-                        vnic_config.distributedVirtualPort.portgroupKey = self.port_group_obj.key
+                        vnic_config.distributedVirtualPort = (
+                            vim.dvs.PortConnection()
+                        )
+                        vnic_config.distributedVirtualPort.switchUuid = (
+                            self.dv_switch_obj.uuid
+                        )
+                        vnic_config.distributedVirtualPort.portgroupKey = (
+                            self.port_group_obj.key
+                        )
 
                 try:
                     if not self.module.check_mode:
-                        self.esxi_host_obj.configManager.networkSystem.UpdateVirtualNic(self.vnic.device, vnic_config)
+                        self.esxi_host_obj.configManager.networkSystem.UpdateVirtualNic(
+                            self.vnic.device, vnic_config
+                        )
                 except vim.fault.NotFound as not_found:
                     self.module.fail_json(
-                        msg="Failed to update vmk as virtual network adapter cannot be found %s" %
-                        to_native(not_found.msg)
+                        msg="Failed to update vmk as virtual network adapter cannot be found %s"
+                        % to_native(not_found.msg)
                     )
                 except vim.fault.HostConfigFault as host_config_fault:
                     self.module.fail_json(
-                        msg="Failed to update vmk due to host config issues : %s" %
-                        to_native(host_config_fault.msg)
+                        msg="Failed to update vmk due to host config issues : %s"
+                        % to_native(host_config_fault.msg)
                     )
                 except vim.fault.InvalidState as invalid_state:
                     self.module.fail_json(
-                        msg="Failed to update vmk as ipv6 address is specified in an ipv4 only system : %s" %
-                        to_native(invalid_state.msg)
+                        msg="Failed to update vmk as ipv6 address is specified in an ipv4 only system : %s"
+                        % to_native(invalid_state.msg)
                     )
                 except vmodl.fault.InvalidArgument as invalid_arg:
                     self.module.fail_json(
                         msg="Failed to update vmk as IP address or Subnet Mask in the IP configuration"
-                        "are invalid or PortGroup does not exist : %s" % to_native(invalid_arg.msg)
+                        "are invalid or PortGroup does not exist : %s"
+                        % to_native(invalid_arg.msg)
                     )
 
             if changed_services:
                 changed_list.append("Services")
                 services_previous = []
-                vnic_manager = self.esxi_host_obj.configManager.virtualNicManager
+                vnic_manager = (
+                    self.esxi_host_obj.configManager.virtualNicManager
+                )
 
                 if changed_service_mgmt:
-                    if self.vnic.device in service_type_vmks['management']:
-                        services_previous.append('Mgmt')
-                    operation = 'select' if self.enable_mgmt else 'deselect'
+                    if self.vnic.device in service_type_vmks["management"]:
+                        services_previous.append("Mgmt")
+                    operation = "select" if self.enable_mgmt else "deselect"
                     self.set_service_type(
-                        vnic_manager=vnic_manager, vmk=self.vnic, service_type='management', operation=operation
+                        vnic_manager=vnic_manager,
+                        vmk=self.vnic,
+                        service_type="management",
+                        operation=operation,
                     )
 
                 if changed_service_vmotion:
-                    if self.vnic.device in service_type_vmks['vmotion']:
-                        services_previous.append('vMotion')
-                    operation = 'select' if self.enable_vmotion else 'deselect'
+                    if self.vnic.device in service_type_vmks["vmotion"]:
+                        services_previous.append("vMotion")
+                    operation = "select" if self.enable_vmotion else "deselect"
                     self.set_service_type(
-                        vnic_manager=vnic_manager, vmk=self.vnic, service_type='vmotion', operation=operation
+                        vnic_manager=vnic_manager,
+                        vmk=self.vnic,
+                        service_type="vmotion",
+                        operation=operation,
                     )
 
                 if changed_service_ft:
-                    if self.vnic.device in service_type_vmks['faultToleranceLogging']:
-                        services_previous.append('FT')
-                    operation = 'select' if self.enable_ft else 'deselect'
+                    if (
+                        self.vnic.device
+                        in service_type_vmks["faultToleranceLogging"]
+                    ):
+                        services_previous.append("FT")
+                    operation = "select" if self.enable_ft else "deselect"
                     self.set_service_type(
-                        vnic_manager=vnic_manager, vmk=self.vnic, service_type='faultToleranceLogging', operation=operation
+                        vnic_manager=vnic_manager,
+                        vmk=self.vnic,
+                        service_type="faultToleranceLogging",
+                        operation=operation,
                     )
 
                 if changed_service_prov:
-                    if self.vnic.device in service_type_vmks['vSphereProvisioning']:
-                        services_previous.append('Prov')
-                    operation = 'select' if self.enable_provisioning else 'deselect'
+                    if (
+                        self.vnic.device
+                        in service_type_vmks["vSphereProvisioning"]
+                    ):
+                        services_previous.append("Prov")
+                    operation = (
+                        "select" if self.enable_provisioning else "deselect"
+                    )
                     self.set_service_type(
-                        vnic_manager=vnic_manager, vmk=self.vnic, service_type='vSphereProvisioning', operation=operation
+                        vnic_manager=vnic_manager,
+                        vmk=self.vnic,
+                        service_type="vSphereProvisioning",
+                        operation=operation,
                     )
 
                 if changed_service_rep:
-                    if self.vnic.device in service_type_vmks['vSphereReplication']:
-                        services_previous.append('Repl')
-                    operation = 'select' if self.enable_replication else 'deselect'
+                    if (
+                        self.vnic.device
+                        in service_type_vmks["vSphereReplication"]
+                    ):
+                        services_previous.append("Repl")
+                    operation = (
+                        "select" if self.enable_replication else "deselect"
+                    )
                     self.set_service_type(
-                        vnic_manager=vnic_manager, vmk=self.vnic, service_type='vSphereReplication', operation=operation
+                        vnic_manager=vnic_manager,
+                        vmk=self.vnic,
+                        service_type="vSphereReplication",
+                        operation=operation,
                     )
 
                 if changed_service_rep_nfc:
-                    if self.vnic.device in service_type_vmks['vSphereReplicationNFC']:
-                        services_previous.append('Repl_NFC')
-                    operation = 'select' if self.enable_replication_nfc else 'deselect'
+                    if (
+                        self.vnic.device
+                        in service_type_vmks["vSphereReplicationNFC"]
+                    ):
+                        services_previous.append("Repl_NFC")
+                    operation = (
+                        "select" if self.enable_replication_nfc else "deselect"
+                    )
                     self.set_service_type(
-                        vnic_manager=vnic_manager, vmk=self.vnic, service_type='vSphereReplicationNFC', operation=operation
+                        vnic_manager=vnic_manager,
+                        vmk=self.vnic,
+                        service_type="vSphereReplicationNFC",
+                        operation=operation,
                     )
 
                 if changed_service_vsan:
-                    if self.vnic.device in service_type_vmks['vsan']:
-                        services_previous.append('VSAN')
+                    if self.vnic.device in service_type_vmks["vsan"]:
+                        services_previous.append("VSAN")
                     if self.enable_vsan:
-                        results['vsan'] = self.set_vsan_service_type()
+                        results["vsan"] = self.set_vsan_service_type()
                     else:
                         self.set_service_type(
-                            vnic_manager=vnic_manager, vmk=self.vnic, service_type='vsan', operation=operation
+                            vnic_manager=vnic_manager,
+                            vmk=self.vnic,
+                            service_type="vsan",
+                            operation=operation,
                         )
 
-                results['services_previous'] = ', '.join(services_previous)
+                results["services_previous"] = ", ".join(services_previous)
         else:
             message = "VMkernel Adapter already configured properly"
 
-        results['changed'] = changed
-        results['msg'] = message
-        results['device'] = self.vnic.device
+        results["changed"] = changed
+        results["msg"] = message
+        results["device"] = self.vnic.device
         self.module.exit_json(**results)
 
     def find_dvs_by_uuid(self, uuid):
@@ -806,7 +985,8 @@ class PyVmomiHelper(PyVmomi):
                 wait_for_task(vsan_task)
             except TaskError as task_err:
                 self.module.fail_json(
-                    msg="Failed to set service type to vsan for %s : %s" % (self.vnic.device, to_native(task_err))
+                    msg="Failed to set service type to vsan for %s : %s"
+                    % (self.vnic.device, to_native(task_err))
                 )
         return result
 
@@ -816,117 +996,152 @@ class PyVmomiHelper(PyVmomi):
         Returns: NA
 
         """
-        results = dict(changed=False, message='')
+        results = dict(changed=False, message="")
         if self.vswitch_name:
-            results['switch'] = self.vswitch_name
+            results["switch"] = self.vswitch_name
         elif self.vds_name:
-            results['switch'] = self.vds_name
-        results['portgroup'] = self.port_group_name
+            results["switch"] = self.vds_name
+        results["portgroup"] = self.port_group_name
 
         vnic_config = vim.host.VirtualNic.Specification()
 
         ip_spec = vim.host.IpConfig()
-        results['ipv4'] = self.network_type
-        if self.network_type == 'dhcp':
+        results["ipv4"] = self.network_type
+        if self.network_type == "dhcp":
             ip_spec.dhcp = True
         else:
             ip_spec.dhcp = False
-            results['ipv4_ip'] = self.ip_address
-            results['ipv4_sm'] = self.subnet_mask
+            results["ipv4_ip"] = self.ip_address
+            results["ipv4_sm"] = self.subnet_mask
             ip_spec.ipAddress = self.ip_address
             ip_spec.subnetMask = self.subnet_mask
             if self.default_gateway:
                 vnic_config.ipRouteSpec = vim.host.VirtualNic.IpRouteSpec()
-                vnic_config.ipRouteSpec.ipRouteConfig = vim.host.IpRouteConfig()
-                vnic_config.ipRouteSpec.ipRouteConfig.defaultGateway = self.default_gateway
+                vnic_config.ipRouteSpec.ipRouteConfig = (
+                    vim.host.IpRouteConfig()
+                )
+                vnic_config.ipRouteSpec.ipRouteConfig.defaultGateway = (
+                    self.default_gateway
+                )
         vnic_config.ip = ip_spec
 
-        results['mtu'] = self.mtu
+        results["mtu"] = self.mtu
         vnic_config.mtu = self.mtu
 
-        results['tcpip_stack'] = self.tcpip_stack
-        vnic_config.netStackInstanceKey = self.get_api_net_stack_instance(self.tcpip_stack)
+        results["tcpip_stack"] = self.tcpip_stack
+        vnic_config.netStackInstanceKey = self.get_api_net_stack_instance(
+            self.tcpip_stack
+        )
 
         vmk_device = None
         try:
             if self.module.check_mode:
-                results['msg'] = "VMkernel Adapter would be created"
+                results["msg"] = "VMkernel Adapter would be created"
             else:
                 if self.vswitch_name:
                     vmk_device = self.esxi_host_obj.configManager.networkSystem.AddVirtualNic(
-                        self.port_group_name,
-                        vnic_config
+                        self.port_group_name, vnic_config
                     )
                 elif self.vds_name:
-                    vnic_config.distributedVirtualPort = vim.dvs.PortConnection()
-                    vnic_config.distributedVirtualPort.switchUuid = self.dv_switch_obj.uuid
-                    vnic_config.distributedVirtualPort.portgroupKey = self.port_group_obj.key
-                    vmk_device = self.esxi_host_obj.configManager.networkSystem.AddVirtualNic(portgroup="", nic=vnic_config)
-                results['msg'] = "VMkernel Adapter created"
-            results['changed'] = True
-            results['device'] = vmk_device
-            if self.network_type != 'dhcp':
+                    vnic_config.distributedVirtualPort = (
+                        vim.dvs.PortConnection()
+                    )
+                    vnic_config.distributedVirtualPort.switchUuid = (
+                        self.dv_switch_obj.uuid
+                    )
+                    vnic_config.distributedVirtualPort.portgroupKey = (
+                        self.port_group_obj.key
+                    )
+                    vmk_device = self.esxi_host_obj.configManager.networkSystem.AddVirtualNic(
+                        portgroup="", nic=vnic_config
+                    )
+                results["msg"] = "VMkernel Adapter created"
+            results["changed"] = True
+            results["device"] = vmk_device
+            if self.network_type != "dhcp":
                 if self.default_gateway:
-                    results['ipv4_gw'] = self.default_gateway
+                    results["ipv4_gw"] = self.default_gateway
                 else:
-                    results['ipv4_gw'] = "No override"
-            results['services'] = self.create_enabled_services_string()
+                    results["ipv4_gw"] = "No override"
+            results["services"] = self.create_enabled_services_string()
         except vim.fault.AlreadyExists as already_exists:
             self.module.fail_json(
-                msg="Failed to add vmk as portgroup already has a virtual network adapter %s" %
-                to_native(already_exists.msg)
+                msg="Failed to add vmk as portgroup already has a virtual network adapter %s"
+                % to_native(already_exists.msg)
             )
         except vim.fault.HostConfigFault as host_config_fault:
             self.module.fail_json(
-                msg="Failed to add vmk due to host config issues : %s" %
-                to_native(host_config_fault.msg)
+                msg="Failed to add vmk due to host config issues : %s"
+                % to_native(host_config_fault.msg)
             )
         except vim.fault.InvalidState as invalid_state:
             self.module.fail_json(
-                msg="Failed to add vmk as ipv6 address is specified in an ipv4 only system : %s" %
-                to_native(invalid_state.msg)
+                msg="Failed to add vmk as ipv6 address is specified in an ipv4 only system : %s"
+                % to_native(invalid_state.msg)
             )
         except vmodl.fault.InvalidArgument as invalid_arg:
             self.module.fail_json(
                 msg="Failed to add vmk as IP address or Subnet Mask in the IP configuration "
-                "are invalid or PortGroup does not exist : %s" % to_native(invalid_arg.msg)
+                "are invalid or PortGroup does not exist : %s"
+                % to_native(invalid_arg.msg)
             )
 
         # do service type configuration
-        if self.tcpip_stack == 'default' and not all(
-                option is False for option in [self.enable_vsan, self.enable_vmotion,
-                                               self.enable_mgmt, self.enable_ft,
-                                               self.enable_provisioning, self.enable_replication,
-                                               self.enable_replication_nfc]):
+        if self.tcpip_stack == "default" and not all(
+            option is False
+            for option in [
+                self.enable_vsan,
+                self.enable_vmotion,
+                self.enable_mgmt,
+                self.enable_ft,
+                self.enable_provisioning,
+                self.enable_replication,
+                self.enable_replication_nfc,
+            ]
+        ):
             self.vnic = self.get_vmkernel_by_device(device_name=vmk_device)
 
             # VSAN
             if self.enable_vsan:
-                results['vsan'] = self.set_vsan_service_type()
+                results["vsan"] = self.set_vsan_service_type()
 
             # Other service type
-            host_vnic_manager = self.esxi_host_obj.configManager.virtualNicManager
+            host_vnic_manager = (
+                self.esxi_host_obj.configManager.virtualNicManager
+            )
             if self.enable_vmotion:
-                self.set_service_type(host_vnic_manager, self.vnic, 'vmotion')
+                self.set_service_type(host_vnic_manager, self.vnic, "vmotion")
 
             if self.enable_mgmt:
-                self.set_service_type(host_vnic_manager, self.vnic, 'management')
+                self.set_service_type(
+                    host_vnic_manager, self.vnic, "management"
+                )
 
             if self.enable_ft:
-                self.set_service_type(host_vnic_manager, self.vnic, 'faultToleranceLogging')
+                self.set_service_type(
+                    host_vnic_manager, self.vnic, "faultToleranceLogging"
+                )
 
             if self.enable_provisioning:
-                self.set_service_type(host_vnic_manager, self.vnic, 'vSphereProvisioning')
+                self.set_service_type(
+                    host_vnic_manager, self.vnic, "vSphereProvisioning"
+                )
 
             if self.enable_replication:
-                self.set_service_type(host_vnic_manager, self.vnic, 'vSphereReplication')
+                self.set_service_type(
+                    host_vnic_manager, self.vnic, "vSphereReplication"
+                )
 
             if self.enable_replication_nfc:
-                self.set_service_type(host_vnic_manager, self.vnic, 'vSphereReplicationNFC')
+                self.set_service_type(
+                    host_vnic_manager, self.vnic, "vSphereReplicationNFC"
+                )
 
         self.module.exit_json(**results)
 
-    def set_service_type(self, vnic_manager, vmk, service_type, operation='select'):
+    def set_service_type(
+        self, vnic_manager, vmk, service_type, operation="select"
+    ):
         """
         Set service type to given VMKernel
         Args:
@@ -937,16 +1152,23 @@ class PyVmomiHelper(PyVmomi):
 
         """
         try:
-            if operation == 'select':
+            if operation == "select":
                 if not self.module.check_mode:
                     vnic_manager.SelectVnicForNicType(service_type, vmk.device)
-            elif operation == 'deselect':
+            elif operation == "deselect":
                 if not self.module.check_mode:
-                    vnic_manager.DeselectVnicForNicType(service_type, vmk.device)
+                    vnic_manager.DeselectVnicForNicType(
+                        service_type, vmk.device
+                    )
         except vmodl.fault.InvalidArgument as invalid_arg:
             self.module.fail_json(
-                msg="Failed to %s VMK service type '%s' on '%s' due to : %s" %
-                (operation, service_type, vmk.device, to_native(invalid_arg.msg))
+                msg="Failed to %s VMK service type '%s' on '%s' due to : %s"
+                % (
+                    operation,
+                    service_type,
+                    vmk.device,
+                    to_native(invalid_arg.msg),
+                )
             )
 
     def get_all_vmks_by_service_type(self):
@@ -982,132 +1204,154 @@ class PyVmomiHelper(PyVmomi):
         vmks_list = []
         query = None
         try:
-            query = self.esxi_host_obj.configManager.virtualNicManager.QueryNetConfig(service_type)
+            query = self.esxi_host_obj.configManager.virtualNicManager.QueryNetConfig(
+                service_type
+            )
         except vim.fault.HostConfigFault as config_fault:
             self.module.fail_json(
-                msg="Failed to get all VMKs for service type %s due to host config fault : %s" %
-                (service_type, to_native(config_fault.msg))
+                msg="Failed to get all VMKs for service type %s due to host config fault : %s"
+                % (service_type, to_native(config_fault.msg))
             )
         except vmodl.fault.InvalidArgument as invalid_argument:
             self.module.fail_json(
-                msg="Failed to get all VMKs for service type %s due to invalid arguments : %s" %
-                (service_type, to_native(invalid_argument.msg))
+                msg="Failed to get all VMKs for service type %s due to invalid arguments : %s"
+                % (service_type, to_native(invalid_argument.msg))
             )
 
         if not query.selectedVnic:
             return vmks_list
         selected_vnics = [vnic for vnic in query.selectedVnic]
-        vnics_with_service_type = [vnic.device for vnic in query.candidateVnic if vnic.key in selected_vnics]
+        vnics_with_service_type = [
+            vnic.device
+            for vnic in query.candidateVnic
+            if vnic.key in selected_vnics
+        ]
         return vnics_with_service_type
 
     def create_enabled_services_string(self):
         """Create services list"""
         services = []
         if self.enable_mgmt:
-            services.append('Mgmt')
+            services.append("Mgmt")
         if self.enable_vmotion:
-            services.append('vMotion')
+            services.append("vMotion")
         if self.enable_ft:
-            services.append('FT')
+            services.append("FT")
         if self.enable_vsan:
-            services.append('VSAN')
+            services.append("VSAN")
         if self.enable_provisioning:
-            services.append('Prov')
+            services.append("Prov")
         if self.enable_replication:
-            services.append('Repl')
+            services.append("Repl")
         if self.enable_replication_nfc:
-            services.append('Repl_NFC')
-        return ', '.join(services)
+            services.append("Repl_NFC")
+        return ", ".join(services)
 
     @staticmethod
     def get_api_net_stack_instance(tcpip_stack):
         """Get TCP/IP stack instance name or key"""
         net_stack_instance = None
-        if tcpip_stack == 'default':
-            net_stack_instance = 'defaultTcpipStack'
-        elif tcpip_stack == 'provisioning':
-            net_stack_instance = 'vSphereProvisioning'
+        if tcpip_stack == "default":
+            net_stack_instance = "defaultTcpipStack"
+        elif tcpip_stack == "provisioning":
+            net_stack_instance = "vSphereProvisioning"
         # vmotion and vxlan stay the same
-        elif tcpip_stack == 'vmotion':
-            net_stack_instance = 'vmotion'
-        elif tcpip_stack == 'vxlan':
-            net_stack_instance = 'vxlan'
-        elif tcpip_stack == 'defaultTcpipStack':
-            net_stack_instance = 'default'
-        elif tcpip_stack == 'vSphereProvisioning':
-            net_stack_instance = 'provisioning'
+        elif tcpip_stack == "vmotion":
+            net_stack_instance = "vmotion"
+        elif tcpip_stack == "vxlan":
+            net_stack_instance = "vxlan"
+        elif tcpip_stack == "defaultTcpipStack":
+            net_stack_instance = "default"
+        elif tcpip_stack == "vSphereProvisioning":
+            net_stack_instance = "provisioning"
         # vmotion and vxlan stay the same
-        elif tcpip_stack == 'vmotion':
-            net_stack_instance = 'vmotion'
-        elif tcpip_stack == 'vxlan':
-            net_stack_instance = 'vxlan'
+        elif tcpip_stack == "vmotion":
+            net_stack_instance = "vmotion"
+        elif tcpip_stack == "vxlan":
+            net_stack_instance = "vxlan"
         return net_stack_instance
 
 
 def main():
     """Main"""
     argument_spec = vmware_argument_spec()
-    argument_spec.update(dict(
-        esxi_hostname=dict(required=True, type='str'),
-        portgroup_name=dict(required=True, type='str', aliases=['portgroup']),
-        ip_address=dict(removed_in_version=2.9, type='str'),
-        subnet_mask=dict(removed_in_version=2.9, type='str'),
-        mtu=dict(required=False, type='int', default=1500),
-        device=dict(type='str'),
-        enable_vsan=dict(required=False, type='bool', default=False),
-        enable_vmotion=dict(required=False, type='bool', default=False),
-        enable_mgmt=dict(required=False, type='bool', default=False),
-        enable_ft=dict(required=False, type='bool', default=False),
-        enable_provisioning=dict(type='bool', default=False),
-        enable_replication=dict(type='bool', default=False),
-        enable_replication_nfc=dict(type='bool', default=False),
-        vswitch_name=dict(required=False, type='str', aliases=['vswitch']),
-        dvswitch_name=dict(required=False, type='str', aliases=['dvswitch']),
-        network=dict(
-            type='dict',
-            options=dict(
-                type=dict(type='str', default='static', choices=['static', 'dhcp']),
-                ip_address=dict(type='str'),
-                subnet_mask=dict(type='str'),
-                default_gateway=dict(type='str'),
-                tcpip_stack=dict(type='str', default='default', choices=['default', 'provisioning', 'vmotion', 'vxlan']),
+    argument_spec.update(
+        dict(
+            esxi_hostname=dict(required=True, type="str"),
+            portgroup_name=dict(
+                required=True, type="str", aliases=["portgroup"]
             ),
-            default=dict(
-                type='static',
-                tcpip_stack='default',
+            ip_address=dict(removed_in_version=2.9, type="str"),
+            subnet_mask=dict(removed_in_version=2.9, type="str"),
+            mtu=dict(required=False, type="int", default=1500),
+            device=dict(type="str"),
+            enable_vsan=dict(required=False, type="bool", default=False),
+            enable_vmotion=dict(required=False, type="bool", default=False),
+            enable_mgmt=dict(required=False, type="bool", default=False),
+            enable_ft=dict(required=False, type="bool", default=False),
+            enable_provisioning=dict(type="bool", default=False),
+            enable_replication=dict(type="bool", default=False),
+            enable_replication_nfc=dict(type="bool", default=False),
+            vswitch_name=dict(required=False, type="str", aliases=["vswitch"]),
+            dvswitch_name=dict(
+                required=False, type="str", aliases=["dvswitch"]
             ),
-        ),
-        state=dict(
-            type='str',
-            default='present',
-            choices=['absent', 'present']
-        ),
-    ))
+            network=dict(
+                type="dict",
+                options=dict(
+                    type=dict(
+                        type="str",
+                        default="static",
+                        choices=["static", "dhcp"],
+                    ),
+                    ip_address=dict(type="str"),
+                    subnet_mask=dict(type="str"),
+                    default_gateway=dict(type="str"),
+                    tcpip_stack=dict(
+                        type="str",
+                        default="default",
+                        choices=[
+                            "default",
+                            "provisioning",
+                            "vmotion",
+                            "vxlan",
+                        ],
+                    ),
+                ),
+                default=dict(type="static", tcpip_stack="default"),
+            ),
+            state=dict(
+                type="str", default="present", choices=["absent", "present"]
+            ),
+        )
+    )
 
-    module = AnsibleModule(argument_spec=argument_spec,
-                           mutually_exclusive=[
-                               ['vswitch_name', 'dvswitch_name'],
-                               ['tcpip_stack', 'enable_vsan'],
-                               ['tcpip_stack', 'enable_vmotion'],
-                               ['tcpip_stack', 'enable_mgmt'],
-                               ['tcpip_stack', 'enable_ft'],
-                               ['tcpip_stack', 'enable_provisioning'],
-                               ['tcpip_stack', 'enable_replication'],
-                               ['tcpip_stack', 'enable_replication_nfc'],
-                           ],
-                           required_one_of=[
-                               ['vswitch_name', 'dvswitch_name'],
-                               ['portgroup_name', 'device'],
-                           ],
-                           required_if=[
-                               ['state', 'present', ['portgroup_name']],
-                               ['state', 'absent', ['device']]
-                           ],
-                           supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec,
+        mutually_exclusive=[
+            ["vswitch_name", "dvswitch_name"],
+            ["tcpip_stack", "enable_vsan"],
+            ["tcpip_stack", "enable_vmotion"],
+            ["tcpip_stack", "enable_mgmt"],
+            ["tcpip_stack", "enable_ft"],
+            ["tcpip_stack", "enable_provisioning"],
+            ["tcpip_stack", "enable_replication"],
+            ["tcpip_stack", "enable_replication_nfc"],
+        ],
+        required_one_of=[
+            ["vswitch_name", "dvswitch_name"],
+            ["portgroup_name", "device"],
+        ],
+        required_if=[
+            ["state", "present", ["portgroup_name"]],
+            ["state", "absent", ["device"]],
+        ],
+        supports_check_mode=True,
+    )
 
     pyv = PyVmomiHelper(module)
     pyv.ensure()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

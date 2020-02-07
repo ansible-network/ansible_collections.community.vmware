@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_tag
 short_description: Manage VMware tags
@@ -64,9 +65,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware_rest_client.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create a tag
   vmware_tag:
     hostname: '{{ vcenter_hostname }}'
@@ -97,9 +98,9 @@ EXAMPLES = r'''
     tag_name: Sample_Tag_0002
     state: absent
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 tag_status:
   description: dictionary of tag metadata
   returned: on success
@@ -108,10 +109,13 @@ tag_status:
         "msg": "Tag 'Sample_Tag_0002' created.",
         "tag_id": "urn:vmomi:InventoryServiceTag:bff91819-f529-43c9-80ca-1c9dfda09441:GLOBAL"
     }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import (
+    VmwareRestClient,
+)
+
 try:
     from com.vmware.vapi.std.errors_client import Error
 except ImportError:
@@ -124,7 +128,7 @@ class VmwareTag(VmwareRestClient):
         self.global_tags = dict()
         # api_client to call APIs instead of individual service
         self.tag_service = self.api_client.tagging.Tag
-        self.tag_name = self.params.get('tag_name')
+        self.tag_name = self.params.get("tag_name")
         self.get_all_tags()
         self.category_service = self.api_client.tagging.Category
 
@@ -133,16 +137,16 @@ class VmwareTag(VmwareRestClient):
         Manage internal states of tags
 
         """
-        desired_state = self.params.get('state')
+        desired_state = self.params.get("state")
         states = {
-            'present': {
-                'present': self.state_update_tag,
-                'absent': self.state_create_tag,
+            "present": {
+                "present": self.state_update_tag,
+                "absent": self.state_create_tag,
             },
-            'absent': {
-                'present': self.state_delete_tag,
-                'absent': self.state_unchanged,
-            }
+            "absent": {
+                "present": self.state_delete_tag,
+                "absent": self.state_unchanged,
+            },
         }
         states[desired_state][self.check_tag_status()]()
 
@@ -153,10 +157,12 @@ class VmwareTag(VmwareRestClient):
         """
         tag_spec = self.tag_service.CreateSpec()
         tag_spec.name = self.tag_name
-        tag_spec.description = self.params.get('tag_description')
-        category_id = self.params.get('category_id', None)
+        tag_spec.description = self.params.get("tag_description")
+        category_id = self.params.get("category_id", None)
         if category_id is None:
-            self.module.fail_json(msg="'category_id' is required parameter while creating tag.")
+            self.module.fail_json(
+                msg="'category_id' is required parameter while creating tag."
+            )
 
         category_found = False
         for category in self.category_service.list():
@@ -166,20 +172,28 @@ class VmwareTag(VmwareRestClient):
                 break
 
         if not category_found:
-            self.module.fail_json(msg="Unable to find category specified using 'category_id' - %s" % category_id)
+            self.module.fail_json(
+                msg="Unable to find category specified using 'category_id' - %s"
+                % category_id
+            )
 
         tag_spec.category_id = category_id
-        tag_id = ''
+        tag_id = ""
         try:
             tag_id = self.tag_service.create(tag_spec)
         except Error as error:
             self.module.fail_json(msg="%s" % self.get_error_message(error))
 
         if tag_id:
-            self.module.exit_json(changed=True,
-                                  tag_status=dict(msg="Tag '%s' created." % tag_spec.name, tag_id=tag_id))
-        self.module.exit_json(changed=False,
-                              tag_status=dict(msg="No tag created", tag_id=tag_id))
+            self.module.exit_json(
+                changed=True,
+                tag_status=dict(
+                    msg="Tag '%s' created." % tag_spec.name, tag_id=tag_id
+                ),
+            )
+        self.module.exit_json(
+            changed=False, tag_status=dict(msg="No tag created", tag_id=tag_id)
+        )
 
     def state_unchanged(self):
         """
@@ -194,12 +208,13 @@ class VmwareTag(VmwareRestClient):
 
         """
         changed = False
-        tag_id = self.global_tags[self.tag_name]['tag_id']
-        results = dict(msg="Tag %s is unchanged." % self.tag_name,
-                       tag_id=tag_id)
+        tag_id = self.global_tags[self.tag_name]["tag_id"]
+        results = dict(
+            msg="Tag %s is unchanged." % self.tag_name, tag_id=tag_id
+        )
         tag_update_spec = self.tag_service.UpdateSpec()
-        tag_desc = self.global_tags[self.tag_name]['tag_description']
-        desired_tag_desc = self.params.get('tag_description')
+        tag_desc = self.global_tags[self.tag_name]["tag_description"]
+        desired_tag_desc = self.params.get("tag_description")
         if tag_desc != desired_tag_desc:
             tag_update_spec.description = desired_tag_desc
             try:
@@ -207,7 +222,7 @@ class VmwareTag(VmwareRestClient):
             except Error as error:
                 self.module.fail_json(msg="%s" % self.get_error_message(error))
 
-            results['msg'] = 'Tag %s updated.' % self.tag_name
+            results["msg"] = "Tag %s updated." % self.tag_name
             changed = True
 
         self.module.exit_json(changed=changed, tag_status=results)
@@ -217,13 +232,17 @@ class VmwareTag(VmwareRestClient):
         Delete tag
 
         """
-        tag_id = self.global_tags[self.tag_name]['tag_id']
+        tag_id = self.global_tags[self.tag_name]["tag_id"]
         try:
             self.tag_service.delete(tag_id=tag_id)
         except Error as error:
             self.module.fail_json(msg="%s" % self.get_error_message(error))
-        self.module.exit_json(changed=True,
-                              tag_status=dict(msg="Tag '%s' deleted." % self.tag_name, tag_id=tag_id))
+        self.module.exit_json(
+            changed=True,
+            tag_status=dict(
+                msg="Tag '%s' deleted." % self.tag_name, tag_id=tag_id
+            ),
+        )
 
     def check_tag_status(self):
         """
@@ -231,13 +250,17 @@ class VmwareTag(VmwareRestClient):
         Returns: 'present' if tag found, else 'absent'
 
         """
-        if 'category_id' in self.params:
-            if self.tag_name in self.global_tags and self.params['category_id'] == self.global_tags[self.tag_name]['tag_category_id']:
-                ret = 'present'
+        if "category_id" in self.params:
+            if (
+                self.tag_name in self.global_tags
+                and self.params["category_id"]
+                == self.global_tags[self.tag_name]["tag_category_id"]
+            ):
+                ret = "present"
             else:
-                ret = 'absent'
+                ret = "absent"
         else:
-            ret = 'present' if self.tag_name in self.global_tags else 'absent'
+            ret = "present" if self.tag_name in self.global_tags else "absent"
         return ret
 
     def get_all_tags(self):
@@ -251,17 +274,22 @@ class VmwareTag(VmwareRestClient):
                 tag_description=tag_obj.description,
                 tag_used_by=tag_obj.used_by,
                 tag_category_id=tag_obj.category_id,
-                tag_id=tag_obj.id
+                tag_id=tag_obj.id,
             )
 
 
 def main():
     argument_spec = VmwareRestClient.vmware_client_argument_spec()
     argument_spec.update(
-        tag_name=dict(type='str', required=True),
-        tag_description=dict(type='str', default='', required=False),
-        category_id=dict(type='str', required=False),
-        state=dict(type='str', choices=['present', 'absent'], default='present', required=False),
+        tag_name=dict(type="str", required=True),
+        tag_description=dict(type="str", default="", required=False),
+        category_id=dict(type="str", required=False),
+        state=dict(
+            type="str",
+            choices=["present", "absent"],
+            default="present",
+            required=False,
+        ),
     )
     module = AnsibleModule(argument_spec=argument_spec)
 
@@ -269,5 +297,5 @@ def main():
     vmware_tag.ensure_state()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

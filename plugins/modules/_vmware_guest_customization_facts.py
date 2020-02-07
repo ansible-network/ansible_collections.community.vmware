@@ -6,15 +6,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['deprecated'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["deprecated"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_customization_facts
 deprecated:
@@ -41,9 +42,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Gather facts about all customization specification
   vmware_guest_customization_facts:
     hostname: "{{ vcenter_hostname }}"
@@ -62,7 +63,7 @@ EXAMPLES = '''
     spec_name: custom_linux_spec
   delegate_to: localhost
   register: custom_spec_facts
-'''
+"""
 
 RETURN = """
 custom_spec_facts:
@@ -105,7 +106,10 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_text
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+)
 
 
 class VmwareCustomSpecManger(PyVmomi):
@@ -113,20 +117,25 @@ class VmwareCustomSpecManger(PyVmomi):
         super(VmwareCustomSpecManger, self).__init__(module)
         self.cc_mgr = self.content.customizationSpecManager
         if self.cc_mgr is None:
-            self.module.fail_json(msg="Failed to get customization spec manager.")
+            self.module.fail_json(
+                msg="Failed to get customization spec manager."
+            )
 
     def gather_custom_spec_facts(self):
         """
         Gather facts about customization specifications
         """
 
-        spec_name = self.params.get('spec_name', None)
+        spec_name = self.params.get("spec_name", None)
         specs_list = []
         if spec_name:
             if self.cc_mgr.DoesCustomizationSpecExist(name=spec_name):
                 specs_list.append(spec_name)
             else:
-                self.module.fail_json(msg="Unable to find customization specification named '%s'" % spec_name)
+                self.module.fail_json(
+                    msg="Unable to find customization specification named '%s'"
+                    % spec_name
+                )
         else:
             available_specs = self.cc_mgr.info
             for spec_info in available_specs:
@@ -142,7 +151,9 @@ class VmwareCustomSpecManger(PyVmomi):
                     ip_address=nic.adapter.ip.ipAddress,
                     subnet_mask=nic.adapter.subnetMask,
                     gateway=[gw for gw in nic.adapter.gateway],
-                    nic_dns_server_list=[ndsl for ndsl in nic.adapter.dnsServerList],
+                    nic_dns_server_list=[
+                        ndsl for ndsl in nic.adapter.dnsServerList
+                    ],
                     dns_domain=nic.adapter.dnsDomain,
                     primary_wins=nic.adapter.primaryWINS,
                     secondry_wins=nic.adapter.secondaryWINS,
@@ -151,9 +162,15 @@ class VmwareCustomSpecManger(PyVmomi):
                 adapter_mapping_list.append(temp_data)
 
             current_hostname = None
-            if isinstance(current_spec.spec.identity.hostName, vim.vm.customization.PrefixNameGenerator):
+            if isinstance(
+                current_spec.spec.identity.hostName,
+                vim.vm.customization.PrefixNameGenerator,
+            ):
                 current_hostname = current_spec.spec.identity.hostName.base
-            elif isinstance(current_spec.spec.identity.hostName, vim.vm.customization.FixedName):
+            elif isinstance(
+                current_spec.spec.identity.hostName,
+                vim.vm.customization.FixedName,
+            ):
                 current_hostname = current_spec.spec.identity.hostName.name
 
             spec_facts[spec] = dict(
@@ -169,8 +186,12 @@ class VmwareCustomSpecManger(PyVmomi):
                 time_zone=current_spec.spec.identity.timeZone,
                 hw_clock_utc=current_spec.spec.identity.hwClockUTC,
                 # global IP Settings
-                dns_suffix_list=[i for i in current_spec.spec.globalIPSettings.dnsSuffixList],
-                dns_server_list=[i for i in current_spec.spec.globalIPSettings.dnsServerList],
+                dns_suffix_list=[
+                    i for i in current_spec.spec.globalIPSettings.dnsSuffixList
+                ],
+                dns_server_list=[
+                    i for i in current_spec.spec.globalIPSettings.dnsServerList
+                ],
                 # NIC setting map
                 nic_setting_map=adapter_mapping_list,
             )
@@ -179,20 +200,19 @@ class VmwareCustomSpecManger(PyVmomi):
 
 def main():
     argument_spec = vmware_argument_spec()
-    argument_spec.update(
-        spec_name=dict(type='str'),
-    )
+    argument_spec.update(spec_name=dict(type="str"))
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True
+        argument_spec=argument_spec, supports_check_mode=True
     )
 
     pyv = VmwareCustomSpecManger(module)
     try:
         module.exit_json(custom_spec_facts=pyv.gather_custom_spec_facts())
     except Exception as exc:
-        module.fail_json(msg="Failed to gather facts with exception : %s" % to_text(exc))
+        module.fail_json(
+            msg="Failed to gather facts with exception : %s" % to_text(exc)
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -9,16 +9,17 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_vmotion
 short_description: Move a virtual machine using vMotion, and/or its vmdks using storage vMotion.
@@ -78,9 +79,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Perform vMotion of virtual machine
   vmware_vmotion:
     hostname: '{{ vcenter_hostname }}'
@@ -132,15 +133,15 @@ EXAMPLES = '''
     destination_host: 'destination_host_as_per_vcenter'
     destination_datastore: 'destination_datastore_as_per_vcenter'
   delegate_to: localhost
-'''
+"""
 
-RETURN = '''
+RETURN = """
 running_host:
     description: List the host the virtual machine is registered to
     returned: changed or success
     type: str
     sample: 'host1.example.com'
-'''
+"""
 
 try:
     from pyVmomi import vim, VmomiSupport
@@ -149,73 +150,98 @@ except ImportError:
 
 from ansible.module_utils._text import to_native
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_hostsystem_by_name,
-                                         find_vm_by_id, find_datastore_by_name,
-                                         find_resource_pool_by_name,
-                                         vmware_argument_spec, wait_for_task, TaskError)
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    find_hostsystem_by_name,
+    find_vm_by_id,
+    find_datastore_by_name,
+    find_resource_pool_by_name,
+    vmware_argument_spec,
+    wait_for_task,
+    TaskError,
+)
 
 
 class VmotionManager(PyVmomi):
     def __init__(self, module):
         super(VmotionManager, self).__init__(module)
         self.vm = None
-        self.vm_uuid = self.params.get('vm_uuid', None)
-        self.use_instance_uuid = self.params.get('use_instance_uuid', False)
-        self.vm_name = self.params.get('vm_name', None)
-        self.moid = self.params.get('moid') or None
+        self.vm_uuid = self.params.get("vm_uuid", None)
+        self.use_instance_uuid = self.params.get("use_instance_uuid", False)
+        self.vm_name = self.params.get("vm_name", None)
+        self.moid = self.params.get("moid") or None
         result = dict()
 
         self.get_vm()
         if self.vm is None:
             vm_id = self.vm_uuid or self.vm_name or self.moid
-            self.module.fail_json(msg="Failed to find the virtual machine with %s" % vm_id)
+            self.module.fail_json(
+                msg="Failed to find the virtual machine with %s" % vm_id
+            )
 
         # Get Destination Host System if specified by user
-        dest_host_name = self.params.get('destination_host', None)
+        dest_host_name = self.params.get("destination_host", None)
         self.host_object = None
         if dest_host_name is not None:
-            self.host_object = find_hostsystem_by_name(content=self.content,
-                                                       hostname=dest_host_name)
+            self.host_object = find_hostsystem_by_name(
+                content=self.content, hostname=dest_host_name
+            )
 
         # Get Destination Datastore if specified by user
-        dest_datastore = self.params.get('destination_datastore', None)
+        dest_datastore = self.params.get("destination_datastore", None)
         self.datastore_object = None
         if dest_datastore is not None:
-            self.datastore_object = find_datastore_by_name(content=self.content,
-                                                           datastore_name=dest_datastore)
+            self.datastore_object = find_datastore_by_name(
+                content=self.content, datastore_name=dest_datastore
+            )
 
         # At-least one of datastore, host system is required to migrate
         if self.datastore_object is None and self.host_object is None:
-            self.module.fail_json(msg="Unable to find destination datastore"
-                                      " and destination host system.")
+            self.module.fail_json(
+                msg="Unable to find destination datastore"
+                " and destination host system."
+            )
 
         # Get Destination resourcepool
-        dest_resourcepool = self.params.get('destination_resourcepool', None)
+        dest_resourcepool = self.params.get("destination_resourcepool", None)
         self.resourcepool_object = None
         if dest_resourcepool:
-            self.resourcepool_object = find_resource_pool_by_name(content=self.content,
-                                                                  resource_pool_name=dest_resourcepool)
+            self.resourcepool_object = find_resource_pool_by_name(
+                content=self.content, resource_pool_name=dest_resourcepool
+            )
         elif not dest_resourcepool and dest_host_name:
             self.resourcepool_object = self.host_object.parent.resourcePool
         # Fail if resourcePool object is not found
         if self.resourcepool_object is None:
-            self.module.fail_json(msg="Unable to destination resource pool object which is required")
+            self.module.fail_json(
+                msg="Unable to destination resource pool object which is required"
+            )
 
         # Check if datastore is required, this check is required if destination
         # and source host system does not share same datastore.
         host_datastore_required = []
         for vm_datastore in self.vm.datastore:
-            if self.host_object and vm_datastore not in self.host_object.datastore:
+            if (
+                self.host_object
+                and vm_datastore not in self.host_object.datastore
+            ):
                 host_datastore_required.append(True)
             else:
                 host_datastore_required.append(False)
 
         if any(host_datastore_required) and dest_datastore is None:
-            msg = "Destination host system does not share" \
-                  " datastore ['%s'] with source host system ['%s'] on which" \
-                  " virtual machine is located.  Please specify destination_datastore" \
-                  " to rectify this problem." % ("', '".join([ds.name for ds in self.host_object.datastore]),
-                                                 "', '".join([ds.name for ds in self.vm.datastore]))
+            msg = (
+                "Destination host system does not share"
+                " datastore ['%s'] with source host system ['%s'] on which"
+                " virtual machine is located.  Please specify destination_datastore"
+                " to rectify this problem."
+                % (
+                    "', '".join(
+                        [ds.name for ds in self.host_object.datastore]
+                    ),
+                    "', '".join([ds.name for ds in self.vm.datastore]),
+                )
+            )
 
             self.module.fail_json(msg=msg)
 
@@ -226,20 +252,32 @@ class VmotionManager(PyVmomi):
             # We have both host system and datastore object
             if not self.datastore_object.summary.accessible:
                 # Datastore is not accessible
-                self.module.fail_json(msg='Destination datastore %s is'
-                                          ' not accessible.' % dest_datastore)
+                self.module.fail_json(
+                    msg="Destination datastore %s is"
+                    " not accessible." % dest_datastore
+                )
 
             if self.datastore_object not in self.host_object.datastore:
                 # Datastore is not associated with host system
-                self.module.fail_json(msg="Destination datastore %s provided"
-                                          " is not associated with destination"
-                                          " host system %s. Please specify"
-                                          " datastore value ['%s'] associated with"
-                                          " the given host system." % (dest_datastore,
-                                                                       dest_host_name,
-                                                                       "', '".join([ds.name for ds in self.host_object.datastore])))
+                self.module.fail_json(
+                    msg="Destination datastore %s provided"
+                    " is not associated with destination"
+                    " host system %s. Please specify"
+                    " datastore value ['%s'] associated with"
+                    " the given host system."
+                    % (
+                        dest_datastore,
+                        dest_host_name,
+                        "', '".join(
+                            [ds.name for ds in self.host_object.datastore]
+                        ),
+                    )
+                )
 
-            if self.vm.runtime.host.name == dest_host_name and dest_datastore in [ds.name for ds in self.vm.datastore]:
+            if (
+                self.vm.runtime.host.name == dest_host_name
+                and dest_datastore in [ds.name for ds in self.vm.datastore]
+            ):
                 change_required = False
 
         if self.host_object and self.datastore_object is None:
@@ -256,12 +294,14 @@ class VmotionManager(PyVmomi):
 
             if not self.datastore_object.summary.accessible:
                 # Datastore is not accessible
-                self.module.fail_json(msg='Destination datastore %s is'
-                                          ' not accessible.' % dest_datastore)
+                self.module.fail_json(
+                    msg="Destination datastore %s is"
+                    " not accessible." % dest_datastore
+                )
 
         if module.check_mode:
-            result['running_host'] = module.params['destination_host']
-            result['changed'] = True
+            result["running_host"] = module.params["destination_host"]
+            result["changed"] = True
             module.exit_json(**result)
 
         if change_required:
@@ -277,30 +317,32 @@ class VmotionManager(PyVmomi):
                 # The storage layout is not automatically refreshed, so we trigger it to get coherent module return values
                 if storage_vmotion_needed:
                     self.vm.RefreshStorageInfo()
-                result['running_host'] = module.params['destination_host']
-                result['changed'] = True
+                result["running_host"] = module.params["destination_host"]
+                result["changed"] = True
                 module.exit_json(**result)
             else:
-                msg = 'Unable to migrate virtual machine due to an error, please check vCenter'
+                msg = "Unable to migrate virtual machine due to an error, please check vCenter"
                 if task_object.info.error is not None:
                     msg += " : %s" % task_object.info.error
                 module.fail_json(msg=msg)
         else:
             try:
                 host = self.vm.summary.runtime.host
-                result['running_host'] = host.summary.config.name
+                result["running_host"] = host.summary.config.name
             except vim.fault.NoPermission:
-                result['running_host'] = 'NA'
-            result['changed'] = False
+                result["running_host"] = "NA"
+            result["changed"] = False
             module.exit_json(**result)
 
     def migrate_vm(self):
         """
         Migrate virtual machine and return the task.
         """
-        relocate_spec = vim.vm.RelocateSpec(host=self.host_object,
-                                            datastore=self.datastore_object,
-                                            pool=self.resourcepool_object)
+        relocate_spec = vim.vm.RelocateSpec(
+            host=self.host_object,
+            datastore=self.datastore_object,
+            pool=self.resourcepool_object,
+        )
         task_object = self.vm.Relocate(relocate_spec)
         return task_object
 
@@ -313,12 +355,22 @@ class VmotionManager(PyVmomi):
         vms = []
         if self.vm_uuid:
             if not self.use_instance_uuid:
-                vm_obj = find_vm_by_id(self.content, vm_id=self.params['vm_uuid'], vm_id_type="uuid")
+                vm_obj = find_vm_by_id(
+                    self.content,
+                    vm_id=self.params["vm_uuid"],
+                    vm_id_type="uuid",
+                )
             elif self.use_instance_uuid:
-                vm_obj = find_vm_by_id(self.content, vm_id=self.params['vm_uuid'], vm_id_type="instance_uuid")
+                vm_obj = find_vm_by_id(
+                    self.content,
+                    vm_id=self.params["vm_uuid"],
+                    vm_id_type="instance_uuid",
+                )
             vms = [vm_obj]
         elif self.vm_name:
-            objects = self.get_managed_objects_properties(vim_type=vim.VirtualMachine, properties=['name'])
+            objects = self.get_managed_objects_properties(
+                vim_type=vim.VirtualMachine, properties=["name"]
+            )
             for temp_vm_object in objects:
                 if len(temp_vm_object.propSet) != 1:
                     continue
@@ -326,13 +378,17 @@ class VmotionManager(PyVmomi):
                     vms.append(temp_vm_object.obj)
                     break
         elif self.moid:
-            vm_obj = VmomiSupport.templateOf('VirtualMachine')(self.moid, self.si._stub)
+            vm_obj = VmomiSupport.templateOf("VirtualMachine")(
+                self.moid, self.si._stub
+            )
             if vm_obj:
                 vms.append(vm_obj)
 
         if len(vms) > 1:
-            self.module.fail_json(msg="Multiple virtual machines with same name %s found."
-                                      " Please specify vm_uuid instead of vm_name." % self.vm_name)
+            self.module.fail_json(
+                msg="Multiple virtual machines with same name %s found."
+                " Please specify vm_uuid instead of vm_name." % self.vm_name
+            )
 
         if vms:
             self.vm = vms[0]
@@ -342,13 +398,13 @@ def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
         dict(
-            vm_name=dict(aliases=['vm']),
-            vm_uuid=dict(aliases=['uuid']),
-            moid=dict(type='str'),
-            use_instance_uuid=dict(type='bool', default=False),
-            destination_host=dict(aliases=['destination']),
-            destination_resourcepool=dict(aliases=['resource_pool']),
-            destination_datastore=dict(aliases=['datastore'])
+            vm_name=dict(aliases=["vm"]),
+            vm_uuid=dict(aliases=["uuid"]),
+            moid=dict(type="str"),
+            use_instance_uuid=dict(type="bool", default=False),
+            destination_host=dict(aliases=["destination"]),
+            destination_resourcepool=dict(aliases=["resource_pool"]),
+            destination_datastore=dict(aliases=["datastore"]),
         )
     )
 
@@ -356,16 +412,14 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_one_of=[
-            ['destination_host', 'destination_datastore'],
-            ['vm_uuid', 'vm_name', 'moid'],
+            ["destination_host", "destination_datastore"],
+            ["vm_uuid", "vm_name", "moid"],
         ],
-        mutually_exclusive=[
-            ['vm_uuid', 'vm_name', 'moid'],
-        ],
+        mutually_exclusive=[["vm_uuid", "vm_name", "moid"]],
     )
 
     vmotion_manager = VmotionManager(module)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

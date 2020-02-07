@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_cluster_info
 short_description: Gather info about clusters available in given vCenter
@@ -51,9 +52,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Gather cluster info from given datacenter
   vmware_cluster_info:
     hostname: '{{ vcenter_hostname }}'
@@ -82,7 +83,7 @@ EXAMPLES = '''
     show_tag: True
   delegate_to: localhost
   register: cluster_info
-'''
+"""
 
 RETURN = """
 clusters:
@@ -145,25 +146,42 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_datacenter_by_name, find_cluster_by_name
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+    find_datacenter_by_name,
+    find_cluster_by_name,
+)
+from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import (
+    VmwareRestClient,
+)
 
 
 class VmwreClusterInfoManager(PyVmomi):
     def __init__(self, module):
         super(VmwreClusterInfoManager, self).__init__(module)
-        datacenter = self.params.get('datacenter')
-        cluster_name = self.params.get('cluster_name')
+        datacenter = self.params.get("datacenter")
+        cluster_name = self.params.get("cluster_name")
         self.cluster_objs = []
         if datacenter:
-            datacenter_obj = find_datacenter_by_name(self.content, datacenter_name=datacenter)
+            datacenter_obj = find_datacenter_by_name(
+                self.content, datacenter_name=datacenter
+            )
             if datacenter_obj is None:
-                self.module.fail_json(msg="Failed to find datacenter '%s'" % datacenter)
-            self.cluster_objs = self.get_all_cluster_objs(parent=datacenter_obj)
+                self.module.fail_json(
+                    msg="Failed to find datacenter '%s'" % datacenter
+                )
+            self.cluster_objs = self.get_all_cluster_objs(
+                parent=datacenter_obj
+            )
         elif cluster_name:
-            cluster_obj = find_cluster_by_name(self.content, cluster_name=cluster_name)
+            cluster_obj = find_cluster_by_name(
+                self.content, cluster_name=cluster_name
+            )
             if cluster_obj is None:
-                self.module.fail_json(msg="Failed to find cluster '%s'" % cluster_name)
+                self.module.fail_json(
+                    msg="Failed to find cluster '%s'" % cluster_name
+                )
 
             self.cluster_objs = [cluster_obj]
 
@@ -209,38 +227,58 @@ class VmwreClusterInfoManager(PyVmomi):
 
             # Hosts
             for host in cluster.host:
-                hosts.append({
-                    'name': host.name,
-                    'folder': self.get_vm_path(self.content, host),
-                })
+                hosts.append(
+                    {
+                        "name": host.name,
+                        "folder": self.get_vm_path(self.content, host),
+                    }
+                )
 
             # HA
             das_config = cluster.configurationEx.dasConfig
             if das_config.admissionControlPolicy:
-                ha_failover_level = das_config.admissionControlPolicy.failoverLevel
+                ha_failover_level = (
+                    das_config.admissionControlPolicy.failoverLevel
+                )
             if das_config.defaultVmSettings:
-                ha_restart_priority = das_config.defaultVmSettings.restartPriority,
-                ha_vm_tools_monitoring = das_config.defaultVmSettings.vmToolsMonitoringSettings.vmMonitoring,
-                ha_vm_min_up_time = das_config.defaultVmSettings.vmToolsMonitoringSettings.minUpTime,
-                ha_vm_max_failures = das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailures,
-                ha_vm_max_failure_window = das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailureWindow,
-                ha_vm_failure_interval = das_config.defaultVmSettings.vmToolsMonitoringSettings.failureInterval,
+                ha_restart_priority = (
+                    das_config.defaultVmSettings.restartPriority,
+                )
+                ha_vm_tools_monitoring = (
+                    das_config.defaultVmSettings.vmToolsMonitoringSettings.vmMonitoring,
+                )
+                ha_vm_min_up_time = (
+                    das_config.defaultVmSettings.vmToolsMonitoringSettings.minUpTime,
+                )
+                ha_vm_max_failures = (
+                    das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailures,
+                )
+                ha_vm_max_failure_window = (
+                    das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailureWindow,
+                )
+                ha_vm_failure_interval = (
+                    das_config.defaultVmSettings.vmToolsMonitoringSettings.failureInterval,
+                )
 
             # DRS
             drs_config = cluster.configurationEx.drsConfig
 
             # VSAN
-            if hasattr(cluster.configurationEx, 'vsanConfig'):
+            if hasattr(cluster.configurationEx, "vsanConfig"):
                 vsan_config = cluster.configurationEx.vsanConfig
-                enabled_vsan = vsan_config.enabled,
-                vsan_auto_claim_storage = vsan_config.defaultConfig.autoClaimStorage,
+                enabled_vsan = (vsan_config.enabled,)
+                vsan_auto_claim_storage = (
+                    vsan_config.defaultConfig.autoClaimStorage,
+                )
 
             tag_info = []
-            if self.params.get('show_tag'):
+            if self.params.get("show_tag"):
                 vmware_client = VmwareRestClient(self.module)
-                tag_info = vmware_client.get_tags_for_cluster(cluster_mid=cluster._moId)
+                tag_info = vmware_client.get_tags_for_cluster(
+                    cluster_mid=cluster._moId
+                )
 
-            results['clusters'][cluster.name] = dict(
+            results["clusters"][cluster.name] = dict(
                 hosts=hosts,
                 enable_ha=das_config.enabled,
                 ha_failover_level=ha_failover_level,
@@ -268,23 +306,24 @@ class VmwreClusterInfoManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        datacenter=dict(type='str'),
-        cluster_name=dict(type='str'),
-        show_tag=dict(type='bool', default=False),
+        datacenter=dict(type="str"),
+        cluster_name=dict(type="str"),
+        show_tag=dict(type="bool", default=False),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'datacenter'],
-        ],
+        required_one_of=[["cluster_name", "datacenter"]],
         supports_check_mode=True,
     )
-    if module._name == 'vmware_cluster_facts':
-        module.deprecate("The 'vmware_cluster_facts' module has been renamed to 'vmware_cluster_info'", version='2.13')
+    if module._name == "vmware_cluster_facts":
+        module.deprecate(
+            "The 'vmware_cluster_facts' module has been renamed to 'vmware_cluster_info'",
+            version="2.13",
+        )
 
     pyv = VmwreClusterInfoManager(module)
     pyv.gather_cluster_info()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

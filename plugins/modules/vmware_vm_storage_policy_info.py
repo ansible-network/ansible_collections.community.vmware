@@ -6,15 +6,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_vm_storage_policy_info
 short_description: Gather information about vSphere storage profile defined storage policy information.
@@ -32,9 +33,9 @@ requirements:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Get SPBM info
   vmware_vm_storage_policy_info:
     hostname: '{{ vcenter_hostname }}'
@@ -43,9 +44,9 @@ EXAMPLES = r'''
     validate_certs: no
   delegate_to: localhost
   register: profiles
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 spbm_profiles:
   description: list of dictionary of SPBM info
   returned: success
@@ -84,7 +85,7 @@ spbm_profiles:
             "name": "vSAN Default Storage Policy"
         },
     ]
-'''
+"""
 
 try:
     from pyVmomi import pbm
@@ -92,8 +93,12 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_spbm import SPBM
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware_spbm import (
+    SPBM,
+)
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+)
 
 
 class SPBMClient(SPBM):
@@ -107,12 +112,12 @@ class SPBMClient(SPBM):
         capabilities_info = []
         for capability in capabilities:
             for constraint in capability.constraint:
-                if hasattr(constraint, 'propertyInstance'):
+                if hasattr(constraint, "propertyInstance"):
                     for propertyInstance in constraint.propertyInstance:
                         capabilities_info.append(
                             {
-                                'id': propertyInstance.id,
-                                'value': propertyInstance.value
+                                "id": propertyInstance.id,
+                                "value": propertyInstance.value,
                             }
                         )
         return capabilities_info
@@ -124,30 +129,38 @@ class SPBMClient(SPBM):
         profile_manager = self.spbm_content.profileManager
         profile_ids = profile_manager.PbmQueryProfile(
             resourceType=pbm.profile.ResourceType(resourceType="STORAGE"),
-            profileCategory="REQUIREMENT"
+            profileCategory="REQUIREMENT",
         )
         profiles = []
         if profile_ids:
-            profiles = profile_manager.PbmRetrieveContent(profileIds=profile_ids)
+            profiles = profile_manager.PbmRetrieveContent(
+                profileIds=profile_ids
+            )
 
         for profile in profiles:
             temp_profile_info = {
-                'name': profile.name,
-                'id': profile.profileId.uniqueId,
-                'description': profile.description,
-                'constraints_sub_profiles': []
+                "name": profile.name,
+                "id": profile.profileId.uniqueId,
+                "description": profile.description,
+                "constraints_sub_profiles": [],
             }
-            if hasattr(profile.constraints, 'subProfiles'):
+            if hasattr(profile.constraints, "subProfiles"):
                 subprofiles = profile.constraints.subProfiles
                 temp_sub_profiles = []
                 for subprofile in subprofiles:
-                    temp_sub_profiles.append({
-                        'rule_set_name': subprofile.name,
-                        'rule_set_info': self.show_capabilities(subprofile.capability),
-                    })
-                temp_profile_info['constraints_sub_profiles'] = temp_sub_profiles
+                    temp_sub_profiles.append(
+                        {
+                            "rule_set_name": subprofile.name,
+                            "rule_set_info": self.show_capabilities(
+                                subprofile.capability
+                            ),
+                        }
+                    )
+                temp_profile_info[
+                    "constraints_sub_profiles"
+                ] = temp_sub_profiles
 
-            results['spbm_profiles'].append(temp_profile_info)
+            results["spbm_profiles"].append(temp_profile_info)
 
         self.module.exit_json(**results)
 
@@ -155,11 +168,13 @@ class SPBMClient(SPBM):
 def main():
     argument_spec = vmware_argument_spec()
 
-    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
+    module = AnsibleModule(
+        argument_spec=argument_spec, supports_check_mode=True
+    )
 
     spbm_client = SPBMClient(module)
     spbm_client.get_storage_policy_info()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

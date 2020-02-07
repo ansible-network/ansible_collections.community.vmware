@@ -5,15 +5,16 @@
 #  GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_network
 short_description: Manage network adapters of specified virtual machine in given vCenter infrastructure
@@ -122,9 +123,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Change network adapter settings of virtual machine
   vmware_guest_network:
     hostname: "{{ vcenter_hostname }}"
@@ -192,7 +193,7 @@ EXAMPLES = '''
         mac: "aa:50:56:58:59:61"
         directpath_io: True
   delegate_to: localhost
-'''
+"""
 
 RETURN = """
 network_data:
@@ -234,7 +235,13 @@ except ImportError:
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.common.network import is_mac
 from ansible.module_utils._text import to_native, to_text
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task, get_all_objs, get_parent_datacenter
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+    wait_for_task,
+    get_all_objs,
+    get_parent_datacenter,
+)
 
 
 class PyVmomiHelper(PyVmomi):
@@ -257,9 +264,13 @@ class PyVmomiHelper(PyVmomi):
         if device_type and device_type in list(self.nic_device_type.keys()):
             return self.nic_device_type[device_type]()
         else:
-            self.module.fail_json(msg='Invalid network device_type %s' % device_type)
+            self.module.fail_json(
+                msg="Invalid network device_type %s" % device_type
+            )
 
-    def get_network_device(self, vm=None, mac=None, device_type=None, device_label=None):
+    def get_network_device(
+        self, vm=None, mac=None, device_type=None, device_label=None
+    ):
         """
         Get network adapter
         """
@@ -304,44 +315,64 @@ class PyVmomiHelper(PyVmomi):
 
     def create_network_adapter(self, device_info):
         nic = vim.vm.device.VirtualDeviceSpec()
-        nic.device = self.get_device_type(device_type=device_info.get('device_type', 'vmxnet3'))
+        nic.device = self.get_device_type(
+            device_type=device_info.get("device_type", "vmxnet3")
+        )
         nic.device.deviceInfo = vim.Description()
-        network_object = self.find_network_by_name(network_name=device_info['name'])[0]
+        network_object = self.find_network_by_name(
+            network_name=device_info["name"]
+        )[0]
         if network_object:
-            if hasattr(network_object, 'portKeys'):
+            if hasattr(network_object, "portKeys"):
                 # DistributedVirtualPortGroup
-                nic.device.backing = vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo()
+                nic.device.backing = (
+                    vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo()
+                )
                 nic.device.backing.port = vim.dvs.PortConnection()
-                nic.device.backing.port.switchUuid = network_object.config.distributedVirtualSwitch.uuid
+                nic.device.backing.port.switchUuid = (
+                    network_object.config.distributedVirtualSwitch.uuid
+                )
                 nic.device.backing.port.portgroupKey = network_object.key
             elif isinstance(network_object, vim.OpaqueNetwork):
                 # NSX-T Logical Switch
-                nic.device.backing = vim.vm.device.VirtualEthernetCard.OpaqueNetworkBackingInfo()
+                nic.device.backing = (
+                    vim.vm.device.VirtualEthernetCard.OpaqueNetworkBackingInfo()
+                )
                 network_id = network_object.summary.opaqueNetworkId
-                nic.device.backing.opaqueNetworkType = 'nsx.LogicalSwitch'
+                nic.device.backing.opaqueNetworkType = "nsx.LogicalSwitch"
                 nic.device.backing.opaqueNetworkId = network_id
-                nic.device.deviceInfo.summary = 'nsx.LogicalSwitch: %s' % network_id
+                nic.device.deviceInfo.summary = (
+                    "nsx.LogicalSwitch: %s" % network_id
+                )
             else:
                 # Standard vSwitch
-                nic.device.deviceInfo.summary = device_info['name']
-                nic.device.backing = vim.vm.device.VirtualEthernetCard.NetworkBackingInfo()
-                nic.device.backing.deviceName = device_info['name']
+                nic.device.deviceInfo.summary = device_info["name"]
+                nic.device.backing = (
+                    vim.vm.device.VirtualEthernetCard.NetworkBackingInfo()
+                )
+                nic.device.backing.deviceName = device_info["name"]
                 nic.device.backing.network = network_object
         nic.device.connectable = vim.vm.device.VirtualDevice.ConnectInfo()
-        nic.device.connectable.startConnected = device_info.get('start_connected', True)
+        nic.device.connectable.startConnected = device_info.get(
+            "start_connected", True
+        )
         nic.device.connectable.allowGuestControl = True
-        nic.device.connectable.connected = device_info.get('connected', True)
-        if 'manual_mac' in device_info:
-            nic.device.addressType = 'manual'
-            nic.device.macAddress = device_info['manual_mac']
+        nic.device.connectable.connected = device_info.get("connected", True)
+        if "manual_mac" in device_info:
+            nic.device.addressType = "manual"
+            nic.device.macAddress = device_info["manual_mac"]
         else:
-            nic.device.addressType = 'generated'
-        if 'directpath_io' in device_info:
+            nic.device.addressType = "generated"
+        if "directpath_io" in device_info:
             if isinstance(nic.device, vim.vm.device.VirtualVmxnet3):
-                nic.device.uptCompatibilityEnabled = device_info['directpath_io']
+                nic.device.uptCompatibilityEnabled = device_info[
+                    "directpath_io"
+                ]
             else:
-                self.module.fail_json(msg='UPT is only compatible for Vmxnet3 adapter.'
-                                      + ' Clients can set this property enabled or disabled if ethernet virtual device is Vmxnet3.')
+                self.module.fail_json(
+                    msg="UPT is only compatible for Vmxnet3 adapter."
+                    + " Clients can set this property enabled or disabled if ethernet virtual device is Vmxnet3."
+                )
 
         return nic
 
@@ -353,20 +384,20 @@ class PyVmomiHelper(PyVmomi):
         nic_index = 0
         for nic in vm_obj.config.hardware.device:
             nic_type = None
-            directpath_io = 'N/A'
+            directpath_io = "N/A"
             if isinstance(nic, vim.vm.device.VirtualPCNet32):
-                nic_type = 'PCNet32'
+                nic_type = "PCNet32"
             elif isinstance(nic, vim.vm.device.VirtualVmxnet2):
-                nic_type = 'VMXNET2'
+                nic_type = "VMXNET2"
             elif isinstance(nic, vim.vm.device.VirtualVmxnet3):
-                nic_type = 'VMXNET3'
+                nic_type = "VMXNET3"
                 directpath_io = nic.uptCompatibilityEnabled
             elif isinstance(nic, vim.vm.device.VirtualE1000):
-                nic_type = 'E1000'
+                nic_type = "E1000"
             elif isinstance(nic, vim.vm.device.VirtualE1000e):
-                nic_type = 'E1000E'
+                nic_type = "E1000E"
             elif isinstance(nic, vim.vm.device.VirtualSriovEthernetCard):
-                nic_type = 'SriovEthernetCard'
+                nic_type = "SriovEthernetCard"
             if nic_type is not None:
                 network_info[nic_index] = dict(
                     device_type=nic_type,
@@ -378,7 +409,7 @@ class PyVmomiHelper(PyVmomi):
                     allow_guest_ctl=nic.connectable.allowGuestControl,
                     connected=nic.connectable.connected,
                     start_connected=nic.connectable.startConnected,
-                    directpath_io=directpath_io
+                    directpath_io=directpath_io,
                 )
                 nic_index += 1
 
@@ -386,60 +417,124 @@ class PyVmomiHelper(PyVmomi):
 
     def sanitize_network_params(self):
         network_list = []
-        valid_state = ['new', 'present', 'absent']
-        if len(self.params['networks']) != 0:
-            for network in self.params['networks']:
-                if 'state' not in network or network['state'].lower() not in valid_state:
-                    self.module.fail_json(msg="Network adapter state not specified or invalid: '%s', valid values: "
-                                              "%s" % (network.get('state', ''), valid_state))
+        valid_state = ["new", "present", "absent"]
+        if len(self.params["networks"]) != 0:
+            for network in self.params["networks"]:
+                if (
+                    "state" not in network
+                    or network["state"].lower() not in valid_state
+                ):
+                    self.module.fail_json(
+                        msg="Network adapter state not specified or invalid: '%s', valid values: "
+                        "%s" % (network.get("state", ""), valid_state)
+                    )
                 # add new network adapter but no name specified
-                if network['state'].lower() == 'new' and 'name' not in network and 'vlan' not in network:
-                    self.module.fail_json(msg="Please specify at least network name or VLAN name for adding new network adapter.")
-                if network['state'].lower() == 'new' and 'mac' in network:
-                    self.module.fail_json(msg="networks.mac is used for vNIC reconfigure, but networks.state is set to 'new'.")
-                if network['state'].lower() == 'present' and 'mac' not in network and 'label' not in network and 'device_type' not in network:
-                    self.module.fail_json(msg="Should specify 'mac', 'label' or 'device_type' parameter to reconfigure network adapter")
-                if 'connected' in network:
-                    if not isinstance(network['connected'], bool):
-                        self.module.fail_json(msg="networks.connected parameter should be boolean.")
-                    if network['state'].lower() == 'new' and not network['connected']:
-                        network['start_connected'] = False
-                if 'start_connected' in network:
-                    if not isinstance(network['start_connected'], bool):
-                        self.module.fail_json(msg="networks.start_connected parameter should be boolean.")
-                    if network['state'].lower() == 'new' and not network['start_connected']:
-                        network['connected'] = False
+                if (
+                    network["state"].lower() == "new"
+                    and "name" not in network
+                    and "vlan" not in network
+                ):
+                    self.module.fail_json(
+                        msg="Please specify at least network name or VLAN name for adding new network adapter."
+                    )
+                if network["state"].lower() == "new" and "mac" in network:
+                    self.module.fail_json(
+                        msg="networks.mac is used for vNIC reconfigure, but networks.state is set to 'new'."
+                    )
+                if (
+                    network["state"].lower() == "present"
+                    and "mac" not in network
+                    and "label" not in network
+                    and "device_type" not in network
+                ):
+                    self.module.fail_json(
+                        msg="Should specify 'mac', 'label' or 'device_type' parameter to reconfigure network adapter"
+                    )
+                if "connected" in network:
+                    if not isinstance(network["connected"], bool):
+                        self.module.fail_json(
+                            msg="networks.connected parameter should be boolean."
+                        )
+                    if (
+                        network["state"].lower() == "new"
+                        and not network["connected"]
+                    ):
+                        network["start_connected"] = False
+                if "start_connected" in network:
+                    if not isinstance(network["start_connected"], bool):
+                        self.module.fail_json(
+                            msg="networks.start_connected parameter should be boolean."
+                        )
+                    if (
+                        network["state"].lower() == "new"
+                        and not network["start_connected"]
+                    ):
+                        network["connected"] = False
                 # specified network does not exist
-                if 'name' in network and not self.network_exists_by_name(network['name']):
-                    self.module.fail_json(msg="Network '%(name)s' does not exist." % network)
-                elif 'vlan' in network:
-                    objects = get_all_objs(self.content, [vim.dvs.DistributedVirtualPortgroup])
-                    dvps = [x for x in objects if to_text(get_parent_datacenter(x).name) == to_text(self.params['datacenter'])]
+                if "name" in network and not self.network_exists_by_name(
+                    network["name"]
+                ):
+                    self.module.fail_json(
+                        msg="Network '%(name)s' does not exist." % network
+                    )
+                elif "vlan" in network:
+                    objects = get_all_objs(
+                        self.content, [vim.dvs.DistributedVirtualPortgroup]
+                    )
+                    dvps = [
+                        x
+                        for x in objects
+                        if to_text(get_parent_datacenter(x).name)
+                        == to_text(self.params["datacenter"])
+                    ]
                     for dvp in dvps:
-                        if hasattr(dvp.config.defaultPortConfig, 'vlan') and \
-                                isinstance(dvp.config.defaultPortConfig.vlan.vlanId, int) and \
-                                str(dvp.config.defaultPortConfig.vlan.vlanId) == str(network['vlan']):
-                            network['name'] = dvp.config.name
+                        if (
+                            hasattr(dvp.config.defaultPortConfig, "vlan")
+                            and isinstance(
+                                dvp.config.defaultPortConfig.vlan.vlanId, int
+                            )
+                            and str(dvp.config.defaultPortConfig.vlan.vlanId)
+                            == str(network["vlan"])
+                        ):
+                            network["name"] = dvp.config.name
                             break
-                        if 'dvswitch_name' in network and \
-                                dvp.config.distributedVirtualSwitch.name == network['dvswitch_name'] and \
-                                dvp.config.name == network['vlan']:
-                            network['name'] = dvp.config.name
+                        if (
+                            "dvswitch_name" in network
+                            and dvp.config.distributedVirtualSwitch.name
+                            == network["dvswitch_name"]
+                            and dvp.config.name == network["vlan"]
+                        ):
+                            network["name"] = dvp.config.name
                             break
-                        if dvp.config.name == network['vlan']:
-                            network['name'] = dvp.config.name
+                        if dvp.config.name == network["vlan"]:
+                            network["name"] = dvp.config.name
                             break
                     else:
-                        self.module.fail_json(msg="VLAN '%(vlan)s' does not exist." % network)
+                        self.module.fail_json(
+                            msg="VLAN '%(vlan)s' does not exist." % network
+                        )
 
-                if 'device_type' in network and network['device_type'] not in list(self.nic_device_type.keys()):
-                    self.module.fail_json(msg="Device type specified '%s' is invalid. "
-                                              "Valid types %s " % (network['device_type'], list(self.nic_device_type.keys())))
+                if "device_type" in network and network[
+                    "device_type"
+                ] not in list(self.nic_device_type.keys()):
+                    self.module.fail_json(
+                        msg="Device type specified '%s' is invalid. "
+                        "Valid types %s "
+                        % (
+                            network["device_type"],
+                            list(self.nic_device_type.keys()),
+                        )
+                    )
 
-                if ('mac' in network and not is_mac(network['mac'])) or \
-                        ('manual_mac' in network and not is_mac(network['manual_mac'])):
-                    self.module.fail_json(msg="Device MAC address '%s' or manual set MAC address %s is invalid. "
-                                              "Please provide correct MAC address." % (network['mac'], network['manual_mac']))
+                if ("mac" in network and not is_mac(network["mac"])) or (
+                    "manual_mac" in network
+                    and not is_mac(network["manual_mac"])
+                ):
+                    self.module.fail_json(
+                        msg="Device MAC address '%s' or manual set MAC address %s is invalid. "
+                        "Please provide correct MAC address."
+                        % (network["mac"], network["manual_mac"])
+                    )
 
                 network_list.append(network)
 
@@ -449,90 +544,193 @@ class PyVmomiHelper(PyVmomi):
         # create network adapter config spec for adding, editing, removing
         for network in network_list:
             # add new network adapter
-            if network['state'].lower() == 'new':
+            if network["state"].lower() == "new":
                 nic_spec = self.create_network_adapter(network)
-                nic_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
+                nic_spec.operation = (
+                    vim.vm.device.VirtualDeviceSpec.Operation.add
+                )
                 self.change_detected = True
                 self.config_spec.deviceChange.append(nic_spec)
             # reconfigure network adapter or remove network adapter
             else:
                 nic_devices = []
-                if 'mac' in network:
-                    nic = self.get_network_device_by_mac(vm_obj, mac=network['mac'])
+                if "mac" in network:
+                    nic = self.get_network_device_by_mac(
+                        vm_obj, mac=network["mac"]
+                    )
                     if nic is not None:
                         nic_devices.append(nic)
-                if 'label' in network and len(nic_devices) == 0:
-                    nic = self.get_network_device_by_label(vm_obj, device_label=network['label'])
+                if "label" in network and len(nic_devices) == 0:
+                    nic = self.get_network_device_by_label(
+                        vm_obj, device_label=network["label"]
+                    )
                     if nic is not None:
                         nic_devices.append(nic)
-                if 'device_type' in network and len(nic_devices) == 0:
-                    nic_devices = self.get_network_devices_by_type(vm_obj, device_type=network['device_type'])
+                if "device_type" in network and len(nic_devices) == 0:
+                    nic_devices = self.get_network_devices_by_type(
+                        vm_obj, device_type=network["device_type"]
+                    )
                 if len(nic_devices) != 0:
                     for nic_device in nic_devices:
                         nic_spec = vim.vm.device.VirtualDeviceSpec()
-                        if network['state'].lower() == 'present':
-                            nic_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.edit
+                        if network["state"].lower() == "present":
+                            nic_spec.operation = (
+                                vim.vm.device.VirtualDeviceSpec.Operation.edit
+                            )
                             nic_spec.device = nic_device
-                            if 'start_connected' in network and nic_device.connectable.startConnected != network['start_connected']:
-                                nic_device.connectable.startConnected = network['start_connected']
+                            if (
+                                "start_connected" in network
+                                and nic_device.connectable.startConnected
+                                != network["start_connected"]
+                            ):
+                                nic_device.connectable.startConnected = network[
+                                    "start_connected"
+                                ]
                                 self.change_detected = True
-                            if 'connected' in network and nic_device.connectable.connected != network['connected']:
-                                nic_device.connectable.connected = network['connected']
+                            if (
+                                "connected" in network
+                                and nic_device.connectable.connected
+                                != network["connected"]
+                            ):
+                                nic_device.connectable.connected = network[
+                                    "connected"
+                                ]
                                 self.change_detected = True
-                            if 'name' in network:
-                                network_object = self.find_network_by_name(network_name=network['name'])[0]
-                                if network_object and hasattr(network_object, 'portKeys') and hasattr(nic_spec.device.backing, 'port'):
-                                    if network_object.config.distributedVirtualSwitch.uuid != nic_spec.device.backing.port.switchUuid:
+                            if "name" in network:
+                                network_object = self.find_network_by_name(
+                                    network_name=network["name"]
+                                )[0]
+                                if (
+                                    network_object
+                                    and hasattr(network_object, "portKeys")
+                                    and hasattr(
+                                        nic_spec.device.backing, "port"
+                                    )
+                                ):
+                                    if (
+                                        network_object.config.distributedVirtualSwitch.uuid
+                                        != nic_spec.device.backing.port.switchUuid
+                                    ):
                                         # DistributedVirtualPortGroup
-                                        nic_spec.device.backing = vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo()
-                                        nic_spec.device.backing.port = vim.dvs.PortConnection()
-                                        nic_spec.device.backing.port.switchUuid = network_object.config.distributedVirtualSwitch.uuid
-                                        nic_spec.device.backing.port.portgroupKey = network_object.key
+                                        nic_spec.device.backing = (
+                                            vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo()
+                                        )
+                                        nic_spec.device.backing.port = (
+                                            vim.dvs.PortConnection()
+                                        )
+                                        nic_spec.device.backing.port.switchUuid = (
+                                            network_object.config.distributedVirtualSwitch.uuid
+                                        )
+                                        nic_spec.device.backing.port.portgroupKey = (
+                                            network_object.key
+                                        )
                                         self.change_detected = True
-                                elif network_object and isinstance(network_object, vim.OpaqueNetwork) and hasattr(nic_spec.device.backing, 'opaqueNetworkId'):
-                                    if nic_spec.device.backing.opaqueNetworkId != network_object.summary.opaqueNetworkId:
+                                elif (
+                                    network_object
+                                    and isinstance(
+                                        network_object, vim.OpaqueNetwork
+                                    )
+                                    and hasattr(
+                                        nic_spec.device.backing,
+                                        "opaqueNetworkId",
+                                    )
+                                ):
+                                    if (
+                                        nic_spec.device.backing.opaqueNetworkId
+                                        != network_object.summary.opaqueNetworkId
+                                    ):
                                         # NSX-T Logical Switch
-                                        nic_spec.device.backing = vim.vm.device.VirtualEthernetCard.OpaqueNetworkBackingInfo()
-                                        network_id = network_object.summary.opaqueNetworkId
-                                        nic_spec.device.backing.opaqueNetworkType = 'nsx.LogicalSwitch'
-                                        nic_spec.device.backing.opaqueNetworkId = network_id
-                                        nic_spec.device.deviceInfo.summary = 'nsx.LogicalSwitch: %s' % network_id
+                                        nic_spec.device.backing = (
+                                            vim.vm.device.VirtualEthernetCard.OpaqueNetworkBackingInfo()
+                                        )
+                                        network_id = (
+                                            network_object.summary.opaqueNetworkId
+                                        )
+                                        nic_spec.device.backing.opaqueNetworkType = (
+                                            "nsx.LogicalSwitch"
+                                        )
+                                        nic_spec.device.backing.opaqueNetworkId = (
+                                            network_id
+                                        )
+                                        nic_spec.device.deviceInfo.summary = (
+                                            "nsx.LogicalSwitch: %s"
+                                            % network_id
+                                        )
                                         self.change_detected = True
-                                elif nic_device.deviceInfo.summary != network['name']:
+                                elif (
+                                    nic_device.deviceInfo.summary
+                                    != network["name"]
+                                ):
                                     # Standard vSwitch
-                                    nic_spec.device.backing = vim.vm.device.VirtualEthernetCard.NetworkBackingInfo()
-                                    nic_spec.device.backing.deviceName = network['name']
-                                    nic_spec.device.backing.network = network_object
+                                    nic_spec.device.backing = (
+                                        vim.vm.device.VirtualEthernetCard.NetworkBackingInfo()
+                                    )
+                                    nic_spec.device.backing.deviceName = network[
+                                        "name"
+                                    ]
+                                    nic_spec.device.backing.network = (
+                                        network_object
+                                    )
                                     self.change_detected = True
-                            if 'manual_mac' in network and nic_device.macAddress != network['manual_mac']:
-                                if vm_obj.runtime.powerState != vim.VirtualMachinePowerState.poweredOff:
-                                    self.module.fail_json(msg='Expected power state is poweredOff to reconfigure MAC address')
-                                nic_device.addressType = 'manual'
-                                nic_device.macAddress = network['manual_mac']
+                            if (
+                                "manual_mac" in network
+                                and nic_device.macAddress
+                                != network["manual_mac"]
+                            ):
+                                if (
+                                    vm_obj.runtime.powerState
+                                    != vim.VirtualMachinePowerState.poweredOff
+                                ):
+                                    self.module.fail_json(
+                                        msg="Expected power state is poweredOff to reconfigure MAC address"
+                                    )
+                                nic_device.addressType = "manual"
+                                nic_device.macAddress = network["manual_mac"]
                                 self.change_detected = True
-                            if 'directpath_io' in network:
-                                if isinstance(nic_device, vim.vm.device.VirtualVmxnet3):
-                                    if nic_device.uptCompatibilityEnabled != network['directpath_io']:
-                                        nic_device.uptCompatibilityEnabled = network['directpath_io']
+                            if "directpath_io" in network:
+                                if isinstance(
+                                    nic_device, vim.vm.device.VirtualVmxnet3
+                                ):
+                                    if (
+                                        nic_device.uptCompatibilityEnabled
+                                        != network["directpath_io"]
+                                    ):
+                                        nic_device.uptCompatibilityEnabled = network[
+                                            "directpath_io"
+                                        ]
                                         self.change_detected = True
                                 else:
-                                    self.module.fail_json(msg='UPT is only compatible for Vmxnet3 adapter.'
-                                                          + ' Clients can set this property enabled or disabled if ethernet virtual device is Vmxnet3.')
+                                    self.module.fail_json(
+                                        msg="UPT is only compatible for Vmxnet3 adapter."
+                                        + " Clients can set this property enabled or disabled if ethernet virtual device is Vmxnet3."
+                                    )
                             if self.change_detected:
                                 self.config_spec.deviceChange.append(nic_spec)
-                        elif network['state'].lower() == 'absent':
-                            nic_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.remove
+                        elif network["state"].lower() == "absent":
+                            nic_spec.operation = (
+                                vim.vm.device.VirtualDeviceSpec.Operation.remove
+                            )
                             nic_spec.device = nic_device
                             self.change_detected = True
                             self.config_spec.deviceChange.append(nic_spec)
                 else:
-                    self.module.fail_json(msg='Unable to find the specified network adapter: %s' % network)
+                    self.module.fail_json(
+                        msg="Unable to find the specified network adapter: %s"
+                        % network
+                    )
 
     def reconfigure_vm_network(self, vm_obj):
         network_list = self.sanitize_network_params()
         # gather network adapter info only
-        if (self.params['gather_network_info'] is not None and self.params['gather_network_info']) or len(network_list) == 0:
-            results = {'changed': False, 'failed': False, 'network_data': self.get_network_info(vm_obj)}
+        if (
+            self.params["gather_network_info"] is not None
+            and self.params["gather_network_info"]
+        ) or len(network_list) == 0:
+            results = {
+                "changed": False,
+                "failed": False,
+                "network_data": self.get_network_info(vm_obj),
+            }
         # do reconfigure then gather info
         else:
             self.get_network_config_spec(vm_obj, network_list)
@@ -540,17 +738,29 @@ class PyVmomiHelper(PyVmomi):
                 task = vm_obj.ReconfigVM_Task(spec=self.config_spec)
                 wait_for_task(task)
             except vim.fault.InvalidDeviceSpec as e:
-                self.module.fail_json(msg="Failed to configure network adapter on given virtual machine due to invalid"
-                                          " device spec : %s" % to_native(e.msg),
-                                      details="Please check ESXi server logs for more details.")
+                self.module.fail_json(
+                    msg="Failed to configure network adapter on given virtual machine due to invalid"
+                    " device spec : %s" % to_native(e.msg),
+                    details="Please check ESXi server logs for more details.",
+                )
             except vim.fault.RestrictedVersion as e:
-                self.module.fail_json(msg="Failed to reconfigure virtual machine due to"
-                                          " product versioning restrictions: %s" % to_native(e.msg))
-            if task.info.state == 'error':
-                results = {'changed': self.change_detected, 'failed': True, 'msg': task.info.error.msg}
+                self.module.fail_json(
+                    msg="Failed to reconfigure virtual machine due to"
+                    " product versioning restrictions: %s" % to_native(e.msg)
+                )
+            if task.info.state == "error":
+                results = {
+                    "changed": self.change_detected,
+                    "failed": True,
+                    "msg": task.info.error.msg,
+                }
             else:
                 network_info = self.get_network_info(vm_obj)
-                results = {'changed': self.change_detected, 'failed': False, 'network_data': network_info}
+                results = {
+                    "changed": self.change_detected,
+                    "failed": False,
+                    "network_data": network_info,
+                }
 
         return results
 
@@ -558,37 +768,42 @@ class PyVmomiHelper(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        uuid=dict(type='str'),
-        use_instance_uuid=dict(type='bool', default=False),
-        moid=dict(type='str'),
-        folder=dict(type='str'),
-        datacenter=dict(type='str', default='ha-datacenter'),
-        esxi_hostname=dict(type='str'),
-        cluster=dict(type='str'),
-        gather_network_info=dict(type='bool', default=False, aliases=['gather_network_facts']),
-        networks=dict(type='list', default=[])
+        name=dict(type="str"),
+        uuid=dict(type="str"),
+        use_instance_uuid=dict(type="bool", default=False),
+        moid=dict(type="str"),
+        folder=dict(type="str"),
+        datacenter=dict(type="str", default="ha-datacenter"),
+        esxi_hostname=dict(type="str"),
+        cluster=dict(type="str"),
+        gather_network_info=dict(
+            type="bool", default=False, aliases=["gather_network_facts"]
+        ),
+        networks=dict(type="list", default=[]),
     )
 
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ]
+        argument_spec=argument_spec, required_one_of=[["name", "uuid", "moid"]]
     )
 
     pyv = PyVmomiHelper(module)
     vm = pyv.get_vm()
     if not vm:
-        vm_id = (module.params.get('uuid') or module.params.get('name') or module.params.get('moid'))
-        module.fail_json(msg='Unable to find the specified virtual machine using %s' % vm_id)
+        vm_id = (
+            module.params.get("uuid")
+            or module.params.get("name")
+            or module.params.get("moid")
+        )
+        module.fail_json(
+            msg="Unable to find the specified virtual machine using %s" % vm_id
+        )
 
     result = pyv.reconfigure_vm_network(vm)
-    if result['failed']:
+    if result["failed"]:
         module.fail_json(**result)
     else:
         module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

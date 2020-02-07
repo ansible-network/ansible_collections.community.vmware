@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vcenter_extension_info
 short_description: Gather info vCenter extensions
@@ -29,9 +30,9 @@ requirements:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather info about vCenter Extensions
   vcenter_extension_info:
     hostname: '{{ vcenter_hostname }}'
@@ -39,9 +40,9 @@ EXAMPLES = r'''
     password: '{{ vcenter_password }}'
   register: ext_info
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 extension_info:
     description: List of extensions
     returned: success
@@ -68,10 +69,13 @@ extension_info:
             "extension_version": "5.5"
         }
     ]
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class VmwareExtManager(PyVmomi):
@@ -91,11 +95,13 @@ class VmwareExtManager(PyVmomi):
                 extension_key=ext.key,
                 extension_company=ext.company,
                 extension_version=ext.version,
-                extension_type=ext.type if ext.type else '',
-                extension_subject_name=ext.subjectName if ext.subjectName else '',
+                extension_type=ext.type if ext.type else "",
+                extension_subject_name=ext.subjectName
+                if ext.subjectName
+                else "",
                 extension_last_heartbeat_time=ext.lastHeartbeatTime,
             )
-            result['extension_info'].append(ext_info)
+            result["extension_info"].append(ext_info)
 
         self.module.exit_json(**result)
 
@@ -104,8 +110,7 @@ def main():
     argument_spec = vmware_argument_spec()
 
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True,
+        argument_spec=argument_spec, supports_check_mode=True
     )
 
     vcenter_extension_info_mgr = VmwareExtManager(module)

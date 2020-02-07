@@ -6,16 +6,17 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_custom_attribute_defs
 short_description: Manage custom attributes definitions for virtual machine from VMware
@@ -50,9 +51,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Add VMware Attribute Definition
   vmware_guest_custom_attribute_defs:
     hostname: "{{ vcenter_hostname }}"
@@ -72,7 +73,7 @@ EXAMPLES = '''
     attribute_key: custom_attr_def_1
   delegate_to: localhost
   register: defs
-'''
+"""
 
 RETURN = """
 custom_attribute_defs:
@@ -83,7 +84,10 @@ custom_attribute_defs:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+)
 
 try:
     from pyVmomi import vim
@@ -102,10 +106,16 @@ class VmAttributeDefManager(PyVmomi):
             if x.name == field and x.managedObjectType == vim.VirtualMachine:
                 changed = True
                 if not self.module.check_mode:
-                    self.content.customFieldsManager.RemoveCustomFieldDef(key=x.key)
+                    self.content.customFieldsManager.RemoveCustomFieldDef(
+                        key=x.key
+                    )
                     break
             f[x.name] = (x.key, x.managedObjectType)
-        return {'changed': changed, 'failed': False, 'custom_attribute_defs': list(f.keys())}
+        return {
+            "changed": changed,
+            "failed": False,
+            "custom_attribute_defs": list(f.keys()),
+        }
 
     def add_custom_def(self, field):
         changed = False
@@ -119,35 +129,43 @@ class VmAttributeDefManager(PyVmomi):
         if not found:
             changed = True
             if not self.module.check_mode:
-                new_field = self.content.customFieldsManager.AddFieldDefinition(name=field, moType=vim.VirtualMachine)
+                new_field = self.content.customFieldsManager.AddFieldDefinition(
+                    name=field, moType=vim.VirtualMachine
+                )
                 f[new_field.name] = (new_field.key, new_field.type)
-        return {'changed': changed, 'failed': False, 'custom_attribute_defs': list(f.keys())}
+        return {
+            "changed": changed,
+            "failed": False,
+            "custom_attribute_defs": list(f.keys()),
+        }
 
 
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        attribute_key=dict(type='str'),
-        state=dict(type='str', default='present', choices=['absent', 'present']),
+        attribute_key=dict(type="str"),
+        state=dict(
+            type="str", default="present", choices=["absent", "present"]
+        ),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ['state', 'present', ['attribute_key']],
-            ['state', 'absent', ['attribute_key']],
-        ]
+            ["state", "present", ["attribute_key"]],
+            ["state", "absent", ["attribute_key"]],
+        ],
     )
 
     pyv = VmAttributeDefManager(module)
     results = dict(changed=False, custom_attribute_defs=list())
-    if module.params['state'] == "present":
-        results = pyv.add_custom_def(module.params['attribute_key'])
-    elif module.params['state'] == "absent":
-        results = pyv.remove_custom_def(module.params['attribute_key'])
+    if module.params["state"] == "present":
+        results = pyv.add_custom_def(module.params["attribute_key"])
+    elif module.params["state"] == "absent":
+        results = pyv.remove_custom_def(module.params["attribute_key"])
 
     module.exit_json(**results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

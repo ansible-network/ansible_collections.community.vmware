@@ -6,16 +6,17 @@
 
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_dvs_portgroup_info
 short_description: Gathers info DVS portgroup configurations
@@ -62,9 +63,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Get info about DVPG
   vmware_dvs_portgroup_info:
     hostname: "{{ vcenter_server }}"
@@ -81,9 +82,9 @@ EXAMPLES = r'''
     - "{{ dvpg_info.dvs_portgroup_info['dvs_001'] | json_query(query) }}"
   vars:
     query: "[?portgroup_name=='dvpg_001']"
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 dvs_portgroup_info:
     description: metadata about DVS portgroup configuration
     returned: on success
@@ -128,7 +129,7 @@ dvs_portgroup_info:
             },
         ]
     }
-'''
+"""
 
 try:
     from pyVmomi import vim
@@ -136,28 +137,41 @@ except ImportError as e:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, get_all_objs, find_dvs_by_name
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+    get_all_objs,
+    find_dvs_by_name,
+)
 
 
 class DVSPortgroupInfoManager(PyVmomi):
     def __init__(self, module):
         super(DVSPortgroupInfoManager, self).__init__(module)
-        self.dc_name = self.params['datacenter']
-        self.dvs_name = self.params['dvswitch']
+        self.dc_name = self.params["datacenter"]
+        self.dvs_name = self.params["dvswitch"]
 
         datacenter = self.find_datacenter_by_name(self.dc_name)
         if datacenter is None:
-            self.module.fail_json(msg="Failed to find the datacenter %s" % self.dc_name)
+            self.module.fail_json(
+                msg="Failed to find the datacenter %s" % self.dc_name
+            )
         if self.dvs_name:
             # User specified specific dvswitch name to gather information
             dvsn = find_dvs_by_name(self.content, self.dvs_name)
             if dvsn is None:
-                self.module.fail_json(msg="Failed to find the dvswitch %s" % self.dvs_name)
+                self.module.fail_json(
+                    msg="Failed to find the dvswitch %s" % self.dvs_name
+                )
 
             self.dvsls = [dvsn]
         else:
             # default behaviour, gather information about all dvswitches
-            self.dvsls = get_all_objs(self.content, [vim.DistributedVirtualSwitch], folder=datacenter.networkFolder)
+            self.dvsls = get_all_objs(
+                self.content,
+                [vim.DistributedVirtualSwitch],
+                folder=datacenter.networkFolder,
+            )
 
     def get_vlan_info(self, vlan_obj=None):
         """
@@ -171,7 +185,9 @@ class DVSPortgroupInfoManager(PyVmomi):
         if not vlan_obj:
             return vdret
 
-        if isinstance(vlan_obj, vim.dvs.VmwareDistributedVirtualSwitch.TrunkVlanSpec):
+        if isinstance(
+            vlan_obj, vim.dvs.VmwareDistributedVirtualSwitch.TrunkVlanSpec
+        ):
             vlan_id_list = []
             for vli in vlan_obj.vlanId:
                 if vli.start == vli.end:
@@ -179,10 +195,16 @@ class DVSPortgroupInfoManager(PyVmomi):
                 else:
                     vlan_id_list.append(str(vli.start) + "-" + str(vli.end))
             vdret = dict(trunk=True, pvlan=False, vlan_id=vlan_id_list)
-        elif isinstance(vlan_obj, vim.dvs.VmwareDistributedVirtualSwitch.PvlanSpec):
-            vdret = dict(trunk=False, pvlan=True, vlan_id=str(vlan_obj.pvlanId))
+        elif isinstance(
+            vlan_obj, vim.dvs.VmwareDistributedVirtualSwitch.PvlanSpec
+        ):
+            vdret = dict(
+                trunk=False, pvlan=True, vlan_id=str(vlan_obj.pvlanId)
+            )
         else:
-            vdret = dict(trunk=False, pvlan=False, vlan_id=str(vlan_obj.vlanId))
+            vdret = dict(
+                trunk=False, pvlan=False, vlan_id=str(vlan_obj.vlanId)
+            )
 
         return vdret
 
@@ -197,13 +219,16 @@ class DVSPortgroupInfoManager(PyVmomi):
                 port_policy = dict()
                 vlan_info = dict()
 
-                if self.module.params['show_network_policy'] and dvs_pg.config.defaultPortConfig.securityPolicy:
+                if (
+                    self.module.params["show_network_policy"]
+                    and dvs_pg.config.defaultPortConfig.securityPolicy
+                ):
                     network_policy = dict(
                         forged_transmits=dvs_pg.config.defaultPortConfig.securityPolicy.forgedTransmits.value,
                         promiscuous=dvs_pg.config.defaultPortConfig.securityPolicy.allowPromiscuous.value,
-                        mac_changes=dvs_pg.config.defaultPortConfig.securityPolicy.macChanges.value
+                        mac_changes=dvs_pg.config.defaultPortConfig.securityPolicy.macChanges.value,
                     )
-                if self.module.params['show_teaming_policy']:
+                if self.module.params["show_teaming_policy"]:
                     # govcsim does not have uplinkTeamingPolicy, remove this check once
                     # PR https://github.com/vmware/govmomi/pull/1524 merged.
                     if dvs_pg.config.defaultPortConfig.uplinkTeamingPolicy:
@@ -214,7 +239,7 @@ class DVSPortgroupInfoManager(PyVmomi):
                             rolling_order=dvs_pg.config.defaultPortConfig.uplinkTeamingPolicy.rollingOrder.value,
                         )
 
-                if self.params['show_port_policy']:
+                if self.params["show_port_policy"]:
                     # govcsim does not have port policy
                     if dvs_pg.config.policy:
                         port_policy = dict(
@@ -228,11 +253,13 @@ class DVSPortgroupInfoManager(PyVmomi):
                             traffic_filter_override=dvs_pg.config.policy.trafficFilterOverrideAllowed,
                             uplink_teaming_override=dvs_pg.config.policy.uplinkTeamingOverrideAllowed,
                             vendor_config_override=dvs_pg.config.policy.vendorConfigOverrideAllowed,
-                            vlan_override=dvs_pg.config.policy.vlanOverrideAllowed
+                            vlan_override=dvs_pg.config.policy.vlanOverrideAllowed,
                         )
 
-                if self.params['show_vlan_info']:
-                    vlan_info = self.get_vlan_info(dvs_pg.config.defaultPortConfig.vlan)
+                if self.params["show_vlan_info"]:
+                    vlan_info = self.get_vlan_info(
+                        dvs_pg.config.defaultPortConfig.vlan
+                    )
 
                 dvpg_details = dict(
                     portgroup_name=dvs_pg.name,
@@ -253,21 +280,22 @@ class DVSPortgroupInfoManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        datacenter=dict(type='str', required=True),
-        show_network_policy=dict(type='bool', default=True),
-        show_teaming_policy=dict(type='bool', default=True),
-        show_port_policy=dict(type='bool', default=True),
+        datacenter=dict(type="str", required=True),
+        show_network_policy=dict(type="bool", default=True),
+        show_teaming_policy=dict(type="bool", default=True),
+        show_port_policy=dict(type="bool", default=True),
         dvswitch=dict(),
-        show_vlan_info=dict(type='bool', default=False),
+        show_vlan_info=dict(type="bool", default=False),
     )
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True,
+        argument_spec=argument_spec, supports_check_mode=True
     )
 
     dvs_pg_mgr = DVSPortgroupInfoManager(module)
-    module.exit_json(changed=False,
-                     dvs_portgroup_info=dvs_pg_mgr.gather_dvs_portgroup_info())
+    module.exit_json(
+        changed=False,
+        dvs_portgroup_info=dvs_pg_mgr.gather_dvs_portgroup_info(),
+    )
 
 
 if __name__ == "__main__":

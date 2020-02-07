@@ -5,15 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['deprecated'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["deprecated"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_host_firewall_facts
 deprecated:
@@ -44,9 +45,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather firewall facts about all ESXi Host in given Cluster
   vmware_host_firewall_facts:
     hostname: '{{ vcenter_hostname }}'
@@ -62,9 +63,9 @@ EXAMPLES = r'''
     password: '{{ vcenter_password }}'
     esxi_hostname: '{{ esxi_hostname }}'
   delegate_to: localhost
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 hosts_firewall_facts:
     description: metadata about host's firewall configuration
     returned: on success
@@ -97,42 +98,50 @@ hosts_firewall_facts:
                 },
             ]
         }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class FirewallFactsManager(PyVmomi):
     def __init__(self, module):
         super(FirewallFactsManager, self).__init__(module)
-        cluster_name = self.params.get('cluster_name', None)
-        esxi_host_name = self.params.get('esxi_hostname', None)
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=esxi_host_name)
+        cluster_name = self.params.get("cluster_name", None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=esxi_host_name
+        )
 
     @staticmethod
     def normalize_rule_set(rule_obj):
         rule_dict = dict()
-        rule_dict['key'] = rule_obj.key
-        rule_dict['service'] = rule_obj.service
-        rule_dict['enabled'] = rule_obj.enabled
-        rule_dict['rule'] = []
+        rule_dict["key"] = rule_obj.key
+        rule_dict["service"] = rule_obj.service
+        rule_dict["enabled"] = rule_obj.enabled
+        rule_dict["rule"] = []
 
         for rule in rule_obj.rule:
             rule_set_dict = dict()
-            rule_set_dict['port'] = rule.port
-            rule_set_dict['end_port'] = rule.endPort
-            rule_set_dict['direction'] = rule.direction
-            rule_set_dict['port_type'] = rule.portType
-            rule_set_dict['protocol'] = rule.protocol
-            rule_dict['rule'].append(rule_set_dict)
+            rule_set_dict["port"] = rule.port
+            rule_set_dict["end_port"] = rule.endPort
+            rule_set_dict["direction"] = rule.direction
+            rule_set_dict["port_type"] = rule.portType
+            rule_set_dict["protocol"] = rule.protocol
+            rule_dict["rule"].append(rule_set_dict)
 
         allowed_host = rule_obj.allowedHosts
         rule_allow_host = dict()
-        rule_allow_host['ip_address'] = [ip for ip in allowed_host.ipAddress]
-        rule_allow_host['ip_network'] = [ip.network + "/" + str(ip.prefixLength) for ip in allowed_host.ipNetwork]
-        rule_allow_host['all_ip'] = allowed_host.allIp
-        rule_dict['allowed_hosts'] = rule_allow_host
+        rule_allow_host["ip_address"] = [ip for ip in allowed_host.ipAddress]
+        rule_allow_host["ip_network"] = [
+            ip.network + "/" + str(ip.prefixLength)
+            for ip in allowed_host.ipNetwork
+        ]
+        rule_allow_host["all_ip"] = allowed_host.allIp
+        rule_dict["allowed_hosts"] = rule_allow_host
         return rule_dict
 
     def gather_host_firewall_facts(self):
@@ -142,27 +151,30 @@ class FirewallFactsManager(PyVmomi):
             if firewall_system:
                 hosts_firewall_facts[host.name] = []
                 for rule_set_obj in firewall_system.firewallInfo.ruleset:
-                    hosts_firewall_facts[host.name].append(self.normalize_rule_set(rule_obj=rule_set_obj))
+                    hosts_firewall_facts[host.name].append(
+                        self.normalize_rule_set(rule_obj=rule_set_obj)
+                    )
         return hosts_firewall_facts
 
 
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        cluster_name=dict(type='str', required=False),
-        esxi_hostname=dict(type='str', required=False),
+        cluster_name=dict(type="str", required=False),
+        esxi_hostname=dict(type="str", required=False),
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
-        supports_check_mode=True
+        required_one_of=[["cluster_name", "esxi_hostname"]],
+        supports_check_mode=True,
     )
 
     vmware_host_firewall = FirewallFactsManager(module)
-    module.exit_json(changed=False, hosts_firewall_facts=vmware_host_firewall.gather_host_firewall_facts())
+    module.exit_json(
+        changed=False,
+        hosts_firewall_facts=vmware_host_firewall.gather_host_firewall_facts(),
+    )
 
 
 if __name__ == "__main__":

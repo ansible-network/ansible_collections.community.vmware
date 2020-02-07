@@ -11,12 +11,12 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_cluster_ha
 short_description: Manage High Availability (HA) on VMware vSphere clusters
@@ -180,7 +180,7 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
 EXAMPLES = r"""
 - name: Enable HA without admission control
@@ -230,40 +230,61 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, TaskError, find_datacenter_by_name,
-                                         vmware_argument_spec, wait_for_task, option_diff)
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    TaskError,
+    find_datacenter_by_name,
+    vmware_argument_spec,
+    wait_for_task,
+    option_diff,
+)
 from ansible.module_utils._text import to_native
 
 
 class VMwareCluster(PyVmomi):
     def __init__(self, module):
         super(VMwareCluster, self).__init__(module)
-        self.cluster_name = module.params['cluster_name']
-        self.datacenter_name = module.params['datacenter']
-        self.enable_ha = module.params['enable_ha']
+        self.cluster_name = module.params["cluster_name"]
+        self.datacenter_name = module.params["datacenter"]
+        self.enable_ha = module.params["enable_ha"]
         self.datacenter = None
         self.cluster = None
-        self.host_isolation_response = getattr(vim.cluster.DasVmSettings.IsolationResponse, self.params.get('host_isolation_response'))
+        self.host_isolation_response = getattr(
+            vim.cluster.DasVmSettings.IsolationResponse,
+            self.params.get("host_isolation_response"),
+        )
 
         if self.enable_ha and (
-                self.params.get('slot_based_admission_control') or
-                self.params.get('reservation_based_admission_control') or
-                self.params.get('failover_host_admission_control')):
+            self.params.get("slot_based_admission_control")
+            or self.params.get("reservation_based_admission_control")
+            or self.params.get("failover_host_admission_control")
+        ):
             self.ha_admission_control = True
         else:
             self.ha_admission_control = False
 
-        self.datacenter = find_datacenter_by_name(self.content, self.datacenter_name)
+        self.datacenter = find_datacenter_by_name(
+            self.content, self.datacenter_name
+        )
         if self.datacenter is None:
-            self.module.fail_json(msg="Datacenter %s does not exist." % self.datacenter_name)
+            self.module.fail_json(
+                msg="Datacenter %s does not exist." % self.datacenter_name
+            )
 
-        self.cluster = self.find_cluster_by_name(cluster_name=self.cluster_name)
+        self.cluster = self.find_cluster_by_name(
+            cluster_name=self.cluster_name
+        )
         if self.cluster is None:
-            self.module.fail_json(msg="Cluster %s does not exist." % self.cluster_name)
+            self.module.fail_json(
+                msg="Cluster %s does not exist." % self.cluster_name
+            )
 
-        self.advanced_settings = self.params.get('advanced_settings')
+        self.advanced_settings = self.params.get("advanced_settings")
         if self.advanced_settings:
-            self.changed_advanced_settings = option_diff(self.advanced_settings, self.cluster.configurationEx.dasConfig.option)
+            self.changed_advanced_settings = option_diff(
+                self.advanced_settings,
+                self.cluster.configurationEx.dasConfig.option,
+            )
         else:
             self.changed_advanced_settings = None
 
@@ -273,14 +294,20 @@ class VMwareCluster(PyVmomi):
         Returns: List of ESXi hosts sorted by name
 
         """
-        policy = self.params.get('failover_host_admission_control')
+        policy = self.params.get("failover_host_admission_control")
         hosts = []
-        all_hosts = dict((h.name, h) for h in self.get_all_hosts_by_cluster(self.cluster_name))
-        for host in policy.get('failover_hosts'):
+        all_hosts = dict(
+            (h.name, h)
+            for h in self.get_all_hosts_by_cluster(self.cluster_name)
+        )
+        for host in policy.get("failover_hosts"):
             if host in all_hosts:
                 hosts.append(all_hosts.get(host))
             else:
-                self.module.fail_json(msg="Host %s is not a member of cluster %s." % (host, self.cluster_name))
+                self.module.fail_json(
+                    msg="Host %s is not a member of cluster %s."
+                    % (host, self.cluster_name)
+                )
         hosts.sort(key=lambda h: h.name)
         return hosts
 
@@ -295,41 +322,74 @@ class VMwareCluster(PyVmomi):
             return True
 
         if self.enable_ha and (
-                das_config.vmMonitoring != self.params.get('ha_vm_monitoring') or
-                das_config.hostMonitoring != self.params.get('ha_host_monitoring') or
-                das_config.admissionControlEnabled != self.ha_admission_control or
-                das_config.defaultVmSettings.restartPriority != self.params.get('ha_restart_priority') or
-                das_config.defaultVmSettings.isolationResponse != self.host_isolation_response or
-                das_config.defaultVmSettings.vmToolsMonitoringSettings.vmMonitoring != self.params.get('ha_vm_monitoring') or
-                das_config.defaultVmSettings.vmToolsMonitoringSettings.failureInterval != self.params.get('ha_vm_failure_interval') or
-                das_config.defaultVmSettings.vmToolsMonitoringSettings.minUpTime != self.params.get('ha_vm_min_up_time') or
-                das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailures != self.params.get('ha_vm_max_failures') or
-                das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailureWindow != self.params.get('ha_vm_max_failure_window')):
+            das_config.vmMonitoring != self.params.get("ha_vm_monitoring")
+            or das_config.hostMonitoring
+            != self.params.get("ha_host_monitoring")
+            or das_config.admissionControlEnabled != self.ha_admission_control
+            or das_config.defaultVmSettings.restartPriority
+            != self.params.get("ha_restart_priority")
+            or das_config.defaultVmSettings.isolationResponse
+            != self.host_isolation_response
+            or das_config.defaultVmSettings.vmToolsMonitoringSettings.vmMonitoring
+            != self.params.get("ha_vm_monitoring")
+            or das_config.defaultVmSettings.vmToolsMonitoringSettings.failureInterval
+            != self.params.get("ha_vm_failure_interval")
+            or das_config.defaultVmSettings.vmToolsMonitoringSettings.minUpTime
+            != self.params.get("ha_vm_min_up_time")
+            or das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailures
+            != self.params.get("ha_vm_max_failures")
+            or das_config.defaultVmSettings.vmToolsMonitoringSettings.maxFailureWindow
+            != self.params.get("ha_vm_max_failure_window")
+        ):
             return True
 
         if self.ha_admission_control:
-            if self.params.get('slot_based_admission_control'):
-                policy = self.params.get('slot_based_admission_control')
-                if not isinstance(das_config.admissionControlPolicy, vim.cluster.FailoverLevelAdmissionControlPolicy) or \
-                        das_config.admissionControlPolicy.failoverLevel != policy.get('failover_level'):
+            if self.params.get("slot_based_admission_control"):
+                policy = self.params.get("slot_based_admission_control")
+                if not isinstance(
+                    das_config.admissionControlPolicy,
+                    vim.cluster.FailoverLevelAdmissionControlPolicy,
+                ) or das_config.admissionControlPolicy.failoverLevel != policy.get(
+                    "failover_level"
+                ):
                     return True
-            elif self.params.get('reservation_based_admission_control'):
-                policy = self.params.get('reservation_based_admission_control')
-                auto_compute_percentages = policy.get('auto_compute_percentages')
-                if not isinstance(das_config.admissionControlPolicy, vim.cluster.FailoverResourcesAdmissionControlPolicy) or \
-                        das_config.admissionControlPolicy.autoComputePercentages != auto_compute_percentages or \
-                        das_config.admissionControlPolicy.failoverLevel != policy.get('failover_level'):
+            elif self.params.get("reservation_based_admission_control"):
+                policy = self.params.get("reservation_based_admission_control")
+                auto_compute_percentages = policy.get(
+                    "auto_compute_percentages"
+                )
+                if (
+                    not isinstance(
+                        das_config.admissionControlPolicy,
+                        vim.cluster.FailoverResourcesAdmissionControlPolicy,
+                    )
+                    or das_config.admissionControlPolicy.autoComputePercentages
+                    != auto_compute_percentages
+                    or das_config.admissionControlPolicy.failoverLevel
+                    != policy.get("failover_level")
+                ):
                     return True
                 if not auto_compute_percentages:
-                    if das_config.admissionControlPolicy.cpuFailoverResourcesPercent != policy.get('cpu_failover_resources_percent') or \
-                            das_config.admissionControlPolicy.memoryFailoverResourcesPercent != policy.get('memory_failover_resources_percent'):
+                    if das_config.admissionControlPolicy.cpuFailoverResourcesPercent != policy.get(
+                        "cpu_failover_resources_percent"
+                    ) or das_config.admissionControlPolicy.memoryFailoverResourcesPercent != policy.get(
+                        "memory_failover_resources_percent"
+                    ):
                         return True
-            elif self.params.get('failover_host_admission_control'):
-                policy = self.params.get('failover_host_admission_control')
-                if not isinstance(das_config.admissionControlPolicy, vim.cluster.FailoverHostAdmissionControlPolicy):
+            elif self.params.get("failover_host_admission_control"):
+                policy = self.params.get("failover_host_admission_control")
+                if not isinstance(
+                    das_config.admissionControlPolicy,
+                    vim.cluster.FailoverHostAdmissionControlPolicy,
+                ):
                     return True
-                das_config.admissionControlPolicy.failoverHosts.sort(key=lambda h: h.name)
-                if das_config.admissionControlPolicy.failoverHosts != self.get_failover_hosts():
+                das_config.admissionControlPolicy.failoverHosts.sort(
+                    key=lambda h: h.name
+                )
+                if (
+                    das_config.admissionControlPolicy.failoverHosts
+                    != self.get_failover_hosts()
+                ):
                     return True
 
         if self.changed_advanced_settings:
@@ -353,49 +413,101 @@ class VMwareCluster(PyVmomi):
                 if self.enable_ha:
                     vm_tool_spec = vim.cluster.VmToolsMonitoringSettings()
                     vm_tool_spec.enabled = True
-                    vm_tool_spec.vmMonitoring = self.params.get('ha_vm_monitoring')
-                    vm_tool_spec.failureInterval = self.params.get('ha_vm_failure_interval')
-                    vm_tool_spec.minUpTime = self.params.get('ha_vm_min_up_time')
-                    vm_tool_spec.maxFailures = self.params.get('ha_vm_max_failures')
-                    vm_tool_spec.maxFailureWindow = self.params.get('ha_vm_max_failure_window')
+                    vm_tool_spec.vmMonitoring = self.params.get(
+                        "ha_vm_monitoring"
+                    )
+                    vm_tool_spec.failureInterval = self.params.get(
+                        "ha_vm_failure_interval"
+                    )
+                    vm_tool_spec.minUpTime = self.params.get(
+                        "ha_vm_min_up_time"
+                    )
+                    vm_tool_spec.maxFailures = self.params.get(
+                        "ha_vm_max_failures"
+                    )
+                    vm_tool_spec.maxFailureWindow = self.params.get(
+                        "ha_vm_max_failure_window"
+                    )
 
                     das_vm_config = vim.cluster.DasVmSettings()
-                    das_vm_config.restartPriority = self.params.get('ha_restart_priority')
-                    das_vm_config.isolationResponse = self.host_isolation_response
+                    das_vm_config.restartPriority = self.params.get(
+                        "ha_restart_priority"
+                    )
+                    das_vm_config.isolationResponse = (
+                        self.host_isolation_response
+                    )
                     das_vm_config.vmToolsMonitoringSettings = vm_tool_spec
-                    cluster_config_spec.dasConfig.defaultVmSettings = das_vm_config
+                    cluster_config_spec.dasConfig.defaultVmSettings = (
+                        das_vm_config
+                    )
 
-                cluster_config_spec.dasConfig.admissionControlEnabled = self.ha_admission_control
+                cluster_config_spec.dasConfig.admissionControlEnabled = (
+                    self.ha_admission_control
+                )
 
                 if self.ha_admission_control:
-                    if self.params.get('slot_based_admission_control'):
-                        cluster_config_spec.dasConfig.admissionControlPolicy = vim.cluster.FailoverLevelAdmissionControlPolicy()
-                        policy = self.params.get('slot_based_admission_control')
-                        cluster_config_spec.dasConfig.admissionControlPolicy.failoverLevel = policy.get('failover_level')
-                    elif self.params.get('reservation_based_admission_control'):
-                        cluster_config_spec.dasConfig.admissionControlPolicy = vim.cluster.FailoverResourcesAdmissionControlPolicy()
-                        policy = self.params.get('reservation_based_admission_control')
-                        auto_compute_percentages = policy.get('auto_compute_percentages')
-                        cluster_config_spec.dasConfig.admissionControlPolicy.autoComputePercentages = auto_compute_percentages
-                        cluster_config_spec.dasConfig.admissionControlPolicy.failoverLevel = policy.get('failover_level')
+                    if self.params.get("slot_based_admission_control"):
+                        cluster_config_spec.dasConfig.admissionControlPolicy = (
+                            vim.cluster.FailoverLevelAdmissionControlPolicy()
+                        )
+                        policy = self.params.get(
+                            "slot_based_admission_control"
+                        )
+                        cluster_config_spec.dasConfig.admissionControlPolicy.failoverLevel = policy.get(
+                            "failover_level"
+                        )
+                    elif self.params.get(
+                        "reservation_based_admission_control"
+                    ):
+                        cluster_config_spec.dasConfig.admissionControlPolicy = (
+                            vim.cluster.FailoverResourcesAdmissionControlPolicy()
+                        )
+                        policy = self.params.get(
+                            "reservation_based_admission_control"
+                        )
+                        auto_compute_percentages = policy.get(
+                            "auto_compute_percentages"
+                        )
+                        cluster_config_spec.dasConfig.admissionControlPolicy.autoComputePercentages = (
+                            auto_compute_percentages
+                        )
+                        cluster_config_spec.dasConfig.admissionControlPolicy.failoverLevel = policy.get(
+                            "failover_level"
+                        )
                         if not auto_compute_percentages:
-                            cluster_config_spec.dasConfig.admissionControlPolicy.cpuFailoverResourcesPercent = \
-                                policy.get('cpu_failover_resources_percent')
-                            cluster_config_spec.dasConfig.admissionControlPolicy.memoryFailoverResourcesPercent = \
-                                policy.get('memory_failover_resources_percent')
-                    elif self.params.get('failover_host_admission_control'):
-                        cluster_config_spec.dasConfig.admissionControlPolicy = vim.cluster.FailoverHostAdmissionControlPolicy()
-                        policy = self.params.get('failover_host_admission_control')
-                        cluster_config_spec.dasConfig.admissionControlPolicy.failoverHosts = self.get_failover_hosts()
+                            cluster_config_spec.dasConfig.admissionControlPolicy.cpuFailoverResourcesPercent = policy.get(
+                                "cpu_failover_resources_percent"
+                            )
+                            cluster_config_spec.dasConfig.admissionControlPolicy.memoryFailoverResourcesPercent = policy.get(
+                                "memory_failover_resources_percent"
+                            )
+                    elif self.params.get("failover_host_admission_control"):
+                        cluster_config_spec.dasConfig.admissionControlPolicy = (
+                            vim.cluster.FailoverHostAdmissionControlPolicy()
+                        )
+                        policy = self.params.get(
+                            "failover_host_admission_control"
+                        )
+                        cluster_config_spec.dasConfig.admissionControlPolicy.failoverHosts = (
+                            self.get_failover_hosts()
+                        )
 
-                cluster_config_spec.dasConfig.hostMonitoring = self.params.get('ha_host_monitoring')
-                cluster_config_spec.dasConfig.vmMonitoring = self.params.get('ha_vm_monitoring')
+                cluster_config_spec.dasConfig.hostMonitoring = self.params.get(
+                    "ha_host_monitoring"
+                )
+                cluster_config_spec.dasConfig.vmMonitoring = self.params.get(
+                    "ha_vm_monitoring"
+                )
 
                 if self.changed_advanced_settings:
-                    cluster_config_spec.dasConfig.option = self.changed_advanced_settings
+                    cluster_config_spec.dasConfig.option = (
+                        self.changed_advanced_settings
+                    )
 
                 try:
-                    task = self.cluster.ReconfigureComputeResource_Task(cluster_config_spec, True)
+                    task = self.cluster.ReconfigureComputeResource_Task(
+                        cluster_config_spec, True
+                    )
                     changed, result = wait_for_task(task)
                 except vmodl.RuntimeFault as runtime_fault:
                     self.module.fail_json(msg=to_native(runtime_fault.msg))
@@ -404,8 +516,10 @@ class VMwareCluster(PyVmomi):
                 except TaskError as task_e:
                     self.module.fail_json(msg=to_native(task_e))
                 except Exception as generic_exc:
-                    self.module.fail_json(msg="Failed to update cluster"
-                                              " due to generic exception %s" % to_native(generic_exc))
+                    self.module.fail_json(
+                        msg="Failed to update cluster"
+                        " due to generic exception %s" % to_native(generic_exc)
+                    )
             else:
                 changed = True
 
@@ -414,56 +528,88 @@ class VMwareCluster(PyVmomi):
 
 def main():
     argument_spec = vmware_argument_spec()
-    argument_spec.update(dict(
-        cluster_name=dict(type='str', required=True),
-        datacenter=dict(type='str', required=True, aliases=['datacenter_name']),
-        # HA
-        enable_ha=dict(type='bool', default=False),
-        ha_host_monitoring=dict(type='str',
-                                default='enabled',
-                                choices=['enabled', 'disabled']),
-        host_isolation_response=dict(type='str',
-                                     default='none',
-                                     choices=['none', 'powerOff', 'shutdown']),
-        advanced_settings=dict(type='dict', default=dict(), required=False),
-        # HA VM Monitoring related parameters
-        ha_vm_monitoring=dict(type='str',
-                              choices=['vmAndAppMonitoring', 'vmMonitoringOnly', 'vmMonitoringDisabled'],
-                              default='vmMonitoringDisabled'),
-        ha_vm_failure_interval=dict(type='int', default=30),
-        ha_vm_min_up_time=dict(type='int', default=120),
-        ha_vm_max_failures=dict(type='int', default=3),
-        ha_vm_max_failure_window=dict(type='int', default=-1),
-
-        ha_restart_priority=dict(type='str',
-                                 choices=['high', 'low', 'medium', 'disabled'],
-                                 default='medium'),
-        # HA Admission Control related parameters
-        slot_based_admission_control=dict(type='dict', options=dict(
-            failover_level=dict(type='int', required=True),
-        )),
-        reservation_based_admission_control=dict(type='dict', options=dict(
-            auto_compute_percentages=dict(type='bool', default=True),
-            failover_level=dict(type='int', required=True),
-            cpu_failover_resources_percent=dict(type='int', default=50),
-            memory_failover_resources_percent=dict(type='int', default=50),
-        )),
-        failover_host_admission_control=dict(type='dict', options=dict(
-            failover_hosts=dict(type='list', elements='str', required=True),
-        )),
-    ))
+    argument_spec.update(
+        dict(
+            cluster_name=dict(type="str", required=True),
+            datacenter=dict(
+                type="str", required=True, aliases=["datacenter_name"]
+            ),
+            # HA
+            enable_ha=dict(type="bool", default=False),
+            ha_host_monitoring=dict(
+                type="str", default="enabled", choices=["enabled", "disabled"]
+            ),
+            host_isolation_response=dict(
+                type="str",
+                default="none",
+                choices=["none", "powerOff", "shutdown"],
+            ),
+            advanced_settings=dict(
+                type="dict", default=dict(), required=False
+            ),
+            # HA VM Monitoring related parameters
+            ha_vm_monitoring=dict(
+                type="str",
+                choices=[
+                    "vmAndAppMonitoring",
+                    "vmMonitoringOnly",
+                    "vmMonitoringDisabled",
+                ],
+                default="vmMonitoringDisabled",
+            ),
+            ha_vm_failure_interval=dict(type="int", default=30),
+            ha_vm_min_up_time=dict(type="int", default=120),
+            ha_vm_max_failures=dict(type="int", default=3),
+            ha_vm_max_failure_window=dict(type="int", default=-1),
+            ha_restart_priority=dict(
+                type="str",
+                choices=["high", "low", "medium", "disabled"],
+                default="medium",
+            ),
+            # HA Admission Control related parameters
+            slot_based_admission_control=dict(
+                type="dict",
+                options=dict(failover_level=dict(type="int", required=True)),
+            ),
+            reservation_based_admission_control=dict(
+                type="dict",
+                options=dict(
+                    auto_compute_percentages=dict(type="bool", default=True),
+                    failover_level=dict(type="int", required=True),
+                    cpu_failover_resources_percent=dict(
+                        type="int", default=50
+                    ),
+                    memory_failover_resources_percent=dict(
+                        type="int", default=50
+                    ),
+                ),
+            ),
+            failover_host_admission_control=dict(
+                type="dict",
+                options=dict(
+                    failover_hosts=dict(
+                        type="list", elements="str", required=True
+                    )
+                ),
+            ),
+        )
+    )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
         mutually_exclusive=[
-            ['slot_based_admission_control', 'reservation_based_admission_control', 'failover_host_admission_control']
-        ]
+            [
+                "slot_based_admission_control",
+                "reservation_based_admission_control",
+                "failover_host_admission_control",
+            ]
+        ],
     )
 
     vmware_cluster_ha = VMwareCluster(module)
     vmware_cluster_ha.configure_ha()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

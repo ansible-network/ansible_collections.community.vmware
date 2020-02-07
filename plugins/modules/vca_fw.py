@@ -4,13 +4,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vca_fw
 short_description: add remove firewall rules in a gateway  in a vca
@@ -27,9 +30,9 @@ options:
 
 extends_documentation_fragment:
 - community.general.vca.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 
 #Add a set of firewall rules
 
@@ -54,11 +57,15 @@ EXAMPLES = '''
            protocol: "Tcp"
            policy: "allow"
 
-'''
+"""
 
 try:
-    from pyvcloud.schema.vcd.v1_5.schemas.vcloud.networkType import FirewallRuleType
-    from pyvcloud.schema.vcd.v1_5.schemas.vcloud.networkType import ProtocolsType
+    from pyvcloud.schema.vcd.v1_5.schemas.vcloud.networkType import (
+        FirewallRuleType,
+    )
+    from pyvcloud.schema.vcd.v1_5.schemas.vcloud.networkType import (
+        ProtocolsType,
+    )
 except ImportError:
     # normally set a flag here but it will be caught when testing for
     # the existence of pyvcloud (see module_utils/vca.py).  This just
@@ -66,35 +73,49 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.community.general.plugins.module_utils.vca import VcaError, vca_argument_spec, vca_login
+from ansible_collections.community.general.plugins.module_utils.vca import (
+    VcaError,
+    vca_argument_spec,
+    vca_login,
+)
 
 
-VALID_PROTO = ['Tcp', 'Udp', 'Icmp', 'Other', 'Any']
-VALID_RULE_KEYS = ['policy', 'is_enable', 'enable_logging', 'description',
-                   'dest_ip', 'dest_port', 'source_ip', 'source_port',
-                   'protocol']
+VALID_PROTO = ["Tcp", "Udp", "Icmp", "Other", "Any"]
+VALID_RULE_KEYS = [
+    "policy",
+    "is_enable",
+    "enable_logging",
+    "description",
+    "dest_ip",
+    "dest_port",
+    "source_ip",
+    "source_port",
+    "protocol",
+]
 
 
 def protocol_to_tuple(protocol):
-    return (protocol.get_Tcp(),
-            protocol.get_Udp(),
-            protocol.get_Icmp(),
-            protocol.get_Other(),
-            protocol.get_Any())
+    return (
+        protocol.get_Tcp(),
+        protocol.get_Udp(),
+        protocol.get_Icmp(),
+        protocol.get_Other(),
+        protocol.get_Any(),
+    )
 
 
 def protocol_to_string(protocol):
     protocol = protocol_to_tuple(protocol)
     if protocol[0] is True:
-        return 'Tcp'
+        return "Tcp"
     elif protocol[1] is True:
-        return 'Udp'
+        return "Udp"
     elif protocol[2] is True:
-        return 'Icmp'
+        return "Icmp"
     elif protocol[3] is True:
-        return 'Other'
+        return "Other"
     elif protocol[4] is True:
-        return 'Any'
+        return "Any"
 
 
 def protocol_to_type(protocol):
@@ -110,18 +131,21 @@ def validate_fw_rules(fw_rules):
     for rule in fw_rules:
         for k in rule.keys():
             if k not in VALID_RULE_KEYS:
-                raise VcaError("%s is not a valid key in fw rules, please "
-                               "check above.." % k, valid_keys=VALID_RULE_KEYS)
+                raise VcaError(
+                    "%s is not a valid key in fw rules, please "
+                    "check above.." % k,
+                    valid_keys=VALID_RULE_KEYS,
+                )
 
-        rule['dest_port'] = str(rule.get('dest_port', 'Any')).lower()
-        rule['dest_ip'] = rule.get('dest_ip', 'Any').lower()
-        rule['source_port'] = str(rule.get('source_port', 'Any')).lower()
-        rule['source_ip'] = rule.get('source_ip', 'Any').lower()
-        rule['protocol'] = rule.get('protocol', 'Any').lower()
-        rule['policy'] = rule.get('policy', 'allow').lower()
-        rule['is_enable'] = rule.get('is_enable', True)
-        rule['enable_logging'] = rule.get('enable_logging', False)
-        rule['description'] = rule.get('description', 'rule added by Ansible')
+        rule["dest_port"] = str(rule.get("dest_port", "Any")).lower()
+        rule["dest_ip"] = rule.get("dest_ip", "Any").lower()
+        rule["source_port"] = str(rule.get("source_port", "Any")).lower()
+        rule["source_ip"] = rule.get("source_ip", "Any").lower()
+        rule["protocol"] = rule.get("protocol", "Any").lower()
+        rule["policy"] = rule.get("policy", "allow").lower()
+        rule["is_enable"] = rule.get("is_enable", True)
+        rule["enable_logging"] = rule.get("enable_logging", False)
+        rule["description"] = rule.get("description", "rule added by Ansible")
 
     return fw_rules
 
@@ -139,48 +163,61 @@ def fw_rules_to_dict(rules):
                 policy=rule.get_Policy().lower(),
                 is_enable=rule.get_IsEnabled(),
                 enable_logging=rule.get_EnableLogging(),
-                description=rule.get_Description()
+                description=rule.get_Description(),
             )
         )
     return fw_rules
 
 
-def create_fw_rule(is_enable, description, policy, protocol, dest_port,
-                   dest_ip, source_port, source_ip, enable_logging):
+def create_fw_rule(
+    is_enable,
+    description,
+    policy,
+    protocol,
+    dest_port,
+    dest_ip,
+    source_port,
+    source_ip,
+    enable_logging,
+):
 
-    return FirewallRuleType(IsEnabled=is_enable,
-                            Description=description,
-                            Policy=policy,
-                            Protocols=protocol_to_type(protocol),
-                            DestinationPortRange=dest_port,
-                            DestinationIp=dest_ip,
-                            SourcePortRange=source_port,
-                            SourceIp=source_ip,
-                            EnableLogging=enable_logging)
+    return FirewallRuleType(
+        IsEnabled=is_enable,
+        Description=description,
+        Policy=policy,
+        Protocols=protocol_to_type(protocol),
+        DestinationPortRange=dest_port,
+        DestinationIp=dest_ip,
+        SourcePortRange=source_port,
+        SourceIp=source_ip,
+        EnableLogging=enable_logging,
+    )
 
 
 def main():
     argument_spec = vca_argument_spec()
     argument_spec.update(
         dict(
-            fw_rules=dict(required=True, type='list'),
-            gateway_name=dict(default='gateway'),
-            state=dict(default='present', choices=['present', 'absent'])
+            fw_rules=dict(required=True, type="list"),
+            gateway_name=dict(default="gateway"),
+            state=dict(default="present", choices=["present", "absent"]),
         )
     )
 
     module = AnsibleModule(argument_spec, supports_check_mode=True)
 
-    fw_rules = module.params.get('fw_rules')
-    gateway_name = module.params.get('gateway_name')
-    vdc_name = module.params['vdc_name']
+    fw_rules = module.params.get("fw_rules")
+    gateway_name = module.params.get("gateway_name")
+    vdc_name = module.params["vdc_name"]
 
     vca = vca_login(module)
 
     gateway = vca.get_gateway(vdc_name, gateway_name)
     if not gateway:
-        module.fail_json(msg="Not able to find the gateway %s, please check "
-                             "the gateway_name param" % gateway_name)
+        module.fail_json(
+            msg="Not able to find the gateway %s, please check "
+            "the gateway_name param" % gateway_name
+        )
 
     fwservice = gateway._getFirewallService()
 
@@ -193,8 +230,8 @@ def main():
         module.fail_json(msg=e.message)
 
     result = dict(changed=False)
-    result['current_rules'] = current_rules
-    result['desired_rules'] = desired_rules
+    result["current_rules"] = current_rules
+    result["desired_rules"] = desired_rules
 
     updates = list()
     additions = list()
@@ -214,35 +251,35 @@ def main():
 
     for rule in additions:
         if not module.check_mode:
-            rule['protocol'] = rule['protocol'].capitalize()
+            rule["protocol"] = rule["protocol"].capitalize()
             gateway.add_fw_rule(**rule)
-        result['changed'] = True
+        result["changed"] = True
 
     for index, rule in updates:
         if not module.check_mode:
             rule = create_fw_rule(**rule)
             fwservice.replace_FirewallRule_at(index, rule)
-        result['changed'] = True
+        result["changed"] = True
 
-    keys = ['protocol', 'dest_port', 'dest_ip', 'source_port', 'source_ip']
+    keys = ["protocol", "dest_port", "dest_ip", "source_port", "source_ip"]
     for rule in deletions:
         if not module.check_mode:
             kwargs = dict([(k, v) for k, v in rule.items() if k in keys])
-            kwargs['protocol'] = protocol_to_string(kwargs['protocol'])
+            kwargs["protocol"] = protocol_to_string(kwargs["protocol"])
             gateway.delete_fw_rule(**kwargs)
-        result['changed'] = True
+        result["changed"] = True
 
-    if not module.check_mode and result['changed'] is True:
+    if not module.check_mode and result["changed"] is True:
         task = gateway.save_services_configuration()
         if task:
             vca.block_until_completed(task)
 
-    result['rules_updated'] = len(updates)
-    result['rules_added'] = len(additions)
-    result['rules_deleted'] = len(deletions)
+    result["rules_updated"] = len(updates)
+    result["rules_added"] = len(additions)
+    result["rules_deleted"] = len(deletions)
 
     return module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

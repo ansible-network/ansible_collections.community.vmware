@@ -5,16 +5,17 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['deprecated'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["deprecated"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_host_ssl_facts
 deprecated:
@@ -47,9 +48,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Gather SSL thumbprint information about all ESXi Hosts in given Cluster
   vmware_host_ssl_facts:
     hostname: '{{ vcenter_hostname }}'
@@ -82,9 +83,9 @@ EXAMPLES = r'''
     esxi_password: '{{ esxi_password }}'
     esxi_ssl_thumbprint: '{{ ssl_thumbprint }}'
     state: present
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 host_ssl_facts:
     description:
     - dict with hostname as key and dict with SSL thumbprint related facts
@@ -101,31 +102,42 @@ host_ssl_facts:
                 ]
             }
         }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class VMwareHostSslManager(PyVmomi):
     def __init__(self, module):
         super(VMwareHostSslManager, self).__init__(module)
-        cluster_name = self.params.get('cluster_name', None)
-        esxi_host_name = self.params.get('esxi_hostname', None)
-        self.hosts = self.get_all_host_objs(cluster_name=cluster_name, esxi_host_name=esxi_host_name)
+        cluster_name = self.params.get("cluster_name", None)
+        esxi_host_name = self.params.get("esxi_hostname", None)
+        self.hosts = self.get_all_host_objs(
+            cluster_name=cluster_name, esxi_host_name=esxi_host_name
+        )
         self.hosts_facts = {}
 
     def gather_ssl_facts(self):
         for host in self.hosts:
-            self.hosts_facts[host.name] = dict(principal='',
-                                               owner_tag='',
-                                               ssl_thumbprints=[])
+            self.hosts_facts[host.name] = dict(
+                principal="", owner_tag="", ssl_thumbprints=[]
+            )
 
             host_ssl_info_mgr = host.config.sslThumbprintInfo
             if host_ssl_info_mgr:
-                self.hosts_facts[host.name]['principal'] = host_ssl_info_mgr.principal
-                self.hosts_facts[host.name]['owner_tag'] = host_ssl_info_mgr.ownerTag
-                self.hosts_facts[host.name]['ssl_thumbprints'] = [i for i in host_ssl_info_mgr.sslThumbprints]
+                self.hosts_facts[host.name][
+                    "principal"
+                ] = host_ssl_info_mgr.principal
+                self.hosts_facts[host.name][
+                    "owner_tag"
+                ] = host_ssl_info_mgr.ownerTag
+                self.hosts_facts[host.name]["ssl_thumbprints"] = [
+                    i for i in host_ssl_info_mgr.sslThumbprints
+                ]
 
         self.module.exit_json(changed=False, host_ssl_facts=self.hosts_facts)
 
@@ -133,15 +145,12 @@ class VMwareHostSslManager(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        cluster_name=dict(type='str'),
-        esxi_hostname=dict(type='str'),
+        cluster_name=dict(type="str"), esxi_hostname=dict(type="str")
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[
-            ['cluster_name', 'esxi_hostname'],
-        ],
+        required_one_of=[["cluster_name", "esxi_hostname"]],
         supports_check_mode=True,
     )
 

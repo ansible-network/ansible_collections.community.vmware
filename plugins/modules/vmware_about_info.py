@@ -6,15 +6,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_about_info
 short_description: Provides information about VMware server to which user is connecting to
@@ -30,9 +31,9 @@ requirements:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Provide information about vCenter
   vmware_about_info:
     hostname: '{{ vcenter_hostname }}'
@@ -48,9 +49,9 @@ EXAMPLES = r'''
     password: '{{ esxi_password }}'
   delegate_to: localhost
   register: esxi_about_info
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 about_info:
     description:
     - dict about VMware server
@@ -73,10 +74,13 @@ about_info:
             "vendor": "VMware, Inc.",
             "version": "6.5.0"
         }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    vmware_argument_spec,
+    PyVmomi,
+)
 
 
 class VmwareAboutManager(PyVmomi):
@@ -107,7 +111,7 @@ class VmwareAboutManager(PyVmomi):
                 instance_uuid=about.instanceUuid,
                 license_product_name=about.licenseProductName,
                 license_product_version=about.licenseProductVersion,
-            )
+            ),
         )
 
 
@@ -115,8 +119,7 @@ def main():
     argument_spec = vmware_argument_spec()
 
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True,
+        argument_spec=argument_spec, supports_check_mode=True
     )
 
     vmware_about_info_mgr = VmwareAboutManager(module)

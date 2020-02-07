@@ -5,15 +5,16 @@
 #  GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_screenshot
 short_description: Create a screenshot of the Virtual Machine console.
@@ -86,9 +87,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: take a screenshot of the virtual machine console
   vmware_guest_screenshot:
     validate_certs: no
@@ -114,7 +115,7 @@ EXAMPLES = '''
     local_path: "/tmp/"
   delegate_to: localhost
   register: take_screenshot
-'''
+"""
 
 RETURN = """
 screenshot_info:
@@ -142,7 +143,12 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six.moves.urllib.parse import urlencode, quote
 from ansible.module_utils._text import to_native
 from ansible.module_utils.urls import open_url
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task, get_parent_datacenter
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+    wait_for_task,
+    get_parent_datacenter,
+)
 import os
 
 
@@ -159,13 +165,19 @@ class PyVmomiHelper(PyVmomi):
             return url_path
 
         path = "/folder/%s" % quote(file_path.split()[1])
-        params = dict(dsName=file_path.split()[0].strip('[]'))
+        params = dict(dsName=file_path.split()[0].strip("[]"))
         if not self.is_vcenter():
-            datacenter = 'ha-datacenter'
+            datacenter = "ha-datacenter"
         else:
-            datacenter = get_parent_datacenter(self.current_vm_obj).name.replace('&', '%26')
-        params['dcPath'] = datacenter
-        url_path = "https://%s%s?%s" % (self.params['hostname'], path, urlencode(params))
+            datacenter = get_parent_datacenter(
+                self.current_vm_obj
+            ).name.replace("&", "%26")
+        params["dcPath"] = datacenter
+        url_path = "https://%s%s?%s" % (
+            self.params["hostname"],
+            path,
+            urlencode(params),
+        )
 
         return url_path
 
@@ -173,27 +185,38 @@ class PyVmomiHelper(PyVmomi):
         response = None
         download_size = 0
         # file is downloaded as local_file_name when specified, or use original file name
-        if local_file_path.endswith('.png'):
-            local_file_name = local_file_path.split('/')[-1]
-            local_file_path = local_file_path.rsplit('/', 1)[0]
+        if local_file_path.endswith(".png"):
+            local_file_name = local_file_path.split("/")[-1]
+            local_file_path = local_file_path.rsplit("/", 1)[0]
         else:
             local_file_name = file_name
         if not os.path.exists(local_file_path):
             try:
                 os.makedirs(local_file_path)
             except OSError as err:
-                self.module.fail_json(msg="Exception caught when create folder %s on local machine, with error %s"
-                                          % (local_file_path, to_native(err)))
+                self.module.fail_json(
+                    msg="Exception caught when create folder %s on local machine, with error %s"
+                    % (local_file_path, to_native(err))
+                )
         local_file = os.path.join(local_file_path, local_file_name)
-        with open(local_file, 'wb') as handle:
+        with open(local_file, "wb") as handle:
             try:
-                response = open_url(file_url, url_username=self.params.get('username'),
-                                    url_password=self.params.get('password'), validate_certs=False)
+                response = open_url(
+                    file_url,
+                    url_username=self.params.get("username"),
+                    url_password=self.params.get("password"),
+                    validate_certs=False,
+                )
             except Exception as err:
-                self.module.fail_json(msg="Download screenshot file from URL %s, failed due to %s" % (file_url, to_native(err)))
+                self.module.fail_json(
+                    msg="Download screenshot file from URL %s, failed due to %s"
+                    % (file_url, to_native(err))
+                )
             if not response or response.getcode() >= 400:
-                self.module.fail_json(msg="Download screenshot file from URL %s, failed with response %s, response code %s"
-                                          % (file_url, response, response.getcode()))
+                self.module.fail_json(
+                    msg="Download screenshot file from URL %s, failed with response %s, response code %s"
+                    % (file_url, response, response.getcode())
+                )
             bytes_read = response.read(2 ** 20)
             while bytes_read:
                 handle.write(bytes_read)
@@ -214,74 +237,105 @@ class PyVmomiHelper(PyVmomi):
                 task_complete_time=task_info.completeTime,
                 result=task_info.state,
                 screenshot_file_url=file_url,
-                download_local_path=self.params.get('local_path'),
+                download_local_path=self.params.get("local_path"),
                 download_file_size=file_size,
             )
 
         return screenshot_facts
 
     def take_vm_screenshot(self):
-        if self.current_vm_obj.runtime.powerState != vim.VirtualMachinePowerState.poweredOn:
-            self.module.fail_json(msg="VM is %s, valid power state is poweredOn." % self.current_vm_obj.runtime.powerState)
+        if (
+            self.current_vm_obj.runtime.powerState
+            != vim.VirtualMachinePowerState.poweredOn
+        ):
+            self.module.fail_json(
+                msg="VM is %s, valid power state is poweredOn."
+                % self.current_vm_obj.runtime.powerState
+            )
         try:
             task = self.current_vm_obj.CreateScreenshot_Task()
             wait_for_task(task)
         except vim.fault.FileFault as e:
-            self.module.fail_json(msg="Failed to create screenshot due to errors when creating or accessing one or more"
-                                      " files needed for this operation, %s" % to_native(e.msg))
+            self.module.fail_json(
+                msg="Failed to create screenshot due to errors when creating or accessing one or more"
+                " files needed for this operation, %s" % to_native(e.msg)
+            )
         except vim.fault.InvalidState as e:
-            self.module.fail_json(msg="Failed to create screenshot due to VM is not ready to respond to such requests,"
-                                      " %s" % to_native(e.msg))
+            self.module.fail_json(
+                msg="Failed to create screenshot due to VM is not ready to respond to such requests,"
+                " %s" % to_native(e.msg)
+            )
         except vmodl.RuntimeFault as e:
-            self.module.fail_json(msg="Failed to create screenshot due to runtime fault, %s," % to_native(e.msg))
+            self.module.fail_json(
+                msg="Failed to create screenshot due to runtime fault, %s,"
+                % to_native(e.msg)
+            )
         except vim.fault.TaskInProgress as e:
-            self.module.fail_json(msg="Failed to create screenshot due to VM is busy, %s" % to_native(e.msg))
+            self.module.fail_json(
+                msg="Failed to create screenshot due to VM is busy, %s"
+                % to_native(e.msg)
+            )
 
-        if task.info.state == 'error':
-            return {'changed': self.change_detected, 'failed': True, 'msg': task.info.error.msg}
+        if task.info.state == "error":
+            return {
+                "changed": self.change_detected,
+                "failed": True,
+                "msg": task.info.error.msg,
+            }
         else:
             download_file_size = None
             self.change_detected = True
             file_url = self.generate_http_access_url(task.info.result)
-            if self.params.get('local_path'):
+            if self.params.get("local_path"):
                 if file_url:
-                    download_file_size = self.download_screenshot_file(file_url=file_url,
-                                                                       local_file_path=self.params['local_path'],
-                                                                       file_name=task.info.result.split('/')[-1])
-            screenshot_facts = self.get_screenshot_facts(task.info, file_url, download_file_size)
-            return {'changed': self.change_detected, 'failed': False, 'screenshot_info': screenshot_facts}
+                    download_file_size = self.download_screenshot_file(
+                        file_url=file_url,
+                        local_file_path=self.params["local_path"],
+                        file_name=task.info.result.split("/")[-1],
+                    )
+            screenshot_facts = self.get_screenshot_facts(
+                task.info, file_url, download_file_size
+            )
+            return {
+                "changed": self.change_detected,
+                "failed": False,
+                "screenshot_info": screenshot_facts,
+            }
 
 
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        folder=dict(type='str'),
-        datacenter=dict(type='str'),
-        esxi_hostname=dict(type='str'),
-        cluster=dict(type='str'),
-        local_path=dict(type='path'),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        folder=dict(type="str"),
+        datacenter=dict(type="str"),
+        esxi_hostname=dict(type="str"),
+        cluster=dict(type="str"),
+        local_path=dict(type="path"),
     )
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ]
+        argument_spec=argument_spec, required_one_of=[["name", "uuid", "moid"]]
     )
     pyv = PyVmomiHelper(module)
     vm = pyv.get_vm()
     if not vm:
-        vm_id = (module.params.get('uuid') or module.params.get('name') or module.params.get('moid'))
-        module.fail_json(msg='Unable to find the specified virtual machine : %s' % vm_id)
+        vm_id = (
+            module.params.get("uuid")
+            or module.params.get("name")
+            or module.params.get("moid")
+        )
+        module.fail_json(
+            msg="Unable to find the specified virtual machine : %s" % vm_id
+        )
 
     result = pyv.take_vm_screenshot()
-    if result['failed']:
+    if result["failed"]:
         module.fail_json(**result)
     else:
         module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

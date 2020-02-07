@@ -5,17 +5,18 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_disk
 short_description: Manage disks related to virtual machine in given vCenter infrastructure
@@ -151,9 +152,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Add disks to virtual machine using UUID
   vmware_guest_disk:
     hostname: "{{ vcenter_hostname }}"
@@ -280,7 +281,7 @@ EXAMPLES = '''
         destroy: no
   delegate_to: localhost
   register: disk_facts
-'''
+"""
 
 RETURN = """
 disk_status:
@@ -307,6 +308,7 @@ disk_status:
 """
 
 import re
+
 try:
     from pyVmomi import vim
 except ImportError:
@@ -314,18 +316,28 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task, find_obj, get_all_objs
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    vmware_argument_spec,
+    wait_for_task,
+    find_obj,
+    get_all_objs,
+)
 
 
 class PyVmomiHelper(PyVmomi):
     def __init__(self, module):
         super(PyVmomiHelper, self).__init__(module)
-        self.desired_disks = self.params['disk']  # Match with vmware_guest parameter
+        self.desired_disks = self.params[
+            "disk"
+        ]  # Match with vmware_guest parameter
         self.vm = None
-        self.scsi_device_type = dict(lsilogic=vim.vm.device.VirtualLsiLogicController,
-                                     paravirtual=vim.vm.device.ParaVirtualSCSIController,
-                                     buslogic=vim.vm.device.VirtualBusLogicController,
-                                     lsilogicsas=vim.vm.device.VirtualLsiLogicSASController)
+        self.scsi_device_type = dict(
+            lsilogic=vim.vm.device.VirtualLsiLogicController,
+            paravirtual=vim.vm.device.ParaVirtualSCSIController,
+            buslogic=vim.vm.device.VirtualBusLogicController,
+            lsilogicsas=vim.vm.device.VirtualLsiLogicSASController,
+        )
         self.config_spec = vim.vm.ConfigSpec()
         self.config_spec.deviceChange = []
 
@@ -345,7 +357,7 @@ class PyVmomiHelper(PyVmomi):
         scsi_ctl.device.unitNumber = 3
         scsi_ctl.device.busNumber = scsi_bus_number
         scsi_ctl.device.hotAddRemove = True
-        scsi_ctl.device.sharedBus = 'noSharing'
+        scsi_ctl.device.sharedBus = "noSharing"
         scsi_ctl.device.scsiCtlrUnitNumber = 7
 
         return scsi_ctl
@@ -366,7 +378,9 @@ class PyVmomiHelper(PyVmomi):
         disk_spec = vim.vm.device.VirtualDeviceSpec()
         disk_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
         disk_spec.device = vim.vm.device.VirtualDisk()
-        disk_spec.device.backing = vim.vm.device.VirtualDisk.FlatVer2BackingInfo()
+        disk_spec.device.backing = (
+            vim.vm.device.VirtualDisk.FlatVer2BackingInfo()
+        )
         disk_spec.device.backing.diskMode = disk_mode
         disk_spec.device.controllerKey = scsi_ctl_key
         disk_spec.device.unitNumber = disk_index
@@ -374,7 +388,9 @@ class PyVmomiHelper(PyVmomi):
         if disk_filename is not None:
             disk_spec.device.backing.fileName = disk_filename
         else:
-            disk_spec.fileOperation = vim.vm.device.VirtualDeviceSpec.FileOperation.create
+            disk_spec.fileOperation = (
+                vim.vm.device.VirtualDeviceSpec.FileOperation.create
+            )
 
         return disk_spec
 
@@ -388,37 +404,44 @@ class PyVmomiHelper(PyVmomi):
         Returns: Boolean status 'changed' and actual task result
 
         """
-        changed, results = (False, '')
+        changed, results = (False, "")
         try:
             # Perform actual VM reconfiguration
             task = self.vm.ReconfigVM_Task(spec=config_spec)
             changed, results = wait_for_task(task)
         except vim.fault.InvalidDeviceSpec as invalid_device_spec:
-            self.module.fail_json(msg="Failed to manage %s on given virtual machine due to invalid"
-                                      " device spec : %s" % (device_type, to_native(invalid_device_spec.msg)),
-                                  details="Please check ESXi server logs for more details.")
+            self.module.fail_json(
+                msg="Failed to manage %s on given virtual machine due to invalid"
+                " device spec : %s"
+                % (device_type, to_native(invalid_device_spec.msg)),
+                details="Please check ESXi server logs for more details.",
+            )
         except vim.fault.RestrictedVersion as e:
-            self.module.fail_json(msg="Failed to reconfigure virtual machine due to"
-                                      " product versioning restrictions: %s" % to_native(e.msg))
+            self.module.fail_json(
+                msg="Failed to reconfigure virtual machine due to"
+                " product versioning restrictions: %s" % to_native(e.msg)
+            )
 
         return changed, results
 
     def get_ioandshares_diskconfig(self, disk_spec, disk):
         io_disk_spec = vim.StorageResourceManager.IOAllocationInfo()
-        if 'iolimit' in disk:
-            io_disk_spec.limit = disk['iolimit']['limit']
-            if 'shares' in disk['iolimit']:
+        if "iolimit" in disk:
+            io_disk_spec.limit = disk["iolimit"]["limit"]
+            if "shares" in disk["iolimit"]:
                 shares_spec = vim.SharesInfo()
-                shares_spec.level = disk['iolimit']['shares']['level']
-                if shares_spec.level == 'custom':
-                    shares_spec.shares = disk['iolimit']['shares']['level_value']
+                shares_spec.level = disk["iolimit"]["shares"]["level"]
+                if shares_spec.level == "custom":
+                    shares_spec.shares = disk["iolimit"]["shares"][
+                        "level_value"
+                    ]
                 io_disk_spec.shares = shares_spec
             disk_spec.device.storageIOAllocation = io_disk_spec
-        if 'shares' in disk:
+        if "shares" in disk:
             shares_spec = vim.SharesInfo()
-            shares_spec.level = disk['shares']['level']
-            if shares_spec.level == 'custom':
-                shares_spec.shares = disk['shares']['level_value']
+            shares_spec.level = disk["shares"]["level"]
+            if shares_spec.level == "custom":
+                shares_spec.shares = disk["shares"]["level_value"]
             io_disk_spec.shares = shares_spec
             disk_spec.device.storageIOAllocation = io_disk_spec
         return disk_spec
@@ -448,14 +471,19 @@ class PyVmomiHelper(PyVmomi):
 
         scsi_changed = False
         for disk in disk_data:
-            scsi_controller = disk['scsi_controller'] + 1000
-            if scsi_controller not in current_scsi_info and disk['state'] == 'present':
-                scsi_ctl = self.create_scsi_controller(disk['scsi_type'], disk['scsi_controller'])
+            scsi_controller = disk["scsi_controller"] + 1000
+            if (
+                scsi_controller not in current_scsi_info
+                and disk["state"] == "present"
+            ):
+                scsi_ctl = self.create_scsi_controller(
+                    disk["scsi_type"], disk["scsi_controller"]
+                )
                 current_scsi_info[scsi_controller] = dict(disks=dict())
                 self.config_spec.deviceChange.append(scsi_ctl)
                 scsi_changed = True
         if scsi_changed:
-            self.reconfigure_vm(self.config_spec, 'SCSI Controller')
+            self.reconfigure_vm(self.config_spec, "SCSI Controller")
             self.config_spec = vim.vm.ConfigSpec()
             self.config_spec.deviceChange = []
 
@@ -464,80 +492,128 @@ class PyVmomiHelper(PyVmomi):
             if isinstance(device, vim.vm.device.VirtualDisk):
                 # Found Virtual Disk device
                 if device.controllerKey not in current_scsi_info:
-                    current_scsi_info[device.controllerKey] = dict(disks=dict())
-                current_scsi_info[device.controllerKey]['disks'][device.unitNumber] = device
+                    current_scsi_info[device.controllerKey] = dict(
+                        disks=dict()
+                    )
+                current_scsi_info[device.controllerKey]["disks"][
+                    device.unitNumber
+                ] = device
 
         vm_name = self.vm.name
         disk_change_list = []
         for disk in disk_data:
             disk_change = False
-            scsi_controller = disk['scsi_controller'] + 1000  # VMware auto assign 1000 + SCSI Controller
-            if disk['disk_unit_number'] not in current_scsi_info[scsi_controller]['disks'] and disk['state'] == 'present':
+            scsi_controller = (
+                disk["scsi_controller"] + 1000
+            )  # VMware auto assign 1000 + SCSI Controller
+            if (
+                disk["disk_unit_number"]
+                not in current_scsi_info[scsi_controller]["disks"]
+                and disk["state"] == "present"
+            ):
                 # Add new disk
-                disk_spec = self.create_scsi_disk(scsi_controller, disk['disk_unit_number'], disk['disk_mode'], disk['filename'])
-                if disk['filename'] is None:
-                    disk_spec.device.capacityInKB = disk['size']
-                if disk['disk_type'] == 'thin':
+                disk_spec = self.create_scsi_disk(
+                    scsi_controller,
+                    disk["disk_unit_number"],
+                    disk["disk_mode"],
+                    disk["filename"],
+                )
+                if disk["filename"] is None:
+                    disk_spec.device.capacityInKB = disk["size"]
+                if disk["disk_type"] == "thin":
                     disk_spec.device.backing.thinProvisioned = True
-                elif disk['disk_type'] == 'eagerzeroedthick':
+                elif disk["disk_type"] == "eagerzeroedthick":
                     disk_spec.device.backing.eagerlyScrub = True
-                if disk['filename'] is None:
-                    disk_spec.device.backing.fileName = "[%s] %s/%s_%s_%s.vmdk" % (
-                        disk['datastore'].name,
-                        vm_name, vm_name,
-                        str(scsi_controller),
-                        str(disk['disk_unit_number']))
+                if disk["filename"] is None:
+                    disk_spec.device.backing.fileName = (
+                        "[%s] %s/%s_%s_%s.vmdk"
+                        % (
+                            disk["datastore"].name,
+                            vm_name,
+                            vm_name,
+                            str(scsi_controller),
+                            str(disk["disk_unit_number"]),
+                        )
+                    )
                 else:
-                    disk_spec.device.backing.fileName = disk['filename']
-                disk_spec.device.backing.datastore = disk['datastore']
+                    disk_spec.device.backing.fileName = disk["filename"]
+                disk_spec.device.backing.datastore = disk["datastore"]
                 disk_spec = self.get_ioandshares_diskconfig(disk_spec, disk)
                 self.config_spec.deviceChange.append(disk_spec)
                 disk_change = True
-                current_scsi_info[scsi_controller]['disks'][disk['disk_unit_number']] = disk_spec.device
-                results['disk_changes'][disk['disk_index']] = "Disk created."
-            elif disk['disk_unit_number'] in current_scsi_info[scsi_controller]['disks']:
-                if disk['state'] == 'present':
+                current_scsi_info[scsi_controller]["disks"][
+                    disk["disk_unit_number"]
+                ] = disk_spec.device
+                results["disk_changes"][disk["disk_index"]] = "Disk created."
+            elif (
+                disk["disk_unit_number"]
+                in current_scsi_info[scsi_controller]["disks"]
+            ):
+                if disk["state"] == "present":
                     disk_spec = vim.vm.device.VirtualDeviceSpec()
                     # set the operation to edit so that it knows to keep other settings
-                    disk_spec.device = current_scsi_info[scsi_controller]['disks'][disk['disk_unit_number']]
+                    disk_spec.device = current_scsi_info[scsi_controller][
+                        "disks"
+                    ][disk["disk_unit_number"]]
                     # Edit and no resizing allowed
-                    if disk['size'] < disk_spec.device.capacityInKB:
-                        self.module.fail_json(msg="Given disk size at disk index [%s] is smaller than found (%d < %d)."
-                                                  "Reducing disks is not allowed." % (disk['disk_index'],
-                                                                                      disk['size'],
-                                                                                      disk_spec.device.capacityInKB))
-                    if disk['size'] != disk_spec.device.capacityInKB:
-                        disk_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.edit
-                        disk_spec = self.get_ioandshares_diskconfig(disk_spec, disk)
-                        disk_spec.device.capacityInKB = disk['size']
+                    if disk["size"] < disk_spec.device.capacityInKB:
+                        self.module.fail_json(
+                            msg="Given disk size at disk index [%s] is smaller than found (%d < %d)."
+                            "Reducing disks is not allowed."
+                            % (
+                                disk["disk_index"],
+                                disk["size"],
+                                disk_spec.device.capacityInKB,
+                            )
+                        )
+                    if disk["size"] != disk_spec.device.capacityInKB:
+                        disk_spec.operation = (
+                            vim.vm.device.VirtualDeviceSpec.Operation.edit
+                        )
+                        disk_spec = self.get_ioandshares_diskconfig(
+                            disk_spec, disk
+                        )
+                        disk_spec.device.capacityInKB = disk["size"]
                         self.config_spec.deviceChange.append(disk_spec)
                         disk_change = True
-                        results['disk_changes'][disk['disk_index']] = "Disk size increased."
+                        results["disk_changes"][
+                            disk["disk_index"]
+                        ] = "Disk size increased."
                     else:
-                        results['disk_changes'][disk['disk_index']] = "Disk already exists."
+                        results["disk_changes"][
+                            disk["disk_index"]
+                        ] = "Disk already exists."
 
-                elif disk['state'] == 'absent':
+                elif disk["state"] == "absent":
                     # Disk already exists, deleting
                     disk_spec = vim.vm.device.VirtualDeviceSpec()
-                    disk_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.remove
-                    if disk['destroy'] is True:
-                        disk_spec.fileOperation = vim.vm.device.VirtualDeviceSpec.FileOperation.destroy
-                    disk_spec.device = current_scsi_info[scsi_controller]['disks'][disk['disk_unit_number']]
+                    disk_spec.operation = (
+                        vim.vm.device.VirtualDeviceSpec.Operation.remove
+                    )
+                    if disk["destroy"] is True:
+                        disk_spec.fileOperation = (
+                            vim.vm.device.VirtualDeviceSpec.FileOperation.destroy
+                        )
+                    disk_spec.device = current_scsi_info[scsi_controller][
+                        "disks"
+                    ][disk["disk_unit_number"]]
                     self.config_spec.deviceChange.append(disk_spec)
                     disk_change = True
-                    results['disk_changes'][disk['disk_index']] = "Disk deleted."
+                    results["disk_changes"][
+                        disk["disk_index"]
+                    ] = "Disk deleted."
 
             if disk_change:
                 # Adding multiple disks in a single attempt raises weird errors
                 # So adding single disk at a time.
-                self.reconfigure_vm(self.config_spec, 'disks')
+                self.reconfigure_vm(self.config_spec, "disks")
                 self.config_spec = vim.vm.ConfigSpec()
                 self.config_spec.deviceChange = []
             disk_change_list.append(disk_change)
 
         if any(disk_change_list):
-            results['changed'] = True
-        results['disk_data'] = self.gather_disk_facts(vm_obj=self.vm)
+            results["changed"] = True
+        results["disk_data"] = self.gather_disk_facts(vm_obj=self.vm)
         self.module.exit_json(**results)
 
     def sanitize_disk_inputs(self):
@@ -548,57 +624,77 @@ class PyVmomiHelper(PyVmomi):
         """
         disks_data = list()
         if not self.desired_disks:
-            self.module.exit_json(changed=False, msg="No disks provided for virtual"
-                                                     " machine '%s' for management." % self.vm.name)
+            self.module.exit_json(
+                changed=False,
+                msg="No disks provided for virtual"
+                " machine '%s' for management." % self.vm.name,
+            )
 
         for disk_index, disk in enumerate(self.desired_disks):
             # Initialize default value for disk
-            current_disk = dict(disk_index=disk_index,
-                                state='present',
-                                destroy=True,
-                                filename=None,
-                                datastore=None,
-                                autoselect_datastore=True,
-                                disk_unit_number=0,
-                                scsi_controller=0,
-                                disk_mode='persistent')
+            current_disk = dict(
+                disk_index=disk_index,
+                state="present",
+                destroy=True,
+                filename=None,
+                datastore=None,
+                autoselect_datastore=True,
+                disk_unit_number=0,
+                scsi_controller=0,
+                disk_mode="persistent",
+            )
             # Check state
-            if 'state' in disk:
-                if disk['state'] not in ['absent', 'present']:
-                    self.module.fail_json(msg="Invalid state provided '%s' for disk index [%s]."
-                                              " State can be either - 'absent', 'present'" % (disk['state'],
-                                                                                              disk_index))
+            if "state" in disk:
+                if disk["state"] not in ["absent", "present"]:
+                    self.module.fail_json(
+                        msg="Invalid state provided '%s' for disk index [%s]."
+                        " State can be either - 'absent', 'present'"
+                        % (disk["state"], disk_index)
+                    )
                 else:
-                    current_disk['state'] = disk['state']
+                    current_disk["state"] = disk["state"]
 
-            if current_disk['state'] == 'absent':
-                current_disk['destroy'] = disk['destroy']
-            elif current_disk['state'] == 'present':
+            if current_disk["state"] == "absent":
+                current_disk["destroy"] = disk["destroy"]
+            elif current_disk["state"] == "present":
                 # Select datastore or datastore cluster
-                if 'datastore' in disk:
-                    if 'autoselect_datastore' in disk:
-                        self.module.fail_json(msg="Please specify either 'datastore' "
-                                                  "or 'autoselect_datastore' for disk index [%s]" % disk_index)
+                if "datastore" in disk:
+                    if "autoselect_datastore" in disk:
+                        self.module.fail_json(
+                            msg="Please specify either 'datastore' "
+                            "or 'autoselect_datastore' for disk index [%s]"
+                            % disk_index
+                        )
 
                     # Check if given value is datastore or datastore cluster
-                    datastore_name = disk['datastore']
-                    datastore_cluster = find_obj(self.content, [vim.StoragePod], datastore_name)
+                    datastore_name = disk["datastore"]
+                    datastore_cluster = find_obj(
+                        self.content, [vim.StoragePod], datastore_name
+                    )
                     if datastore_cluster:
                         # If user specified datastore cluster so get recommended datastore
-                        datastore_name = self.get_recommended_datastore(datastore_cluster_obj=datastore_cluster)
+                        datastore_name = self.get_recommended_datastore(
+                            datastore_cluster_obj=datastore_cluster
+                        )
                     # Check if get_recommended_datastore or user specified datastore exists or not
-                    datastore = find_obj(self.content, [vim.Datastore], datastore_name)
+                    datastore = find_obj(
+                        self.content, [vim.Datastore], datastore_name
+                    )
                     if datastore is None:
-                        self.module.fail_json(msg="Failed to find datastore named '%s' "
-                                                  "in given configuration." % disk['datastore'])
-                    current_disk['datastore'] = datastore
-                    current_disk['autoselect_datastore'] = False
-                elif 'autoselect_datastore' in disk:
+                        self.module.fail_json(
+                            msg="Failed to find datastore named '%s' "
+                            "in given configuration." % disk["datastore"]
+                        )
+                    current_disk["datastore"] = datastore
+                    current_disk["autoselect_datastore"] = False
+                elif "autoselect_datastore" in disk:
                     # Find datastore which fits requirement
                     datastores = get_all_objs(self.content, [vim.Datastore])
                     if not datastores:
-                        self.module.fail_json(msg="Failed to gather information about"
-                                                  " available datastores in given datacenter.")
+                        self.module.fail_json(
+                            msg="Failed to gather information about"
+                            " available datastores in given datacenter."
+                        )
                     datastore = None
                     datastore_freespace = 0
                     for ds in datastores:
@@ -606,29 +702,41 @@ class PyVmomiHelper(PyVmomi):
                             # If datastore field is provided, filter destination datastores
                             datastore = ds
                             datastore_freespace = ds.summary.freeSpace
-                    current_disk['datastore'] = datastore
+                    current_disk["datastore"] = datastore
 
-                if 'datastore' not in disk and 'autoselect_datastore' not in disk and 'filename' not in disk:
-                    self.module.fail_json(msg="Either 'datastore' or 'autoselect_datastore' is"
-                                              " required parameter while creating disk for "
-                                              "disk index [%s]." % disk_index)
+                if (
+                    "datastore" not in disk
+                    and "autoselect_datastore" not in disk
+                    and "filename" not in disk
+                ):
+                    self.module.fail_json(
+                        msg="Either 'datastore' or 'autoselect_datastore' is"
+                        " required parameter while creating disk for "
+                        "disk index [%s]." % disk_index
+                    )
 
-                if 'filename' in disk:
-                    current_disk['filename'] = disk['filename']
+                if "filename" in disk:
+                    current_disk["filename"] = disk["filename"]
 
-                if [x for x in disk.keys() if x.startswith('size_') or x == 'size']:
+                if [
+                    x
+                    for x in disk.keys()
+                    if x.startswith("size_") or x == "size"
+                ]:
                     # size, size_tb, size_gb, size_mb, size_kb
                     disk_size_parse_failed = False
-                    if 'size' in disk:
-                        size_regex = re.compile(r'(\d+(?:\.\d+)?)([tgmkTGMK][bB])')
-                        disk_size_m = size_regex.match(disk['size'])
+                    if "size" in disk:
+                        size_regex = re.compile(
+                            r"(\d+(?:\.\d+)?)([tgmkTGMK][bB])"
+                        )
+                        disk_size_m = size_regex.match(disk["size"])
                         if disk_size_m:
                             expected = disk_size_m.group(1)
                             unit = disk_size_m.group(2)
                         else:
                             disk_size_parse_failed = True
                         try:
-                            if re.match(r'\d+\.\d+', expected):
+                            if re.match(r"\d+\.\d+", expected):
                                 # We found float value in string, let's typecast it
                                 expected = float(expected)
                             else:
@@ -639,14 +747,16 @@ class PyVmomiHelper(PyVmomi):
                     else:
                         # Even multiple size_ parameter provided by user,
                         # consider first value only
-                        param = [x for x in disk.keys() if x.startswith('size_')][0]
-                        unit = param.split('_')[-1]
+                        param = [
+                            x for x in disk.keys() if x.startswith("size_")
+                        ][0]
+                        unit = param.split("_")[-1]
                         disk_size = disk[param]
                         if isinstance(disk_size, (float, int)):
                             disk_size = str(disk_size)
 
                         try:
-                            if re.match(r'\d+\.\d+', disk_size):
+                            if re.match(r"\d+\.\d+", disk_size):
                                 # We found float value in string, let's typecast it
                                 expected = float(disk_size)
                             else:
@@ -657,86 +767,130 @@ class PyVmomiHelper(PyVmomi):
 
                     if disk_size_parse_failed:
                         # Common failure
-                        self.module.fail_json(msg="Failed to parse disk size for disk index [%s],"
-                                                  " please review value provided"
-                                                  " using documentation." % disk_index)
+                        self.module.fail_json(
+                            msg="Failed to parse disk size for disk index [%s],"
+                            " please review value provided"
+                            " using documentation." % disk_index
+                        )
 
                     disk_units = dict(tb=3, gb=2, mb=1, kb=0)
                     unit = unit.lower()
                     if unit in disk_units:
-                        current_disk['size'] = expected * (1024 ** disk_units[unit])
+                        current_disk["size"] = expected * (
+                            1024 ** disk_units[unit]
+                        )
                     else:
-                        self.module.fail_json(msg="%s is not a supported unit for disk size for disk index [%s]."
-                                                  " Supported units are ['%s']." % (unit,
-                                                                                    disk_index,
-                                                                                    "', '".join(disk_units.keys())))
+                        self.module.fail_json(
+                            msg="%s is not a supported unit for disk size for disk index [%s]."
+                            " Supported units are ['%s']."
+                            % (
+                                unit,
+                                disk_index,
+                                "', '".join(disk_units.keys()),
+                            )
+                        )
 
-                elif current_disk['filename'] is None:
+                elif current_disk["filename"] is None:
                     # No size found but disk, fail
-                    self.module.fail_json(msg="No size, size_kb, size_mb, size_gb or size_tb"
-                                              " attribute found into disk index [%s] configuration." % disk_index)
+                    self.module.fail_json(
+                        msg="No size, size_kb, size_mb, size_gb or size_tb"
+                        " attribute found into disk index [%s] configuration."
+                        % disk_index
+                    )
             # Check SCSI controller key
-            if 'scsi_controller' in disk:
+            if "scsi_controller" in disk:
                 try:
-                    temp_disk_controller = int(disk['scsi_controller'])
+                    temp_disk_controller = int(disk["scsi_controller"])
                 except ValueError:
-                    self.module.fail_json(msg="Invalid SCSI controller ID '%s' specified"
-                                              " at index [%s]" % (disk['scsi_controller'], disk_index))
+                    self.module.fail_json(
+                        msg="Invalid SCSI controller ID '%s' specified"
+                        " at index [%s]"
+                        % (disk["scsi_controller"], disk_index)
+                    )
                 if temp_disk_controller not in range(0, 4):
                     # Only 4 SCSI controllers are allowed per VM
-                    self.module.fail_json(msg="Invalid SCSI controller ID specified [%s],"
-                                              " please specify value between 0 to 3 only." % temp_disk_controller)
-                current_disk['scsi_controller'] = temp_disk_controller
+                    self.module.fail_json(
+                        msg="Invalid SCSI controller ID specified [%s],"
+                        " please specify value between 0 to 3 only."
+                        % temp_disk_controller
+                    )
+                current_disk["scsi_controller"] = temp_disk_controller
             else:
-                self.module.fail_json(msg="Please specify 'scsi_controller' under disk parameter"
-                                          " at index [%s], which is required while creating disk." % disk_index)
+                self.module.fail_json(
+                    msg="Please specify 'scsi_controller' under disk parameter"
+                    " at index [%s], which is required while creating disk."
+                    % disk_index
+                )
             # Check for disk unit number
-            if 'unit_number' in disk:
+            if "unit_number" in disk:
                 try:
-                    temp_disk_unit_number = int(disk['unit_number'])
+                    temp_disk_unit_number = int(disk["unit_number"])
                 except ValueError:
-                    self.module.fail_json(msg="Invalid Disk unit number ID '%s'"
-                                              " specified at index [%s]" % (disk['unit_number'], disk_index))
+                    self.module.fail_json(
+                        msg="Invalid Disk unit number ID '%s'"
+                        " specified at index [%s]"
+                        % (disk["unit_number"], disk_index)
+                    )
                 if temp_disk_unit_number not in range(0, 16):
-                    self.module.fail_json(msg="Invalid Disk unit number ID specified for disk [%s] at index [%s],"
-                                              " please specify value between 0 to 15"
-                                              " only (excluding 7)." % (temp_disk_unit_number, disk_index))
+                    self.module.fail_json(
+                        msg="Invalid Disk unit number ID specified for disk [%s] at index [%s],"
+                        " please specify value between 0 to 15"
+                        " only (excluding 7)."
+                        % (temp_disk_unit_number, disk_index)
+                    )
 
                 if temp_disk_unit_number == 7:
-                    self.module.fail_json(msg="Invalid Disk unit number ID specified for disk at index [%s],"
-                                              " please specify value other than 7 as it is reserved"
-                                              "for SCSI Controller" % disk_index)
-                current_disk['disk_unit_number'] = temp_disk_unit_number
+                    self.module.fail_json(
+                        msg="Invalid Disk unit number ID specified for disk at index [%s],"
+                        " please specify value other than 7 as it is reserved"
+                        "for SCSI Controller" % disk_index
+                    )
+                current_disk["disk_unit_number"] = temp_disk_unit_number
 
             else:
-                self.module.fail_json(msg="Please specify 'unit_number' under disk parameter"
-                                          " at index [%s], which is required while creating disk." % disk_index)
+                self.module.fail_json(
+                    msg="Please specify 'unit_number' under disk parameter"
+                    " at index [%s], which is required while creating disk."
+                    % disk_index
+                )
 
             # Type of Disk
-            disk_type = disk.get('type', 'thick').lower()
-            if disk_type not in ['thin', 'thick', 'eagerzeroedthick']:
-                self.module.fail_json(msg="Invalid 'disk_type' specified for disk index [%s]. Please specify"
-                                          " 'disk_type' value from ['thin', 'thick', 'eagerzeroedthick']." % disk_index)
-            current_disk['disk_type'] = disk_type
+            disk_type = disk.get("type", "thick").lower()
+            if disk_type not in ["thin", "thick", "eagerzeroedthick"]:
+                self.module.fail_json(
+                    msg="Invalid 'disk_type' specified for disk index [%s]. Please specify"
+                    " 'disk_type' value from ['thin', 'thick', 'eagerzeroedthick']."
+                    % disk_index
+                )
+            current_disk["disk_type"] = disk_type
 
             # Mode of Disk
-            temp_disk_mode = disk.get('disk_mode', 'persistent').lower()
-            if temp_disk_mode not in ['persistent', 'independent_persistent', 'independent_nonpersistent']:
-                self.module.fail_json(msg="Invalid 'disk_mode' specified for disk index [%s]. Please specify"
-                                          " 'disk_mode' value from ['persistent', 'independent_persistent', 'independent_nonpersistent']." % disk_index)
-            current_disk['disk_mode'] = temp_disk_mode
+            temp_disk_mode = disk.get("disk_mode", "persistent").lower()
+            if temp_disk_mode not in [
+                "persistent",
+                "independent_persistent",
+                "independent_nonpersistent",
+            ]:
+                self.module.fail_json(
+                    msg="Invalid 'disk_mode' specified for disk index [%s]. Please specify"
+                    " 'disk_mode' value from ['persistent', 'independent_persistent', 'independent_nonpersistent']."
+                    % disk_index
+                )
+            current_disk["disk_mode"] = temp_disk_mode
 
             # SCSI Controller Type
-            scsi_contrl_type = disk.get('scsi_type', 'paravirtual').lower()
+            scsi_contrl_type = disk.get("scsi_type", "paravirtual").lower()
             if scsi_contrl_type not in self.scsi_device_type.keys():
-                self.module.fail_json(msg="Invalid 'scsi_type' specified for disk index [%s]. Please specify"
-                                          " 'scsi_type' value from ['%s']" % (disk_index,
-                                                                              "', '".join(self.scsi_device_type.keys())))
-            current_disk['scsi_type'] = scsi_contrl_type
-            if 'shares' in disk:
-                current_disk['shares'] = disk['shares']
-            if 'iolimit' in disk:
-                current_disk['iolimit'] = disk['iolimit']
+                self.module.fail_json(
+                    msg="Invalid 'scsi_type' specified for disk index [%s]. Please specify"
+                    " 'scsi_type' value from ['%s']"
+                    % (disk_index, "', '".join(self.scsi_device_type.keys()))
+                )
+            current_disk["scsi_type"] = scsi_contrl_type
+            if "shares" in disk:
+                current_disk["shares"] = disk["shares"]
+            if "iolimit" in disk:
+                current_disk["iolimit"] = disk["iolimit"]
             disks_data.append(current_disk)
         return disks_data
 
@@ -751,17 +905,21 @@ class PyVmomiHelper(PyVmomi):
 
         """
         # Check if Datastore Cluster provided by user is SDRS ready
-        sdrs_status = datastore_cluster_obj.podStorageDrsEntry.storageDrsConfig.podConfig.enabled
+        sdrs_status = (
+            datastore_cluster_obj.podStorageDrsEntry.storageDrsConfig.podConfig.enabled
+        )
         if sdrs_status:
             # We can get storage recommendation only if SDRS is enabled on given datastorage cluster
             pod_sel_spec = vim.storageDrs.PodSelectionSpec()
             pod_sel_spec.storagePod = datastore_cluster_obj
             storage_spec = vim.storageDrs.StoragePlacementSpec()
             storage_spec.podSelectionSpec = pod_sel_spec
-            storage_spec.type = 'create'
+            storage_spec.type = "create"
 
             try:
-                rec = self.content.storageResourceManager.RecommendDatastores(storageSpec=storage_spec)
+                rec = self.content.storageResourceManager.RecommendDatastores(
+                    storageSpec=storage_spec
+                )
                 rec_action = rec.recommendations[0].action[0]
                 return rec_action.destination.name
             except Exception:
@@ -796,7 +954,9 @@ class PyVmomiHelper(PyVmomi):
         for disk in vm_obj.config.hardware.device:
             if isinstance(disk, vim.vm.device.VirtualDisk):
                 if disk.storageIOAllocation is None:
-                    disk.storageIOAllocation = vim.StorageResourceManager.IOAllocationInfo()
+                    disk.storageIOAllocation = (
+                        vim.StorageResourceManager.IOAllocationInfo()
+                    )
                     disk.storageIOAllocation.shares = vim.SharesInfo()
                 if disk.shares is None:
                     disk.shares = vim.SharesInfo()
@@ -827,25 +987,22 @@ class PyVmomiHelper(PyVmomi):
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        folder=dict(type='str'),
-        datacenter=dict(type='str', required=True),
-        disk=dict(type='list', default=[]),
-        use_instance_uuid=dict(type='bool', default=False),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        folder=dict(type="str"),
+        datacenter=dict(type="str", required=True),
+        disk=dict(type="list", default=[]),
+        use_instance_uuid=dict(type="bool", default=False),
     )
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ]
+        argument_spec=argument_spec, required_one_of=[["name", "uuid", "moid"]]
     )
 
-    if module.params['folder']:
+    if module.params["folder"]:
         # FindByInventoryPath() does not require an absolute path
         # so we should leave the input folder path unmodified
-        module.params['folder'] = module.params['folder'].rstrip('/')
+        module.params["folder"] = module.params["folder"].rstrip("/")
 
     pyv = PyVmomiHelper(module)
     # Check if the VM exists before continuing
@@ -854,18 +1011,25 @@ def main():
     if not vm:
         # We unable to find the virtual machine user specified
         # Bail out
-        vm_id = (module.params.get('name') or module.params.get('uuid') or module.params.get('moid'))
-        module.fail_json(msg="Unable to manage disks for non-existing"
-                             " virtual machine '%s'." % vm_id)
+        vm_id = (
+            module.params.get("name")
+            or module.params.get("uuid")
+            or module.params.get("moid")
+        )
+        module.fail_json(
+            msg="Unable to manage disks for non-existing"
+            " virtual machine '%s'." % vm_id
+        )
 
     # VM exists
     try:
         pyv.ensure_disks(vm_obj=vm)
     except Exception as exc:
-        module.fail_json(msg="Failed to manage disks for virtual machine"
-                             " '%s' with exception : %s" % (vm.name,
-                                                            to_native(exc)))
+        module.fail_json(
+            msg="Failed to manage disks for virtual machine"
+            " '%s' with exception : %s" % (vm.name, to_native(exc))
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

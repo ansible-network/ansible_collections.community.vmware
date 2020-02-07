@@ -7,15 +7,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: vmware_category
 short_description: Manage VMware categories
@@ -91,9 +92,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware_rest_client.documentation
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Create a category
   vmware_category:
     hostname: "{{ vcenter_server }}"
@@ -142,9 +143,9 @@ EXAMPLES = r'''
     - Datastore
     - Cluster
     state: present
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 category_results:
   description: dictionary of category metadata
   returned: on success
@@ -153,10 +154,13 @@ category_results:
         "category_id": "urn:vmomi:InventoryServiceCategory:d7120bda-9fa5-4f92-9d71-aa1acff2e5a8:GLOBAL",
         "msg": "Category NewCat_0001 updated."
     }
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import (
+    VmwareRestClient,
+)
+
 try:
     from com.vmware.cis.tagging_client import CategoryModel
     from com.vmware.vapi.std.errors_client import Error
@@ -169,21 +173,21 @@ class VmwareCategory(VmwareRestClient):
         super(VmwareCategory, self).__init__(module)
         self.category_service = self.api_client.tagging.Category
         self.global_categories = dict()
-        self.category_name = self.params.get('category_name')
+        self.category_name = self.params.get("category_name")
         self.get_all_categories()
 
     def ensure_state(self):
         """Manage internal states of categories. """
-        desired_state = self.params.get('state')
+        desired_state = self.params.get("state")
         states = {
-            'present': {
-                'present': self.state_update_category,
-                'absent': self.state_create_category,
+            "present": {
+                "present": self.state_update_category,
+                "absent": self.state_create_category,
             },
-            'absent': {
-                'present': self.state_delete_category,
-                'absent': self.state_unchanged,
-            }
+            "absent": {
+                "present": self.state_delete_category,
+                "absent": self.state_unchanged,
+            },
         }
         states[desired_state][self.check_category_status()]()
 
@@ -191,19 +195,19 @@ class VmwareCategory(VmwareRestClient):
         """Create category."""
         category_spec = self.category_service.CreateSpec()
         category_spec.name = self.category_name
-        category_spec.description = self.params.get('category_description')
+        category_spec.description = self.params.get("category_description")
 
-        if self.params.get('category_cardinality') == 'single':
+        if self.params.get("category_cardinality") == "single":
             category_spec.cardinality = CategoryModel.Cardinality.SINGLE
         else:
             category_spec.cardinality = CategoryModel.Cardinality.MULTIPLE
 
-        associable_object_types = self.params.get('associable_object_types')
+        associable_object_types = self.params.get("associable_object_types")
 
         obj_types_set = []
         if associable_object_types:
             for obj_type in associable_object_types:
-                if obj_type.lower() == 'all objects':
+                if obj_type.lower() == "all objects":
                     obj_types_set = []
                     break
                 else:
@@ -217,11 +221,17 @@ class VmwareCategory(VmwareRestClient):
             self.module.fail_json(msg="%s" % self.get_error_message(error))
 
         if category_id:
-            self.module.exit_json(changed=True,
-                                  category_results=dict(msg="Category '%s' created." % category_spec.name,
-                                                        category_id=category_id))
-        self.module.exit_json(changed=False,
-                              category_results=dict(msg="No category created", category_id=''))
+            self.module.exit_json(
+                changed=True,
+                category_results=dict(
+                    msg="Category '%s' created." % category_spec.name,
+                    category_id=category_id,
+                ),
+            )
+        self.module.exit_json(
+            changed=False,
+            category_results=dict(msg="No category created", category_id=""),
+        )
 
     def state_unchanged(self):
         """Return unchanged state."""
@@ -229,29 +239,38 @@ class VmwareCategory(VmwareRestClient):
 
     def state_update_category(self):
         """Update category."""
-        category_id = self.global_categories[self.category_name]['category_id']
+        category_id = self.global_categories[self.category_name]["category_id"]
         changed = False
-        results = dict(msg="Category %s is unchanged." % self.category_name,
-                       category_id=category_id)
+        results = dict(
+            msg="Category %s is unchanged." % self.category_name,
+            category_id=category_id,
+        )
 
         category_update_spec = self.category_service.UpdateSpec()
         change_list = []
-        old_cat_desc = self.global_categories[self.category_name]['category_description']
-        new_cat_desc = self.params.get('category_description')
+        old_cat_desc = self.global_categories[self.category_name][
+            "category_description"
+        ]
+        new_cat_desc = self.params.get("category_description")
         if new_cat_desc and new_cat_desc != old_cat_desc:
             category_update_spec.description = new_cat_desc
-            results['msg'] = 'Category %s updated.' % self.category_name
+            results["msg"] = "Category %s updated." % self.category_name
             change_list.append(True)
 
-        new_cat_name = self.params.get('new_category_name')
+        new_cat_name = self.params.get("new_category_name")
         if new_cat_name in self.global_categories:
-            self.module.fail_json(msg="Unable to rename %s as %s already"
-                                      " exists in configuration." % (self.category_name, new_cat_name))
-        old_cat_name = self.global_categories[self.category_name]['category_name']
+            self.module.fail_json(
+                msg="Unable to rename %s as %s already"
+                " exists in configuration."
+                % (self.category_name, new_cat_name)
+            )
+        old_cat_name = self.global_categories[self.category_name][
+            "category_name"
+        ]
 
         if new_cat_name and new_cat_name != old_cat_name:
             category_update_spec.name = new_cat_name
-            results['msg'] = 'Category %s updated.' % self.category_name
+            results["msg"] = "Category %s updated." % self.category_name
             change_list.append(True)
 
         if any(change_list):
@@ -261,19 +280,22 @@ class VmwareCategory(VmwareRestClient):
             except Error as error:
                 self.module.fail_json(msg="%s" % self.get_error_message(error))
 
-        self.module.exit_json(changed=changed,
-                              category_results=results)
+        self.module.exit_json(changed=changed, category_results=results)
 
     def state_delete_category(self):
         """Delete category."""
-        category_id = self.global_categories[self.category_name]['category_id']
+        category_id = self.global_categories[self.category_name]["category_id"]
         try:
             self.category_service.delete(category_id=category_id)
         except Error as error:
             self.module.fail_json(msg="%s" % self.get_error_message(error))
-        self.module.exit_json(changed=True,
-                              category_results=dict(msg="Category '%s' deleted." % self.category_name,
-                                                    category_id=category_id))
+        self.module.exit_json(
+            changed=True,
+            category_results=dict(
+                msg="Category '%s' deleted." % self.category_name,
+                category_id=category_id,
+            ),
+        )
 
     def check_category_status(self):
         """
@@ -282,9 +304,9 @@ class VmwareCategory(VmwareRestClient):
 
         """
         if self.category_name in self.global_categories:
-            return 'present'
+            return "present"
         else:
-            return 'absent'
+            return "absent"
 
     def get_all_categories(self):
         """Retrieve all category information."""
@@ -303,19 +325,33 @@ class VmwareCategory(VmwareRestClient):
 def main():
     argument_spec = VmwareRestClient.vmware_client_argument_spec()
     argument_spec.update(
-        category_name=dict(type='str', required=True),
-        category_description=dict(type='str', default='', required=False),
-        category_cardinality=dict(type='str', choices=["multiple", "single"], default="multiple"),
-        new_category_name=dict(type='str'),
-        state=dict(type='str', choices=['present', 'absent'], default='present'),
+        category_name=dict(type="str", required=True),
+        category_description=dict(type="str", default="", required=False),
+        category_cardinality=dict(
+            type="str", choices=["multiple", "single"], default="multiple"
+        ),
+        new_category_name=dict(type="str"),
+        state=dict(
+            type="str", choices=["present", "absent"], default="present"
+        ),
         associable_object_types=dict(
-            type='list',
+            type="list",
             choices=[
-                'All objects', 'Folder', 'Cluster',
-                'Datacenter', 'Datastore', 'Datastore Cluster',
-                'Distributed Port Group', 'Distributed Switch',
-                'Host', 'Content Library', 'Library item', 'Network',
-                'Resource Pool', 'vApp', 'Virtual Machine',
+                "All objects",
+                "Folder",
+                "Cluster",
+                "Datacenter",
+                "Datastore",
+                "Datastore Cluster",
+                "Distributed Port Group",
+                "Distributed Switch",
+                "Host",
+                "Content Library",
+                "Library item",
+                "Network",
+                "Resource Pool",
+                "vApp",
+                "Virtual Machine",
             ],
             elements=str,
         ),
@@ -326,5 +362,5 @@ def main():
     vmware_category.ensure_state()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

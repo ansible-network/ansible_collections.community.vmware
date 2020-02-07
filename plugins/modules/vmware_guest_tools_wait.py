@@ -4,16 +4,17 @@
 # Copyright: (c) 2017, Philippe Dellaert <philippe@dellaert.org>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
-    'metadata_version': '1.1',
-    'status': ['preview'],
-    'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: vmware_guest_tools_wait
 short_description: Wait for VMware tools to become available
@@ -72,9 +73,9 @@ options:
 
 extends_documentation_fragment:
 - vmware.general.vmware.documentation
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Wait for VMware tools to become available by UUID
   vmware_guest_facts:
     hostname: "{{ vcenter_hostname }}"
@@ -118,7 +119,7 @@ EXAMPLES = '''
     folder: "/{{datacenter}}/vm"
   delegate_to: localhost
   register: facts
-'''
+"""
 
 RETURN = """
 instance:
@@ -132,7 +133,11 @@ import time
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, gather_vm_facts, vmware_argument_spec
+from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+    PyVmomi,
+    gather_vm_facts,
+    vmware_argument_spec,
+)
 
 
 class PyVmomiHelper(PyVmomi):
@@ -149,63 +154,76 @@ class PyVmomiHelper(PyVmomi):
         while not tools_running and poll_num <= poll:
             newvm = self.get_vm()
             vm_facts = self.gather_facts(newvm)
-            if vm_facts['guest_tools_status'] == 'guestToolsRunning':
+            if vm_facts["guest_tools_status"] == "guestToolsRunning":
                 tools_running = True
             else:
                 time.sleep(sleep)
                 poll_num += 1
 
         if not tools_running:
-            return {'failed': True, 'msg': 'VMware tools either not present or not running after {0} seconds'.format((poll * sleep))}
+            return {
+                "failed": True,
+                "msg": "VMware tools either not present or not running after {0} seconds".format(
+                    (poll * sleep)
+                ),
+            }
 
         changed = False
         if poll_num > 0:
             changed = True
-        return {'changed': changed, 'failed': False, 'instance': vm_facts}
+        return {"changed": changed, "failed": False, "instance": vm_facts}
 
 
 def main():
     argument_spec = vmware_argument_spec()
     argument_spec.update(
-        name=dict(type='str'),
-        name_match=dict(type='str', default='first', choices=['first', 'last']),
-        folder=dict(type='str'),
-        uuid=dict(type='str'),
-        moid=dict(type='str'),
-        use_instance_uuid=dict(type='bool', default=False),
+        name=dict(type="str"),
+        name_match=dict(
+            type="str", default="first", choices=["first", "last"]
+        ),
+        folder=dict(type="str"),
+        uuid=dict(type="str"),
+        moid=dict(type="str"),
+        use_instance_uuid=dict(type="bool", default=False),
     )
     module = AnsibleModule(
-        argument_spec=argument_spec,
-        required_one_of=[
-            ['name', 'uuid', 'moid']
-        ]
+        argument_spec=argument_spec, required_one_of=[["name", "uuid", "moid"]]
     )
 
-    if module.params['folder']:
+    if module.params["folder"]:
         # FindByInventoryPath() does not require an absolute path
         # so we should leave the input folder path unmodified
-        module.params['folder'] = module.params['folder'].rstrip('/')
+        module.params["folder"] = module.params["folder"].rstrip("/")
 
     pyv = PyVmomiHelper(module)
     # Check if the VM exists before continuing
     vm = pyv.get_vm()
 
     if not vm:
-        vm_id = module.params.get('name') or module.params.get('uuid') or module.params.get('moid')
-        module.fail_json(msg="Unable to wait for VMware tools for non-existing VM '%s'." % vm_id)
+        vm_id = (
+            module.params.get("name")
+            or module.params.get("uuid")
+            or module.params.get("moid")
+        )
+        module.fail_json(
+            msg="Unable to wait for VMware tools for non-existing VM '%s'."
+            % vm_id
+        )
 
     result = dict(changed=False)
     try:
         result = pyv.wait_for_tools(vm)
     except Exception as e:
-        module.fail_json(msg="Waiting for VMware tools failed with"
-                             " exception: {0:s}".format(to_native(e)))
+        module.fail_json(
+            msg="Waiting for VMware tools failed with"
+            " exception: {0:s}".format(to_native(e))
+        )
 
-    if result['failed']:
+    if result["failed"]:
         module.fail_json(**result)
     else:
         module.exit_json(**result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
