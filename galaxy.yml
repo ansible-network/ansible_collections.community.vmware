@@ -1,15 +1,8 @@
-namespace: vmware
-name: general
-version: 1.0.0
-readme: README.md
-authors: null
-description: null
-license: null
-license_file: null
-tags: null
-dependencies:
-  community.general: '>=1.0'
-repository: git@github.com:ansible-collection-migration/vmware.general.git
-documentation: https://github.com/ansible-collection-migration/vmware.general/tree/master/docs
-homepage: https://github.com/ansible-collection-migration/vmware.general
-issues: https://github.com/ansible-collection-migration/vmware.general/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc
+---
+authors:
+  - Ansible Network Community (ansible-network)
+license_file: LICENSE
+name: vmware
+namespace: community
+readme: README.rst
+repository: https://github.com/ansible-network/ansible_collections.community.vmware
