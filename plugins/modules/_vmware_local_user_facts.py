@@ -27,6 +27,7 @@ description:
     - This module can be used to gather facts about users present on the given ESXi host system in VMware infrastructure.
     - All variables and VMware object names are case sensitive.
     - User must hold the 'Authorization.ModifyPermissions' privilege to invoke this module.
+version_added: "2.6"
 author:
 - Abhijeet Kasurde (@Akasurde)
 - Christian Kotte (@ckotte)
@@ -36,9 +37,7 @@ notes:
 requirements:
     - "python >= 2.6"
     - PyVmomi
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -88,7 +87,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 from ansible.module_utils._text import to_native
 
 

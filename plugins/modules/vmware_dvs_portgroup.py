@@ -20,6 +20,7 @@ module: vmware_dvs_portgroup
 short_description: Create or remove a Distributed vSwitch portgroup.
 description:
     - Create or remove a Distributed vSwitch portgroup.
+version_added: 2.0
 author:
     - Joseph Callen (@jcpowermac)
     - Philippe Dellaert (@pdellaert) <philippe@dellaert.org>
@@ -69,12 +70,14 @@ options:
         choices:
             - 'present'
             - 'absent'
+        version_added: '2.5'
     vlan_trunk:
         description:
             - Indicates whether this is a VLAN trunk or not.
         required: False
         default: False
         type: bool
+        version_added: '2.5'
     network_policy:
         description:
             - Dictionary which configures the different security values for portgroup.
@@ -83,6 +86,7 @@ options:
             - '- C(forged_transmits) (bool): indicates whether forged transmits are allowed. (default: false)'
             - '- C(mac_changes) (bool): indicates whether mac changes are allowed. (default: false)'
         required: False
+        version_added: '2.5'
         default: {
             promiscuous: False,
             forged_transmits: False,
@@ -100,6 +104,7 @@ options:
             - '- C(notify_switches) (bool): Indicate whether or not to notify the physical switch if a link fails. (default: True)'
             - '- C(rolling_order) (bool): Indicate whether or not to use a rolling policy when restoring links. (default: False)'
         required: False
+        version_added: '2.5'
         default: {
             'notify_switches': True,
             'load_balance_policy': 'loadbalance_srcid',
@@ -123,6 +128,7 @@ options:
             - '- C(vendor_config_override) (bool): indicates if the vendor config can be changed per port. (default: false)'
             - '- C(vlan_override) (bool): indicates if the vlan can be changed per port. (default: false)'
         required: False
+        version_added: '2.5'
         default: {
             'traffic_filter_override': False,
             'network_rp_override': False,
@@ -138,9 +144,7 @@ options:
         }
         type: dict
 
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -220,7 +224,7 @@ except ImportError as e:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_dvs_by_name, find_dvspg_by_name,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, find_dvs_by_name, find_dvspg_by_name,
                                          vmware_argument_spec, wait_for_task)
 
 

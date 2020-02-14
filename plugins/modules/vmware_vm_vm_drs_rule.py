@@ -19,6 +19,7 @@ module: vmware_vm_vm_drs_rule
 short_description: Configure VMware DRS Affinity rule for virtual machine in given cluster
 description:
 - This module can be used to configure VMware DRS Affinity rule for virtual machine in given cluster.
+version_added: 2.5
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -70,9 +71,7 @@ options:
     default: present
     choices: [ present, absent ]
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -145,7 +144,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec, wait_for_task,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec, wait_for_task,
                                          find_vm_by_id, find_cluster_by_name)
 
 

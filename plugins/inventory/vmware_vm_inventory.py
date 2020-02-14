@@ -306,7 +306,7 @@ class BaseVMwareInventory:
 
 class InventoryModule(BaseInventoryPlugin, Cacheable):
 
-    NAME = 'vmware.general.vmware_vm_inventory'
+    NAME = 'community.vmware.vmware_vm_inventory'
 
     def verify_file(self, path):
         """

@@ -20,6 +20,7 @@ author:
   - "Karsten Kaj Jakobsen (@karstenjakobsen)"
 description:
   - "This module can be used to gather information about DRS VM/HOST groups from the given cluster."
+extends_documentation_fragment: vmware.documentation
 module: vmware_drs_group_info
 notes:
   - "Tested on vSphere 6.5 and 6.7"
@@ -42,9 +43,7 @@ requirements:
   - "python >= 2.6"
   - PyVmomi
 short_description: "Gathers info about DRS VM/Host groups on the given cluster"
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+version_added: "2.9"
 '''
 
 EXAMPLES = r'''
@@ -118,7 +117,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_datacenter_by_name, get_all_objs
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_datacenter_by_name, get_all_objs
 
 
 class VmwareDrsGroupInfoManager(PyVmomi):

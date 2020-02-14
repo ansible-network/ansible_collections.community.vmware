@@ -22,6 +22,7 @@ module: vmware_portgroup
 short_description: Create a VMware portgroup
 description:
     - Create a VMware Port Group on a VMware Standard Switch (vSS) for given ESXi host(s) or hosts of given cluster.
+version_added: 2.0
 author:
 - Joseph Callen (@jcpowermac)
 - Russell Teague (@mtnbikenc)
@@ -67,6 +68,7 @@ options:
             - '- C(forged_transmits) (bool): indicates whether forged transmits are allowed. (default: None)'
             - '- C(mac_changes) (bool): indicates whether mac changes are allowed. (default: None)'
         required: False
+        version_added: "2.2"
         aliases: [ 'security_policy', 'network_policy' ]
         type: dict
     teaming:
@@ -85,6 +87,7 @@ options:
             - '- C(inbound_policy) (bool): Indicate whether or not the teaming policy is applied to inbound frames as well. Deprecated. (default: False)'
             - '- C(rolling_order) (bool): Indicate whether or not to use a rolling policy when restoring links. Deprecated. (default: False)'
         required: False
+        version_added: '2.6'
         aliases: [ 'teaming_policy' ]
         type: dict
     traffic_shaping:
@@ -96,12 +99,14 @@ options:
             - '- C(peak_bandwidth) (int): Peak bandwidth (kbit/s). (default: None)'
             - '- C(burst_size) (int): Burst size (KB). (default: None)'
         required: False
+        version_added: '2.9'
         type: dict
     cluster_name:
         description:
             - Name of cluster name for host membership.
             - Portgroup will be created on all hosts of the given cluster.
             - This option is required if C(hosts) is not specified.
+        version_added: "2.5"
         aliases: [ 'cluster' ]
         type: str
     hosts:
@@ -109,6 +114,7 @@ options:
             - List of name of host or hosts on which portgroup needs to be added.
             - This option is required if C(cluster_name) is not specified.
         aliases: [ esxi_hostname ]
+        version_added: "2.5"
         type: list
     state:
         description:
@@ -116,11 +122,10 @@ options:
         choices:
             - 'present'
             - 'absent'
+        version_added: '2.5'
         default: present
         type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -243,7 +248,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 from ansible.module_utils._text import to_native
 
 

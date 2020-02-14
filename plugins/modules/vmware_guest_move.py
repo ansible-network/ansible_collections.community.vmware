@@ -20,6 +20,7 @@ module: vmware_guest_move
 short_description: Moves virtual machines in vCenter
 description:
     - This module can be used to move virtual machines between folders.
+version_added: '2.7'
 author:
     - Jose Angel Munoz (@imjoseangel)
 notes:
@@ -42,12 +43,14 @@ options:
         description:
             - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
             - This is required if C(name) or C(uuid) is not supplied.
+        version_added: '2.9'
         type: str
    use_instance_uuid:
         description:
             - Whether to use the VMware instance UUID rather than the BIOS UUID.
         default: no
         type: bool
+        version_added: '2.8'
    name_match:
         description:
             - If multiple virtual machines matching the name, use the first or last found.
@@ -76,9 +79,7 @@ options:
             - Destination datacenter for the move operation
         required: True
         type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -181,7 +182,7 @@ instance:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
 
 
 class PyVmomiHelper(PyVmomi):

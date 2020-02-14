@@ -1,3 +1,5 @@
+plugins/module_utils/vca.py future-import-boilerplate
+plugins/module_utils/vca.py metaclass-boilerplate
 plugins/modules/_vmware_dns_config.py validate-modules:parameter-list-no-elements
 plugins/modules/_vmware_drs_group_facts.py validate-modules:doc-required-mismatch
 plugins/modules/vca_fw.py validate-modules:doc-default-does-not-match-spec
@@ -129,6 +131,8 @@ plugins/modules/vmware_cis_category_info.py validate-modules:parameter-list-no-e
 plugins/modules/vmware_core_info.py validate-modules:doc-required-mismatch
 plugins/modules/vmware_core_info.py validate-modules:parameter-list-no-elements
 plugins/connection/vmware_tools.py yamllint:unparsable-with-libyaml
+plugins/doc_fragments/vca.py future-import-boilerplate
+plugins/doc_fragments/vca.py metaclass-boilerplate
 plugins/doc_fragments/vmware.py future-import-boilerplate
 plugins/doc_fragments/vmware.py metaclass-boilerplate
 plugins/doc_fragments/vmware_rest_client.py future-import-boilerplate
@@ -137,5 +141,9 @@ tests/unit/mock/path.py future-import-boilerplate
 tests/unit/mock/path.py metaclass-boilerplate
 tests/unit/mock/yaml_helper.py future-import-boilerplate
 tests/unit/mock/yaml_helper.py metaclass-boilerplate
+tests/unit/module_utils/conftest.py future-import-boilerplate
+tests/unit/module_utils/conftest.py metaclass-boilerplate
+tests/unit/modules/conftest.py future-import-boilerplate
+tests/unit/modules/conftest.py metaclass-boilerplate
 tests/unit/modules/utils.py future-import-boilerplate
 tests/unit/modules/utils.py metaclass-boilerplate

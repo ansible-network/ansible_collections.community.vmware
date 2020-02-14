@@ -22,6 +22,7 @@ module: vmware_dvs_host
 short_description: Add or remove a host from distributed virtual switch
 description:
     - Manage a host system from distributed virtual switch.
+version_added: 2.0
 author:
 - Joseph Callen (@jcpowermac)
 - Abhijeet Kasurde (@Akasurde)
@@ -61,10 +62,9 @@ options:
             - '- C(key) (str): Key of setting. (default: None)'
             - '- C(value) (str): Value of setting. (default: None)'
         required: False
+        version_added: '2.9'
         type: list
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -110,7 +110,7 @@ except ImportError as e:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_dvs_by_name, find_hostsystem_by_name,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, find_dvs_by_name, find_hostsystem_by_name,
                                          vmware_argument_spec, wait_for_task)
 from ansible.module_utils._text import to_native
 

@@ -21,6 +21,7 @@ module: vmware_dvs_portgroup_info
 short_description: Gathers info DVS portgroup configurations
 description:
 - This module can be used to gather information about DVS portgroup configurations.
+version_added: '2.9'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -39,6 +40,7 @@ options:
     - Name of a dvswitch to look for.
     required: false
     type: str
+    version_added: "2.9"
   show_network_policy:
     description:
     - Show or hide network policies of DVS portgroup.
@@ -59,9 +61,8 @@ options:
     - Show or hide vlan information of the DVS portgroup.
     type: bool
     default: False
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+    version_added: "2.9"
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -136,7 +137,7 @@ except ImportError as e:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, get_all_objs, find_dvs_by_name
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, get_all_objs, find_dvs_by_name
 
 
 class DVSPortgroupInfoManager(PyVmomi):

@@ -22,6 +22,7 @@ description:
 - All parameters and VMware objects values are case sensitive.
 - This module is destructive as administrator permission are managed using APIs used, please read options carefully and proceed.
 - Please specify C(hostname) as vCenter IP or hostname only, as lockdown operations are not possible from standalone ESXi server.
+version_added: '2.5'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -51,10 +52,9 @@ options:
     - If host system is already out of lockdown mode and set to C(absent), no action will be taken.
     default: present
     choices: [ present, absent ]
+    version_added: 2.5
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -130,7 +130,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 from ansible.module_utils._text import to_native
 
 

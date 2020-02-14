@@ -23,6 +23,7 @@ deprecated:
 short_description: Gathers facts about available packages on an ESXi host
 description:
 - This module can be used to gather facts about available packages and their status on an ESXi host.
+version_added: '2.5'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -43,9 +44,7 @@ options:
     - Package facts about this ESXi server will be returned.
     - If C(cluster_name) is not given, this parameter is required.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -78,7 +77,7 @@ hosts_package_facts:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 
 
 class VmwarePackageManager(PyVmomi):

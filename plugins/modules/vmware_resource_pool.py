@@ -17,6 +17,7 @@ module: vmware_resource_pool
 short_description: Add/remove resource pools to/from vCenter
 description:
     - This module can be used to add/remove a resource pool to/from vCenter
+version_added: 2.3
 author:
 - Davis Phillips (@dav1x)
 notes:
@@ -100,9 +101,7 @@ options:
             - 'present'
             - 'absent'
         type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -140,7 +139,7 @@ try:
 except ImportError:
     HAS_PYVMOMI = False
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware import get_all_objs, connect_to_api, vmware_argument_spec, find_datacenter_by_name, \
+from ansible_collections.community.vmware.plugins.module_utils.vmware import get_all_objs, connect_to_api, vmware_argument_spec, find_datacenter_by_name, \
     find_cluster_by_name, wait_for_task, find_host_by_cluster_datacenter
 from ansible.module_utils.basic import AnsibleModule
 

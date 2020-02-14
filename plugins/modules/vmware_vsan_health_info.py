@@ -18,6 +18,7 @@ module: vmware_vsan_health_info
 
 short_description: Gather information about a VMware vSAN cluster's health
 
+version_added: "2.10"
 
 description:
     - "Gather information about a VMware vSAN cluster's health"
@@ -39,12 +40,11 @@ requirements:
     - PyVmomi
     - VMware vSAN Python's SDK
 
+extends_documentation_fragment:
+    - vmware.documentation
 
 author:
     - Erwan Quelin (@equelin)
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -123,7 +123,7 @@ except ImportError:
     HAS_VSANPYTHONSDK = False
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-from ansible_collections.vmware.general.plugins.module_utils.vmware import connect_to_api, vmware_argument_spec, find_cluster_by_name
+from ansible_collections.community.vmware.plugins.module_utils.vmware import connect_to_api, vmware_argument_spec, find_cluster_by_name
 
 
 def main():

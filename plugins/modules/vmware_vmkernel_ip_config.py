@@ -17,6 +17,7 @@ module: vmware_vmkernel_ip_config
 short_description: Configure the VMkernel IP Address
 description:
     - Configure the VMkernel IP Address
+version_added: 2.0
 author:
 - Joseph Callen (@jcpowermac)
 - Russell Teague (@mtnbikenc)
@@ -41,9 +42,7 @@ options:
             - Subnet Mask to assign to VMkernel interface
         required: True
         type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -67,7 +66,7 @@ except ImportError:
     HAS_PYVMOMI = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import HAS_PYVMOMI, connect_to_api, get_all_objs, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import HAS_PYVMOMI, connect_to_api, get_all_objs, vmware_argument_spec
 
 
 def configure_vmkernel_ip_address(host_system, vmk_name, ip_address, subnet_mask):

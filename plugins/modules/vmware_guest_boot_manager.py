@@ -21,6 +21,7 @@ module: vmware_guest_boot_manager
 short_description: Manage boot options for the given virtual machine
 description:
     - This module can be used to manage boot options for the given virtual machine.
+version_added: 2.7
 author:
     - Abhijeet Kasurde (@Akasurde) <akasurde@redhat.com>
 notes:
@@ -43,12 +44,14 @@ options:
      description:
      - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
      - This is required if C(name) or C(uuid) is not supplied.
+     version_added: '2.9'
      type: str
    use_instance_uuid:
      description:
      - Whether to use the VMware instance UUID rather than the BIOS UUID.
      default: no
      type: bool
+     version_added: '2.8'
    boot_order:
      description:
      - List of the boot devices.
@@ -93,9 +96,8 @@ options:
      - Choose if EFI secure boot should be enabled.  EFI secure boot can only be enabled with boot_firmware = efi
      type: 'bool'
      default: False
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+     version_added: '2.8'
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -176,7 +178,7 @@ vm_boot_status:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_vm_by_id, wait_for_task, TaskError
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_vm_by_id, wait_for_task, TaskError
 
 try:
     from pyVmomi import vim, VmomiSupport

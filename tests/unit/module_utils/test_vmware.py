@@ -12,9 +12,9 @@ import pytest
 
 pyvmomi = pytest.importorskip('pyVmomi')
 
-from ansible_collections.vmware.general.tests.unit.compat import mock
+from ansible_collections.community.vmware.tests.unit.compat import mock
 
-import ansible_collections.vmware.general.plugins.module_utils.vmware as vmware_module_utils
+import ansible_collections.community.vmware.plugins.module_utils.vmware as vmware_module_utils
 
 
 test_data = [

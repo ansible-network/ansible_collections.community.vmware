@@ -25,6 +25,7 @@ deprecated:
 short_description: Gather facts about boot options for the given virtual machine
 description:
     - Gather facts about boot options for the given virtual machine.
+version_added: 2.7
 author:
     - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -47,21 +48,21 @@ options:
      description:
      - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
      - This is required if C(name) or C(uuid) is not supplied.
+     version_added: '2.9'
      type: str
    use_instance_uuid:
      description:
      - Whether to use the VMware instance UUID rather than the BIOS UUID.
      default: no
      type: bool
+     version_added: '2.8'
    name_match:
      description:
      - If multiple virtual machines matching the name, use the first or last found.
      default: 'first'
      choices: ['first', 'last']
      type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -107,7 +108,7 @@ vm_boot_facts:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_vm_by_id
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_vm_by_id
 
 try:
     from pyVmomi import vim, VmomiSupport

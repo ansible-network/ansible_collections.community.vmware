@@ -23,6 +23,7 @@ deprecated:
 short_description: Gather facts vCenter extensions
 description:
 - This module can be used to gather facts about vCenter extension.
+version_added: 2.8
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -30,9 +31,7 @@ notes:
 requirements:
 - python >= 2.6
 - PyVmomi
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -75,7 +74,7 @@ extension_facts:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 
 
 class VmwareExtManager(PyVmomi):

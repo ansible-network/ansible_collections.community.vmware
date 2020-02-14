@@ -23,6 +23,7 @@ module: vmware_guest_custom_attributes
 short_description: Manage custom attributes from VMware for the given virtual machine
 description:
     - This module can be used to add, remove and update custom attributes for the given virtual machine.
+version_added: 2.7
 author:
     - Jimmy Conner (@cigamit)
     - Abhijeet Kasurde (@Akasurde)
@@ -54,12 +55,14 @@ options:
      description:
      - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
      - This is required if C(name) or C(uuid) is not supplied.
+     version_added: '2.9'
      type: str
    use_instance_uuid:
      description:
      - Whether to use the VMware instance UUID rather than the BIOS UUID.
      default: no
      type: bool
+     version_added: '2.8'
    folder:
      description:
      - Absolute path to find an existing guest.
@@ -76,9 +79,7 @@ options:
      - Value of custom attribute is not required and will be ignored, if C(state) is set to C(absent).
      default: []
      type: list
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -155,7 +156,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 
 
 class VmAttributeManager(PyVmomi):

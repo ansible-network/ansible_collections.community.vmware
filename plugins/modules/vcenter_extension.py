@@ -17,6 +17,7 @@ module: vcenter_extension
 short_description: Register/deregister vCenter Extensions
 description:
     - This module can be used to register/deregister vCenter Extensions.
+version_added: 2.8
 author:
     - Michael Tipton (@castawayegr)
 notes:
@@ -80,9 +81,7 @@ options:
     choices: [absent, present]
     default: present
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -131,7 +130,7 @@ except ImportError:
 import datetime
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import connect_to_api, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import connect_to_api, vmware_argument_spec
 
 
 def main():

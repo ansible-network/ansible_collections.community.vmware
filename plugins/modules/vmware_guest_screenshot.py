@@ -20,6 +20,7 @@ short_description: Create a screenshot of the Virtual Machine console.
 description:
     - This module is used to take screenshot of the given virtual machine when virtual machine is powered on.
     - All parameters and VMware object names are case sensitive.
+version_added: '2.9'
 author:
     - Diane Wang (@Tomorrow9) <dianew@vmware.com>
 notes:
@@ -42,6 +43,7 @@ options:
      description:
      - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
      - This is required if C(name) or C(uuid) is not supplied.
+     version_added: '2.9'
      type: str
    folder:
      description:
@@ -83,9 +85,7 @@ options:
      - 'If not download screenshot file to local machine, you can open it through the returned file URL in screenshot
        facts manually.'
      type: path
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -142,7 +142,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six.moves.urllib.parse import urlencode, quote
 from ansible.module_utils._text import to_native
 from ansible.module_utils.urls import open_url
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task, get_parent_datacenter
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task, get_parent_datacenter
 import os
 
 

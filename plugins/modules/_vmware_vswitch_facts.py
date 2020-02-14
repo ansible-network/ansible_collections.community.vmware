@@ -25,6 +25,7 @@ description:
 - The vSphere Client shows the value for the number of ports as elastic from vSphere 5.5 and above.
 - Other tools like esxcli might show the number of ports as 1536 or 5632.
 - See U(https://kb.vmware.com/s/article/2064511) for more details.
+version_added: '2.6'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -44,9 +45,7 @@ options:
     - ESXi hostname to gather facts from.
     - If C(cluster_name) is not given, this parameter is required.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -96,7 +95,7 @@ hosts_vswitch_facts:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 
 
 class VswitchFactsManager(PyVmomi):

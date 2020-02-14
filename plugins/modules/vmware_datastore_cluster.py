@@ -22,6 +22,7 @@ short_description: Manage VMware vSphere datastore clusters
 description:
     - This module can be used to add and delete datastore cluster in given VMware environment.
     - All parameters and VMware object values are case sensitive.
+version_added: 2.6
 author:
 -  Abhijeet Kasurde (@Akasurde)
 notes:
@@ -64,6 +65,7 @@ options:
       - '   folder: folder1/datacenter1/datastore'
       - '   folder: /folder1/datacenter1/datastore/folder2'
       required: False
+      version_added: '2.9'
       type: str
     enable_sdrs:
       description:
@@ -71,6 +73,7 @@ options:
       default: False
       type: bool
       required: False
+      version_added: '2.10'
     automation_level:
       description:
       - Run SDRS automated or manually.
@@ -78,27 +81,29 @@ options:
       default: manual
       type: str
       required: False
+      version_added: '2.10'
     keep_vmdks_together:
       description:
       - Specifies whether or not each VM in this datastore cluster should have its virtual disks on the same datastore by default.
       default: True
       type: bool
       required: False
+      version_added: '2.10'
     loadbalance_interval:
       description:
       - Specify the interval in minutes that storage DRS runs to load balance among datastores.
       default: 480
       type: int
       required: False
+      version_added: '2.10'
     enable_io_loadbalance:
       description:
       - Whether or not storage DRS takes into account storage I/O workload when making load balancing and initial placement recommendations.
       default: False
       type: bool
       required: False
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+      version_added: '2.10'
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -148,7 +153,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
 from ansible.module_utils._text import to_native
 
 

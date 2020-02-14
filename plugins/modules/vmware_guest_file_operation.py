@@ -19,6 +19,7 @@ module: vmware_guest_file_operation
 short_description: Files operation in a VMware guest operating system without network
 description:
     - Module to copy a file to a VM, fetch a file from a VM and create or delete a directory in the guest OS.
+version_added: "2.5"
 author:
   - Stéphane Travassac (@stravassac)
 notes:
@@ -114,10 +115,9 @@ options:
             - '  dest: file destination on localhost, path must be exist'
         required: False
         type: dict
+        version_added: 2.5
 
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -179,7 +179,7 @@ import os
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils import urls
 from ansible.module_utils._text import to_bytes, to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_cluster_by_name, find_datacenter_by_name,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, find_cluster_by_name, find_datacenter_by_name,
                                          find_vm_by_id, vmware_argument_spec)
 
 

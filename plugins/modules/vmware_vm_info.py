@@ -23,6 +23,7 @@ description:
 - Return basic information pertaining to a vSphere or ESXi virtual machine guest.
 - Cluster name as fact is added in version 2.7.
 - This module was called C(vmware_vm_facts) before Ansible 2.9. The usage did not change.
+version_added: '2.0'
 author:
 - Joseph Callen (@jcpowermac)
 - Abhijeet Kasurde (@Akasurde)
@@ -42,12 +43,14 @@ options:
       required: False
       default: 'all'
       choices: [ all, vm, template ]
+      version_added: 2.5
       type: str
     show_attribute:
       description:
       - Attributes related to VM guest shown in information only when this is set C(true).
       default: no
       type: bool
+      version_added: 2.8
     folder:
       description:
         - Specify a folder location of VMs to gather information from.
@@ -62,14 +65,14 @@ options:
         - '   folder: folder1/datacenter1/vm'
         - '   folder: /folder1/datacenter1/vm/folder2'
       type: str
+      version_added: 2.9
     show_tag:
       description:
         - Tags related to virtual machine are shown if set to C(True).
       default: False
       type: bool
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+      version_added: 2.9
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -201,8 +204,8 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, get_all_objs, vmware_argument_spec, _get_vm_prop
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, get_all_objs, vmware_argument_spec, _get_vm_prop
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
 
 
 class VmwareVmInfo(PyVmomi):

@@ -12,7 +12,7 @@ try:
 except ImportError:
     pass
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi
 
 
 class SPBM(PyVmomi):

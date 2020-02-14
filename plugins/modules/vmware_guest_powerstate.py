@@ -17,6 +17,7 @@ module: vmware_guest_powerstate
 short_description: Manages power states of virtual machines in vCenter
 description:
 - Power on / Power off / Restart a virtual machine.
+version_added: '2.5'
 author:
 - Abhijeet Kasurde (@Akasurde) <akasurde@redhat.com>
 requirements:
@@ -49,12 +50,14 @@ options:
     description:
     - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
     - This is required if C(name) or C(uuid) is not supplied.
+    version_added: '2.9'
     type: str
   use_instance_uuid:
     description:
     - Whether to use the VMware instance UUID rather than the BIOS UUID.
     default: no
     type: bool
+    version_added: '2.8'
   folder:
     description:
     - Destination folder, absolute or relative path to find an existing guest.
@@ -82,34 +85,37 @@ options:
     - Valid only if C(scheduled_at) is specified.
     type: str
     required: False
+    version_added: '2.9'
   schedule_task_description:
     description:
     - Description of schedule task.
     - Valid only if C(scheduled_at) is specified.
     type: str
     required: False
+    version_added: '2.9'
   schedule_task_enabled:
     description:
     - Flag to indicate whether the scheduled task is enabled or disabled.
     type: bool
     required: False
     default: True
+    version_added: '2.9'
   force:
     description:
     - Ignore warnings and complete the actions.
     - This parameter is useful while forcing virtual machine state.
     default: False
     type: bool
+    version_added: 2.5
   state_change_timeout:
     description:
     - If the C(state) is set to C(shutdown-guest), by default the module will return immediately after sending the shutdown signal.
     - If this argument is set to a positive integer, the module will instead wait for the VM to reach the poweredoff state.
     - The value sets a timeout in seconds for the module to wait for the state change.
     default: 0
+    version_added: '2.6'
     type: int
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -174,7 +180,7 @@ except ImportError:
 from random import randint
 from datetime import datetime
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, set_vm_power_state, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, set_vm_power_state, vmware_argument_spec
 from ansible.module_utils._text import to_native
 
 

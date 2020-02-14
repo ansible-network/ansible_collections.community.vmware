@@ -21,6 +21,7 @@ DOCUMENTATION = '''
 module: vmware_object_role_permission
 short_description: Manage local roles on an ESXi host
 description: This module can be used to manage object permissions on the given host.
+version_added: 2.8
 author:
 - Derek Rushing (@kryptsi)
 - Joseph Andreatta (@vmwjoseph)
@@ -73,9 +74,7 @@ options:
     choices: ['present', 'absent']
     default: present
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -126,7 +125,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_obj
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_obj
 
 
 class VMwareObjectRolePermission(PyVmomi):

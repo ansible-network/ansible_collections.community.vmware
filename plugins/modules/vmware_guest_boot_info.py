@@ -21,6 +21,7 @@ module: vmware_guest_boot_info
 short_description: Gather info about boot options for the given virtual machine
 description:
     - Gather information about boot options for the given virtual machine.
+version_added: '2.9'
 author:
     - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -55,9 +56,7 @@ options:
      default: 'first'
      choices: ['first', 'last']
      type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -103,7 +102,7 @@ vm_boot_info:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_vm_by_id
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_vm_by_id
 
 try:
     from pyVmomi import vim, VmomiSupport

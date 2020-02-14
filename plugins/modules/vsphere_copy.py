@@ -20,13 +20,17 @@ module: vsphere_copy
 short_description: Copy a file to a VMware datastore
 description:
     - Upload files to a VMware datastore through a vCenter REST API.
+version_added: 2.0
 author:
 - Dag Wieers (@dagwieers)
 options:
   hostname:
+    version_added: "2.9"
     aliases: ['host']
   port:
+    version_added: "2.9"
   username:
+    version_added: "2.9"
     aliases: ['login']
   src:
     description:
@@ -53,14 +57,13 @@ options:
       - The timeout in seconds for the upload to the datastore.
     default: 10
     type: int
+    version_added: "2.8"
 
 notes:
   - "This module ought to be run from a system that can access the vCenter or the ESXi directly and has the file to transfer.
     It can be the normal remote target or you can change it either by using C(transport: local) or using C(delegate_to)."
   - Tested on vSphere 5.5 and ESXi 6.7
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -109,7 +112,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six.moves.urllib.parse import urlencode, quote
 from ansible.module_utils._text import to_native
 from ansible.module_utils.urls import open_url
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec
 
 
 def vmware_path(datastore, datacenter, path):

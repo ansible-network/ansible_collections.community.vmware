@@ -24,6 +24,7 @@ description:
 - If C(cluster_name) is provided, then vmnic information about all hosts from given cluster will be returned.
 - If C(esxi_hostname) is provided, then vmnic information about given host system will be returned.
 - Additional details about vswitch and dvswitch with respective vmnic is also provided which is added in 2.7 version.
+version_added: '2.9'
 author:
 - Abhijeet Kasurde (@Akasurde)
 - Christian Kotte (@ckotte)
@@ -60,9 +61,7 @@ options:
     - Vmnic information about each ESXi server will be returned for the given cluster.
     - This parameter is required if C(esxi_hostname) is not specified.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -153,7 +152,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, get_all_objs
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, get_all_objs
 
 
 class HostVmnicMgr(PyVmomi):

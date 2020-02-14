@@ -22,6 +22,7 @@ description:
     - This module can be used to gather information about datastores in VMWare infrastructure.
     - All values and VMware object names are case sensitive.
     - This module was called C(vmware_datastore_facts) before Ansible 2.9. The usage did not change.
+version_added: 2.5
 author:
     - Tim Rightnour (@garbled1)
 notes:
@@ -57,6 +58,7 @@ options:
     - Only valid when C(schema) is C(summary).
     type: bool
     default: false
+    version_added: 2.8
    gather_vmfs_mount_info:
     description:
     - Gather mount information of VMFS datastores.
@@ -64,6 +66,7 @@ options:
     - Only valid when C(schema) is C(summary).
     type: bool
     default: false
+    version_added: 2.8
    schema:
      description:
      - Specify the output schema desired.
@@ -73,6 +76,7 @@ options:
      choices: ['summary', 'vsphere']
      default: 'summary'
      type: str
+     version_added: '2.10'
    properties:
      description:
      - Specify the properties to retrieve.
@@ -88,9 +92,8 @@ options:
      - Only valid when C(schema) is C(vsphere).
      type: list
      required: False
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+     version_added: '2.10'
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -176,7 +179,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec, get_all_objs,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec, get_all_objs,
                                          find_cluster_by_name, get_parent_datacenter)
 
 

@@ -20,6 +20,7 @@ short_description: Send USB HID codes to the Virtual Machine's keyboard.
 description:
     - This module is used to send keystrokes to given virtual machine.
     - All parameters and VMware object names are case sensitive.
+version_added: '2.9'
 author:
     - Diane Wang (@Tomorrow9) <dianew@vmware.com>
 notes:
@@ -87,9 +88,7 @@ options:
         C(CTRL_C) and C(F1) to C(F12), C(RIGHTARROW), C(LEFTARROW), C(DOWNARROW), C(UPARROW).'
      - If both C(keys_send) and C(string_send) are specified, keys in C(keys_send) list will be sent in front of the C(string_send).
      type: list
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -163,7 +162,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 
 
 class PyVmomiHelper(PyVmomi):

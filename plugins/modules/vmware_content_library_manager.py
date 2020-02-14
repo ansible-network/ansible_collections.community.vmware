@@ -21,6 +21,7 @@ description:
 - Module to manage VMware content Library
 - Content Library feature is introduced in vSphere 6.0 version, so this module is not supported in the earlier versions of vSphere.
 - All variables and VMware object names are case sensitive.
+version_added: '2.9'
 author:
 - Pavan Bidkar (@pgbidkar)
 notes:
@@ -73,9 +74,7 @@ options:
       required: False
       default: 'present'
       choices: [ 'present', 'absent' ]
-
-extends_documentation_fragment:
-- vmware.general.vmware_rest_client.documentation
+extends_documentation_fragment: vmware_rest_client.documentation
 '''
 
 EXAMPLES = r'''
@@ -129,8 +128,8 @@ content_library_info:
 
 import uuid
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi
 
 HAS_VAUTOMATION_PYTHON_SDK = False
 try:

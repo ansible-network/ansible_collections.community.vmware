@@ -21,6 +21,7 @@ module: vmware_vspan_session
 short_description: Create or remove a Port Mirroring session.
 description:
    - This module can be used to create, delete or edit different kind of port mirroring sessions.
+version_added: '2.8'
 author:
 - Peter Gyorgy (@gyorgypeter)
 notes:
@@ -146,9 +147,7 @@ options:
             - '- C(nic_label) (bool): Label of the Network Interface Card to use.'
         required: False
         type: dict
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -202,7 +201,7 @@ except ImportError as e:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (vmware_argument_spec, PyVmomi, find_dvs_by_name,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (vmware_argument_spec, PyVmomi, find_dvs_by_name,
                                          find_vm_by_name, wait_for_task)
 
 

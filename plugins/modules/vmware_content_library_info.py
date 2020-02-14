@@ -22,6 +22,7 @@ description:
 - Module to get information about specific content library.
 - Content Library feature is introduced in vSphere 6.0 version, so this module is not supported in the earlier versions of vSphere.
 - All variables and VMware object names are case sensitive.
+version_added: '2.9'
 author:
 - Pavan Bidkar (@pgbidkar)
 notes:
@@ -36,9 +37,7 @@ options:
       - content library id for which details needs to be fetched.
       type: str
       required: False
-
-extends_documentation_fragment:
-- vmware.general.vmware_rest_client.documentation
+extends_documentation_fragment: vmware_rest_client.documentation
 '''
 
 EXAMPLES = r'''
@@ -93,7 +92,7 @@ content_libs:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
 
 
 class VmwareContentLibInfo(VmwareRestClient):

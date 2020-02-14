@@ -26,6 +26,7 @@ short_description: Gather facts about disks of given virtual machine
 description:
     - This module can be used to gather facts about disks belonging to given virtual machine.
     - All parameters and VMware object names are case sensitive.
+version_added: 2.6
 author:
     - Abhijeet Kasurde (@Akasurde) <akasurde@redhat.com>
 notes:
@@ -50,12 +51,14 @@ options:
      description:
      - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
      - This is required if C(name) or C(uuid) is not supplied.
+     version_added: '2.9'
      type: str
    use_instance_uuid:
      description:
      - Whether to use the VMware instance UUID rather than the BIOS UUID.
      default: no
      type: bool
+     version_added: '2.8'
    folder:
      description:
      - Destination folder, absolute or relative path to find an existing guest.
@@ -77,9 +80,7 @@ options:
      - The datacenter name to which virtual machine belongs to.
      required: True
      type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -170,7 +171,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_text
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 
 
 class PyVmomiHelper(PyVmomi):

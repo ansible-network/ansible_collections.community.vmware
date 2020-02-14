@@ -21,6 +21,7 @@ description:
     - This module can be used to gather information about clusters in VMWare infrastructure.
     - All values and VMware object names are case sensitive.
     - This module was called C(vmware_cluster_facts) before Ansible 2.9. The usage did not change.
+version_added: '2.6'
 author:
     - Abhijeet Kasurde (@Akasurde)
     - Christian Neugum (@digifuchsi)
@@ -48,9 +49,8 @@ options:
     - Tags related to cluster are shown if set to C(True).
     default: False
     type: bool
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+    version_added: 2.9
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -145,8 +145,8 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_datacenter_by_name, find_cluster_by_name
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_datacenter_by_name, find_cluster_by_name
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
 
 
 class VmwreClusterInfoManager(PyVmomi):

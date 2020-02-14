@@ -20,6 +20,7 @@ module: vmware_dvswitch_uplink_pg
 short_description: Manage uplink portproup configuration of a Distributed Switch
 description:
     - This module can be used to configure the uplink portgroup of a Distributed Switch.
+version_added: 2.8
 author:
 - Christian Kotte (@ckotte)
 notes:
@@ -93,9 +94,7 @@ options:
             - Indicates if all ports are blocked on the uplink portgroup.
         type: bool
         default: False
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -166,7 +165,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (
     PyVmomi, TaskError, find_dvs_by_name, vmware_argument_spec, wait_for_task
 )
 

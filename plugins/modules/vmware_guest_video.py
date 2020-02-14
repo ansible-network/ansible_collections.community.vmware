@@ -20,6 +20,7 @@ short_description: Modify video card configurations of specified virtual machine
 description:
     - This module is used to reconfigure video card settings of given virtual machine.
     - All parameters and VMware object names are case sensitive.
+version_added: '2.8'
 author:
     - Diane Wang (@Tomorrow9) <dianew@vmware.com>
 notes:
@@ -42,6 +43,7 @@ options:
      description:
      - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
      - This is required if C(name) or C(uuid) is not supplied.
+     version_added: '2.9'
      type: str
    folder:
      description:
@@ -101,9 +103,7 @@ options:
      description:
      - The value of 3D Memory must be power of 2 and valid value is from 32 MB to 2048 MB.
      type: int
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -166,7 +166,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
 
 
 class PyVmomiHelper(PyVmomi):

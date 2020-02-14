@@ -21,6 +21,7 @@ module: vmware_host_active_directory
 short_description: Joins an ESXi host system to an Active Directory domain or leaves it
 description:
 - This module can be used to join or leave an ESXi host to or from an Active Directory domain.
+version_added: 2.8
 author:
 - Christian Kotte (@ckotte)
 notes:
@@ -59,9 +60,7 @@ options:
     - Name of the cluster from which all host systems will be used.
     - This parameter is required if C(esxi_hostname) is not specified.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -113,7 +112,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, TaskError, vmware_argument_spec, wait_for_task
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, TaskError, vmware_argument_spec, wait_for_task
 from ansible.module_utils._text import to_native
 
 

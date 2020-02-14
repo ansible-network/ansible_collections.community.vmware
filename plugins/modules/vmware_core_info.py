@@ -20,6 +20,7 @@ short_description: Gathers info about various VMware inventory objects using RES
 description:
 - This module can be used to gather information about various VMware inventory objects.
 - This module is based on REST API and uses httpapi connection plugin for persistent connection.
+version_added: '2.10'
 author:
 - Abhijeet Kasurde (@Akasurde)
 - Paul Knight (@n3pjk)
@@ -50,9 +51,7 @@ options:
     - content_library, local_library, subscribed_library, content_type, tag, category does not take any filters.
     default: []
     type: list
-
-extends_documentation_fragment:
-- vmware.general.VmwareRestModule_filters.documentation
+extends_documentation_fragment: VmwareRestModule_filters.documentation
 '''
 
 EXAMPLES = r'''
@@ -94,7 +93,7 @@ object_info:
     }
 '''
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware_httpapi.VmwareRestModule import VmwareRestModule
+from ansible_collections.community.vmware.plugins.module_utils.vmware_httpapi.VmwareRestModule import VmwareRestModule
 
 
 def main():

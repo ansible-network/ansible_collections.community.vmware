@@ -18,6 +18,7 @@ short_description: Manages vCloud Air vApp instances.
 description:
   - This module will actively managed vCloud Air vApp instances.  Instances
     can be created and deleted as well as both deployed and undeployed.
+version_added: "2.0"
 author:
 - Peter Sprygada (@privateip)
 notes:
@@ -99,9 +100,7 @@ options:
   vdc_name:
     description:
       - The name of the virtual data center (VDC) where the vm should be created or contains the vAPP.
-
-extends_documentation_fragment:
-- community.general.vca
+extends_documentation_fragment: vca
 '''
 
 EXAMPLES = '''
@@ -117,7 +116,7 @@ EXAMPLES = '''
   delegate_to: localhost
 '''
 
-from ansible_collections.community.general.plugins.module_utils.vca import VcaAnsibleModule, VcaError
+from ansible_collections.community.vmware.plugins.module_utils.vca import VcaAnsibleModule, VcaError
 
 DEFAULT_VAPP_OPERATION = 'noop'
 

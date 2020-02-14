@@ -17,6 +17,7 @@ module: vmware_guest_cross_vc_clone
 
 short_description: Cross-vCenter VM/template clone
 
+version_added: '2.10'
 
 description:
   - 'This module can be used for Cross-vCenter vm/template clone'
@@ -110,12 +111,11 @@ options:
     default: 'present'
     choices: [ 'present', 'poweredon' ]
 
+extends_documentation_fragment:
+  - vmware.documentation
 
 author:
   - Anusha Hegde (@anusha94)
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -189,7 +189,7 @@ vm_info:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_hostsystem_by_name,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, find_hostsystem_by_name,
                                          find_datastore_by_name,
                                          find_folder_by_name, find_vm_by_name,
                                          connect_to_api, vmware_argument_spec,

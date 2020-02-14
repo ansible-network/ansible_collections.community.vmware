@@ -237,7 +237,7 @@ ansible_shell_type: powershell
 class Connection(ConnectionBase):
     """VMware Tools Connection."""
 
-    transport = 'vmware.general.vmware_tools'
+    transport = 'community.vmware.vmware_tools'
 
     @property
     def vmware_host(self):

@@ -23,6 +23,7 @@ short_description: Gather info about a single VM
 description:
     - Gather information about a single VM on a VMware ESX cluster.
     - This module was called C(vmware_guest_facts) before Ansible 2.9. The usage did not change.
+version_added: 2.3
 author:
     - Loic Blot (@nerzhul) <loic.blot@unix-experience.fr>
 notes:
@@ -52,10 +53,12 @@ options:
      - Whether to use the VMware instance UUID rather than the BIOS UUID.
      default: no
      type: bool
+     version_added: '2.8'
    moid:
      description:
      - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
      - This is required if C(name) or C(uuid) is not supplied.
+     version_added: '2.9'
      type: str
    folder:
      description:
@@ -86,6 +89,7 @@ options:
      - vSphere Automation SDK and vCloud Suite SDK is required.
      default: 'no'
      type: bool
+     version_added: '2.8'
    schema:
      description:
      - Specify the output schema desired.
@@ -95,6 +99,7 @@ options:
      choices: ['summary', 'vsphere']
      default: 'summary'
      type: str
+     version_added: '2.8'
    properties:
      description:
      - Specify the properties to retrieve.
@@ -110,9 +115,8 @@ options:
      - Only valid when C(schema) is C(vsphere).
      type: list
      required: False
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+     version_added: '2.8'
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -233,8 +237,8 @@ instance:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_text
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
 try:
     from com.vmware.vapi.std_client import DynamicID
     HAS_VSPHERE = True

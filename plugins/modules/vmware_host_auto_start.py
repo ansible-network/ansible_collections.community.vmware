@@ -18,6 +18,7 @@ module: vmware_host_auto_start
 short_description: Manage the auto power ON or OFF for vm on ESXi host
 author:
   - sky-joker (@sky-joker)
+version_added: '2.10'
 description:
   - In this module, can set up automatic startup and shutdown of virtual machines according to host startup or shutdown.
 requirements:
@@ -131,9 +132,7 @@ options:
         type: str
         choices: ['no', 'yes', 'systemDefault']
         default: systemDefault
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -208,7 +207,7 @@ except ImportError:
         pass
 
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 from ansible.module_utils.basic import AnsibleModule
 
 

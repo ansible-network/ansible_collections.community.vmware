@@ -18,6 +18,7 @@ module: vmware_cfg_backup
 short_description: Backup / Restore / Reset ESXi host configuration
 description:
     - This module can be used to perform various operations related to backup, restore and reset of ESXi host configuration.
+version_added: "2.5"
 author:
     - Andreas Nafpliotis (@nafpliot-ibm)
 notes:
@@ -50,9 +51,7 @@ options:
             - If C(loaded), the backup file in I(src) will be loaded to the ESXi host rewriting the hosts settings.
         choices: [saved, absent, loaded]
         type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -90,7 +89,7 @@ try:
 except ImportError:
     pass
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, get_all_objs, wait_for_task, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, get_all_objs, wait_for_task, PyVmomi
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
 from ansible.module_utils.six.moves.urllib.error import HTTPError

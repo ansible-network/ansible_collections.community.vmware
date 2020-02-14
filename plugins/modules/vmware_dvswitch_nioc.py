@@ -20,6 +20,7 @@ module: vmware_dvswitch_nioc
 short_description: Manage distributed switch Network IO Control
 description:
     - This module can be used to manage distributed switch Network IO Control configurations.
+version_added: "2.9"
 author:
     - Joseph Andreatta (@vmwjoseph)
 notes:
@@ -67,9 +68,7 @@ options:
            }'
         required: False
         type: list
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 RETURN = r'''
@@ -124,7 +123,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, find_datacenter_by_name, find_dvs_by_name, vmware_argument_spec, wait_for_task
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, find_datacenter_by_name, find_dvs_by_name, vmware_argument_spec, wait_for_task
 
 
 class VMwareDVSwitchNIOC(PyVmomi):

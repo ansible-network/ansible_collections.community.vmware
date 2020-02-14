@@ -21,6 +21,7 @@ description:
 - This module can be used to assign / remove VMware tags from the given VMware objects.
 - Tag feature is introduced in vSphere 6 version, so this module is not supported in the earlier versions of vSphere.
 - All variables and VMware object names are case sensitive.
+version_added: 2.8
 author:
 - Abhijeet Kasurde (@Akasurde)
 - Frederic Van Reet (@GBrawl)
@@ -58,9 +59,7 @@ options:
       - For DistributedVirtualPortgroups the format should be "switch_name:portgroup_name"
       required: True
       type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware_rest_client.documentation
+extends_documentation_fragment: vmware_rest_client.documentation
 '''
 
 EXAMPLES = r'''
@@ -138,8 +137,8 @@ tag_status:
     }
 '''
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_dvs_by_name, find_dvspg_by_name)
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, find_dvs_by_name, find_dvspg_by_name)
 try:
     from com.vmware.vapi.std_client import DynamicID
     from com.vmware.vapi.std.errors_client import Error

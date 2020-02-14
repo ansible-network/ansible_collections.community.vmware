@@ -20,6 +20,7 @@ description:
 - This module can be used to gather information about a specific category.
 - This module can also gather facts about all categories.
 - This module is based on REST API and uses httpapi connection plugin for persistent connection.
+version_added: '2.10'
 author:
 - Paul Knight (@n3pjk)
 notes:
@@ -57,9 +58,7 @@ options:
               'datastore', 'folder', 'host', 'local_library', 'network',
               'resource_pool', 'subscribed_library', 'tag', 'vm']
     type: str
-
-extends_documentation_fragment:
-- vmware.general.VmwareRestModule.documentation
+extends_documentation_fragment: VmwareRestModule.documentation
 '''
 
 EXAMPLES = r'''
@@ -77,7 +76,7 @@ category:
     }
 '''
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware_httpapi.VmwareRestModule import VmwareRestModule
+from ansible_collections.community.vmware.plugins.module_utils.vmware_httpapi.VmwareRestModule import VmwareRestModule
 
 
 def main():

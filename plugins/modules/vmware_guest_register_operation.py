@@ -19,6 +19,7 @@ module: vmware_guest_register_operation
 short_description: VM inventory registration operation
 author:
   - sky-joker (@sky-joker)
+version_added: '2.10'
 description:
   - This module can register or unregister VMs to the inventory.
 requirements:
@@ -88,9 +89,7 @@ options:
     default: present
     choices: [ present, absent ]
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -158,7 +157,7 @@ except ImportError:
     HAS_PYVMOMI = False
 
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_resource_pool_by_name, \
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_resource_pool_by_name, \
     wait_for_task, compile_folder_path_for_object, find_cluster_by_name
 from ansible.module_utils.basic import AnsibleModule
 

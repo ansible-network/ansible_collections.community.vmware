@@ -24,6 +24,7 @@ description:
 - This module can be used to manage power states of host systems in given vCenter infrastructure.
 - User can set power state to 'power-down-to-standby', 'power-up-from-standby', 'shutdown-host' and 'reboot-host'.
 - State 'reboot-host', 'shutdown-host' and 'power-down-to-standby' are not supported by all the host systems.
+version_added: 2.6
 author:
 - Abhijeet Kasurde (@Akasurde)
 requirements:
@@ -63,9 +64,7 @@ options:
     - 'This parameter is defined in seconds.'
     default: 600
     type: int
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -117,7 +116,7 @@ result:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task, TaskError
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task, TaskError
 from ansible.module_utils._text import to_native
 
 

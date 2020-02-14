@@ -23,6 +23,7 @@ description:
 - This module can be used to gather information about VMware tag categories.
 - Tag feature is introduced in vSphere 6 version, so this module is not supported in earlier versions of vSphere.
 - All variables and VMware object names are case sensitive.
+version_added: '2.9'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -31,9 +32,7 @@ requirements:
 - python >= 2.6
 - PyVmomi
 - vSphere Automation SDK
-
-extends_documentation_fragment:
-- vmware.general.vmware_rest_client.documentation
+extends_documentation_fragment: vmware_rest_client.documentation
 '''
 
 EXAMPLES = r'''
@@ -90,7 +89,7 @@ tag_category_info:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
 
 
 class VmwareCategoryInfoManager(VmwareRestClient):

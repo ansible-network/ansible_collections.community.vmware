@@ -23,6 +23,7 @@ module: vmware_dvswitch
 short_description: Create or remove a Distributed Switch
 description:
     - This module can be used to create, remove a Distributed Switch.
+version_added: 2.0
 author:
 - Joseph Callen (@jcpowermac)
 - Abhijeet Kasurde (@Akasurde)
@@ -55,6 +56,7 @@ options:
             - The version must match the version of the ESXi hosts you want to connect.
             - The version of the vCenter server is used if not specified.
             - Required only if C(state) is set to C(present).
+        version_added: 2.5
         choices: ['5.0.0', '5.1.0', '5.5.0', '6.0.0', '6.5.0', '6.6.0']
         aliases: ['version']
         type: str
@@ -74,6 +76,7 @@ options:
         type: str
         choices: ['basic', 'snooping']
         default: 'basic'
+        version_added: 2.8
     uplink_quantity:
         description:
             - Quantity of uplink per ESXi host added to the Distributed Switch.
@@ -87,6 +90,7 @@ options:
             - Only valid if the Distributed Switch will be created. Not used if the Distributed Switch is already present.
             - Uplinks are created as Uplink 1, Uplink 2, etc. pp. by default.
         default: 'Uplink '
+        version_added: 2.8
         type: str
     discovery_proto:
         description:
@@ -115,10 +119,12 @@ options:
             - '- C(name) (str): Administrator name.'
             - '- C(description) (str): Description or other details.'
         type: dict
+        version_added: 2.8
     description:
         description:
             - Description of the Distributed Switch.
         type: str
+        version_added: 2.8
     health_check:
         description:
             - Dictionary which configures Health Check for the Distributed Switch.
@@ -136,6 +142,7 @@ options:
             vlan_mtu_interval: 0,
             teaming_failover_interval: 0,
         }
+        version_added: 2.8
     state:
         description:
             - If set to C(present) and the Distributed Switch doesn't exists then the Distributed Switch will be created.
@@ -159,9 +166,8 @@ options:
             - '   folder: /folder1/datacenter1/network/folder2'
         required: False
         type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+        version_added: 2.9
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -249,7 +255,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (
     PyVmomi, TaskError, find_dvs_by_name, vmware_argument_spec, wait_for_task
 )
 

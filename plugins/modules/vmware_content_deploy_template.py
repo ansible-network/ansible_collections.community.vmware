@@ -23,6 +23,7 @@ description:
 - vmtx templates feature is introduced in vSphere 67U1 and APIs for clone template from content library in 67U2.
 - This module does not work with vSphere version older than 67U2.
 - All variables and VMware object names are case sensitive.
+version_added: '2.9'
 author:
 - Pavan Bidkar (@pgbidkar)
 notes:
@@ -85,9 +86,7 @@ options:
       required: False
       default: 'present'
       choices: [ 'present', 'poweredon' ]
-
-extends_documentation_fragment:
-- vmware.general.vmware_rest_client.documentation
+extends_documentation_fragment: vmware_rest_client.documentation
 '''
 
 EXAMPLES = r'''
@@ -135,8 +134,8 @@ vm_deploy_info:
 
 import uuid
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi
 from ansible.module_utils._text import to_native
 
 HAS_VAUTOMATION_PYTHON_SDK = False

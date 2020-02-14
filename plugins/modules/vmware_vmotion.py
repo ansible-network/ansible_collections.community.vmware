@@ -25,6 +25,7 @@ short_description: Move a virtual machine using vMotion, and/or its vmdks using 
 description:
     - Using VMware vCenter, move a virtual machine using vMotion to a different
       host, and/or its vmdks to another datastore using storage vMotion.
+version_added: 2.2
 author:
 - Bede Carroll (@bedecarroll)
 - Olivier Boukili (@oboukili)
@@ -46,17 +47,20 @@ options:
       - UUID of the virtual machine to perform a vMotion operation on.
       - This is a required parameter, if C(vm_name) or C(moid) is not set.
       aliases: ['uuid']
+      version_added: 2.7
       type: str
     moid:
       description:
       - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
       - This is required if C(vm_name) or C(vm_uuid) is not supplied.
+      version_added: '2.9'
       type: str
     use_instance_uuid:
       description:
       - Whether to use the VMware instance UUID rather than the BIOS UUID.
       default: no
       type: bool
+      version_added: '2.8'
     destination_host:
       description:
       - Name of the destination host the virtual machine should be running on.
@@ -67,6 +71,7 @@ options:
       description:
       - Name of the destination datastore the virtual machine's vmdk should be moved on.
       aliases: ['datastore']
+      version_added: 2.7
       type: str
     destination_resourcepool:
       description:
@@ -74,10 +79,9 @@ options:
       - Resource pool is required if vmotion is done between hosts which are part of different clusters or datacenters.
       - if not passed, resource_pool object will be retrived from host_obj parent.
       aliases: ['resource_pool']
+      version_added: '2.10'
       type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -149,7 +153,7 @@ except ImportError:
 
 from ansible.module_utils._text import to_native
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_hostsystem_by_name,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, find_hostsystem_by_name,
                                          find_vm_by_id, find_datastore_by_name,
                                          find_resource_pool_by_name,
                                          vmware_argument_spec, wait_for_task, TaskError)

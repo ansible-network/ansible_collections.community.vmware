@@ -24,6 +24,7 @@ short_description: Return canonical (NAA) from an ESXi host system
 description:
     - This module can be used to gather facts about canonical (NAA) from an ESXi host based on SCSI target ID.
 
+version_added: "2.0"
 author:
 - Joseph Callen (@jcpowermac)
 - Abhijeet Kasurde (@Akasurde)
@@ -43,16 +44,16 @@ options:
     - Name of the cluster.
     - Facts about all SCSI devices for all host system in the given cluster is returned.
     - This parameter is required, if C(esxi_hostname) is not provided.
+    version_added: 2.6
     type: str
   esxi_hostname:
     description:
     - Name of the ESXi host system.
     - Facts about all SCSI devices for the given ESXi host system is returned.
     - This parameter is required, if C(cluster_name) is not provided.
+    version_added: 2.6
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -116,7 +117,7 @@ scsi_tgt_facts:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 
 
 class ScsiTargetFactsManager(PyVmomi):

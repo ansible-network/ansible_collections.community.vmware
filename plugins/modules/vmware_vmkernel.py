@@ -25,6 +25,7 @@ description:
     - The module assumes that the host is already configured with the Port Group in case of a vSphere Standard Switch (vSS).
     - The module assumes that the host is already configured with the Distributed Port Group in case of a vSphere Distributed Switch (vDS).
     - The module automatically migrates the VMKernel adapter from vSS to vDS or vice versa if present.
+version_added: 2.0
 author:
 - Joseph Callen (@jcpowermac)
 - Russell Teague (@mtnbikenc)
@@ -53,6 +54,7 @@ options:
       - Optional parameter from version 2.8 and onwards.
       type: str
       aliases: ['dvswitch']
+      version_added: 2.8
     portgroup_name:
       description:
       - The name of the port group for the VMKernel interface.
@@ -76,18 +78,7 @@ options:
           type: 'static',
           tcpip_stack: 'default',
       }
-    ip_address:
-      description:
-      - The IP Address for the VMKernel interface.
-      - Use C(network) parameter with C(ip_address) instead.
-      - Deprecated option, will be removed in version 2.9.
-      type: str
-    subnet_mask:
-      description:
-      - The Subnet Mask for the VMKernel interface.
-      - Use C(network) parameter with C(subnet_mask) instead.
-      - Deprecated option, will be removed in version 2.9.
-      type: str
+      version_added: 2.5
     mtu:
       description:
       - The MTU for the VMKernel interface.
@@ -98,6 +89,7 @@ options:
       description:
       - Search VMkernel adapter by device name.
       - The parameter is required only in case of C(type) is set to C(dhcp).
+      version_added: 2.8
       type: str
     enable_vsan:
       description:
@@ -125,16 +117,19 @@ options:
       - Enable Provisioning traffic on the VMKernel adapter.
       - This option is only allowed if the default TCP/IP stack is used.
       type: bool
+      version_added: 2.8
     enable_replication:
       description:
       - Enable vSphere Replication traffic on the VMKernel adapter.
       - This option is only allowed if the default TCP/IP stack is used.
       type: bool
+      version_added: 2.8
     enable_replication_nfc:
       description:
       - Enable vSphere Replication NFC traffic on the VMKernel adapter.
       - This option is only allowed if the default TCP/IP stack is used.
       type: bool
+      version_added: 2.8
     state:
       description:
       - If set to C(present), the VMKernel adapter will be created with the given specifications.
@@ -142,16 +137,16 @@ options:
       - If set to C(present) and VMKernel adapter exists, the configurations will be updated.
       choices: [ present, absent ]
       default: present
+      version_added: 2.5
       type: str
     esxi_hostname:
       description:
       - Name of ESXi host to which VMKernel is to be managed.
       - "From version 2.5 onwards, this parameter is required."
       required: True
+      version_added: 2.5
       type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -269,7 +264,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (
     PyVmomi, TaskError, vmware_argument_spec, wait_for_task,
     find_dvspg_by_name, find_dvs_by_name, get_all_objs
 )
@@ -1050,8 +1045,6 @@ def main():
     argument_spec.update(dict(
         esxi_hostname=dict(required=True, type='str'),
         portgroup_name=dict(required=True, type='str', aliases=['portgroup']),
-        ip_address=dict(removed_in_version=2.9, type='str'),
-        subnet_mask=dict(removed_in_version=2.9, type='str'),
         mtu=dict(required=False, type='int', default=1500),
         device=dict(type='str'),
         enable_vsan=dict(required=False, type='bool', default=False),

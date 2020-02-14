@@ -24,6 +24,7 @@ description:
 - You can also optionally force a Refresh of the Storage System in vCenter/ESXi Web Client.
 - All parameters and VMware object names are case sensitive.
 - You can supply an esxi_hostname or a cluster_name
+version_added: '2.8'
 author:
 - Michael Eaton (@michaeldeaton)
 notes:
@@ -48,9 +49,7 @@ options:
     required: false
     default: false
     type: bool
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -100,7 +99,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_obj
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_obj
 from ansible.module_utils._text import to_native
 
 

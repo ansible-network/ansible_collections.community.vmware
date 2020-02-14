@@ -20,6 +20,7 @@ module: vmware_drs_rule_info
 short_description: Gathers info about DRS rule on the given cluster
 description:
 - 'This module can be used to gather information about DRS VM-VM and VM-HOST rules from the given cluster.'
+version_added: '2.9'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -40,9 +41,7 @@ options:
     - DRS information for all the clusters from the given datacenter will be returned.
     - This is required parameter if C(cluster_name) parameter is not provided.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -116,7 +115,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_datacenter_by_name, get_all_objs
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_datacenter_by_name, get_all_objs
 
 
 class VmwareDrsInfoManager(PyVmomi):

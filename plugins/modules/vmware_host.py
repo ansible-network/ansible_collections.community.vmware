@@ -22,6 +22,7 @@ short_description: Add, remove, or move an ESXi host to, from, or within vCenter
 description:
 - This module can be used to add, reconnect, or remove an ESXi host to or from vCenter.
 - This module can also be used to move an ESXi host to a cluster or folder, or vice versa, within the same datacenter.
+version_added: '2.0'
 author:
 - Joseph Callen (@jcpowermac)
 - Russell Teague (@mtnbikenc)
@@ -58,9 +59,8 @@ options:
     - "Here 'host' is an invisible folder under VMware Web Client."
     - "Another example, if there is a nested folder structure like '/myhosts/india/pune' under
        datacenter 'dc2', then C(folder) value will be '/dc2/host/myhosts/india/pune'."
-    - "Other Examples: "
-    - "  - '/Site2/dc2/Asia-Cluster/host'"
-    - "  - '/dc3/Asia-Cluster/host'"
+    - "Other Examples: '/Site2/dc2/Asia-Cluster/host' or '/dc3/Asia-Cluster/host'"
+    version_added: "2.6"
     aliases: ['folder_name']
     type: str
   add_connected:
@@ -69,6 +69,7 @@ options:
     - This parameter is ignored if state is set to a value other than C(present).
     default: True
     type: bool
+    version_added: "2.6"
   esxi_hostname:
     description:
     - ESXi hostname to manage.
@@ -107,6 +108,7 @@ options:
     - "Use following command to get hostsystem certificate's thumbprint - "
     - "# openssl x509 -in /etc/vmware/ssl/rui.crt -fingerprint -sha1 -noout"
     - Only used if C(fetch_thumbprint) isn't set to C(true).
+    version_added: 2.5
     default: ''
     type: str
     aliases: ['ssl_thumbprint']
@@ -120,21 +122,22 @@ options:
     - Optional for reconnect, but only used if C(esxi_username) and C(esxi_password) are used.
     - Unused for removing.
     type: bool
+    version_added: 2.8
     default: True
   force_connection:
     description:
     - Force the connection if the host is already being managed by another vCenter server.
     type: bool
+    version_added: 2.8
     default: True
   reconnect_disconnected:
     description:
     - Reconnect disconnected hosts.
     - This is only used if C(state) is set to C(present) and if the host already exists.
     type: bool
+    version_added: 2.8
     default: True
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -222,7 +225,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (
     PyVmomi, TaskError, vmware_argument_spec,
     wait_for_task, find_host_by_cluster_datacenter, find_hostsystem_by_name
 )

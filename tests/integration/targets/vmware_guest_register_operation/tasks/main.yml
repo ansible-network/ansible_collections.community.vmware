@@ -8,7 +8,7 @@
     setup_resource_pool: true
 - block:
   - name: gather facts of vm
-    vmware_guest_facts:
+    vmware_guest_info:
       hostname: '{{ vcenter_hostname }}'
       username: '{{ vcenter_username }}'
       password: '{{ vcenter_password }}'
@@ -167,7 +167,7 @@
     - vms.virtual_machines | selectattr('guest_name', 'equalto', virtual_machines[0].name)
       | map(attribute='guest_name') | list | length == 1
 - name: Gather facts of vm
-  vmware_guest_facts:
+  vmware_guest_info:
     hostname: '{{ vcenter_hostname }}'
     username: '{{ vcenter_username }}'
     password: '{{ vcenter_password }}'

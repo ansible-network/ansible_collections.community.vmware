@@ -18,6 +18,7 @@ short_description: Manages virtual machines snapshots in vCenter
 description:
     - This module can be used to create, delete and update snapshot(s) of the given virtual machine.
     - All parameters and VMware object names are case sensitive.
+version_added: 2.3
 author:
     - Loic Blot (@nerzhul) <loic.blot@unix-experience.fr>
 notes:
@@ -61,12 +62,14 @@ options:
      description:
      - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
      - This is required if C(name) or C(uuid) is not supplied.
+     version_added: '2.9'
      type: str
    use_instance_uuid:
      description:
      - Whether to use the VMware instance UUID rather than the BIOS UUID.
      default: no
      type: bool
+     version_added: '2.8'
    folder:
      description:
      - Destination folder, absolute or relative path to find an existing guest.
@@ -105,6 +108,7 @@ options:
      - If virtual machine is powered off or VMware Tools are not available, then this flag is set to C(false).
      - If virtual machine does not provide capability to take quiesce snapshot, then this flag is set to C(false).
      required: False
+     version_added: "2.4"
      type: bool
      default: False
    memory_dump:
@@ -113,25 +117,27 @@ options:
      - Note that memory snapshots take time and resources, this will take longer time to create.
      - If virtual machine does not provide capability to take memory snapshot, then this flag is set to C(false).
      required: False
+     version_added: "2.4"
      type: bool
      default: False
    remove_children:
      description:
      - If set to C(true) and state is set to C(absent), then entire snapshot subtree is set for removal.
      required: False
+     version_added: "2.4"
      type: bool
      default: False
    new_snapshot_name:
      description:
      - Value to rename the existing snapshot to.
+     version_added: "2.5"
      type: str
    new_description:
      description:
      - Value to change the description of an existing snapshot to.
+     version_added: "2.5"
      type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -276,7 +282,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, list_snapshots, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, list_snapshots, vmware_argument_spec
 
 
 class PyVmomiHelper(PyVmomi):

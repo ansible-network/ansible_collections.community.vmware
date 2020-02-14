@@ -26,6 +26,7 @@ description:
       module will throw an error.
     - VSAN facts added in 2.7 version.
     - SYSTEM fact uuid added in 2.10 version.
+version_added: 2.5
 author:
     - Wei Gao (@woshihaoren)
 requirements:
@@ -37,6 +38,7 @@ options:
     - ESXi hostname.
     - Host facts about the specified ESXi server will be returned.
     - By specifying this option, you can select which ESXi hostsystem is returned if connecting to a vCenter.
+    version_added: 2.8
     type: str
   show_tag:
     description:
@@ -44,6 +46,7 @@ options:
     default: False
     type: bool
     required: False
+    version_added: 2.9
   schema:
     description:
     - Specify the output schema desired.
@@ -53,6 +56,7 @@ options:
     choices: ['summary', 'vsphere']
     default: 'summary'
     type: str
+    version_added: '2.10'
   properties:
     description:
       - Specify the properties to retrieve.
@@ -68,9 +72,8 @@ options:
       - Only valid when C(schema) is C(vsphere).
     type: list
     required: False
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+    version_added: '2.10'
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -123,6 +126,36 @@ EXAMPLES = r'''
       - config.product.apiVersion
       - overallStatus
   register: host_facts
+
+- name: How to retrieve Product, Version, Build, Update info for ESXi from vCenter
+  block:
+    - name: Gather product version info for ESXi from vCenter
+      vmware_host_facts:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_user }}"
+        password: "{{ vcenter_pass }}"
+        validate_certs: no
+        esxi_hostname: "{{ esxi_hostname }}"
+        schema: vsphere
+        properties:
+          - config.product
+          - config.option
+      register: gather_host_facts_result
+
+    - name: Extract update level info from option properties
+      set_fact:
+        update_level_info: "{{ item.value }}"
+      loop: "{{ gather_host_facts_result.ansible_facts.config.option }}"
+      when:
+        - item.key == 'Misc.HostAgentUpdateLevel'
+
+    - name: The output of Product, Version, Build, Update info for ESXi
+      debug:
+        msg:
+          - "Product : {{ gather_host_facts_result.ansible_facts.config.product.name }}"
+          - "Version : {{ gather_host_facts_result.ansible_facts.config.product.version }}"
+          - "Build   : {{ gather_host_facts_result.ansible_facts.config.product.build }}"
+          - "Update  : {{ update_level_info }}"
 '''
 
 RETURN = r'''
@@ -190,14 +223,14 @@ ansible_facts:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.common.text.formatters import bytes_to_human
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_obj
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_obj
 
 try:
     from pyVmomi import vim
 except ImportError:
     pass
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
 
 
 class VMwareHostFactManager(PyVmomi):

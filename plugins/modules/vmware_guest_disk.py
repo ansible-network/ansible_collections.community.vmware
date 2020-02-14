@@ -24,6 +24,7 @@ description:
     - All parameters and VMware object names are case sensitive.
     - This module is destructive in nature, please read documentation carefully before proceeding.
     - Be careful while removing disk specified as this may lead to data loss.
+version_added: 2.8
 author:
     - Abhijeet Kasurde (@Akasurde) <akasurde@redhat.com>
 notes:
@@ -46,6 +47,7 @@ options:
      description:
      - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
      - This is required if C(name) or C(uuid) is not supplied.
+     version_added: '2.9'
      type: str
    folder:
      description:
@@ -73,6 +75,7 @@ options:
      - Whether to use the VMware instance UUID rather than the BIOS UUID.
      default: no
      type: bool
+     version_added: '2.8'
    disk:
      description:
      - A list of disks to add.
@@ -148,9 +151,7 @@ options:
          elements: dict
      default: []
      type: list
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -314,7 +315,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task, find_obj, get_all_objs
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task, find_obj, get_all_objs
 
 
 class PyVmomiHelper(PyVmomi):

@@ -24,6 +24,7 @@ deprecated:
 short_description: Provides information about VMware server to which user is connecting to
 description:
 - This module can be used to gather information about VMware server to which user is trying to connect.
+version_added: 2.7
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -31,9 +32,7 @@ notes:
 requirements:
 - python >= 2.6
 - PyVmomi
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -80,7 +79,7 @@ about_facts:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 
 
 class VmwareAboutManager(PyVmomi):

@@ -21,6 +21,7 @@ module: vmware_local_role_info
 short_description: Gather info about local roles on an ESXi host
 description:
     - This module can be used to gather information about local role info on an ESXi host
+version_added: '2.9'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -30,9 +31,7 @@ notes:
 requirements:
     - "python >= 2.6"
     - PyVmomi
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -92,7 +91,7 @@ local_role_info:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 
 
 class VMwareLocalRoleInfo(PyVmomi):

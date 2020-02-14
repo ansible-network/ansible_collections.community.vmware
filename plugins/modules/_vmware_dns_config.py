@@ -17,6 +17,7 @@ module: vmware_dns_config
 short_description: Manage VMware ESXi DNS Configuration
 description:
     - Manage VMware ESXi DNS Configuration
+version_added: 2.0
 author:
 - Joseph Callen (@jcpowermac)
 notes:
@@ -44,9 +45,7 @@ options:
             - The DNS servers that the host should be configured to use.
         required: True
         type: list
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -69,7 +68,7 @@ except ImportError:
     HAS_PYVMOMI = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import HAS_PYVMOMI, connect_to_api, get_all_objs, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import HAS_PYVMOMI, connect_to_api, get_all_objs, vmware_argument_spec
 
 
 def configure_dns(host_system, hostname, domainname, dns_servers):

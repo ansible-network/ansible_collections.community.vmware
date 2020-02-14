@@ -17,6 +17,7 @@ module: vmware_guest_serial_port
 
 short_description: Manage serial ports on an existing VM
 
+version_added: "2.10"
 
 description:
   - "This module can be used to manage serial ports on an existing VM"
@@ -82,12 +83,11 @@ options:
       - ' - C(file_path) (str): Required when I(backing_type=file).
             File path for the host file used in this backing. Fully qualified path is required, like <datastore_name>/<file_name>'
 
+extends_documentation_fragment:
+  - vmware.documentation
 
 author:
   - Anusha Hegde (@anusha94)
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -162,7 +162,7 @@ serial_port_data:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
 from ansible.module_utils._text import to_native
 try:
     from pyVmomi import vim

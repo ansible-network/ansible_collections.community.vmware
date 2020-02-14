@@ -22,6 +22,7 @@ description:
 - Returns basic information on vSphere storage profiles.
 - A vSphere storage profile defines storage policy information that describes storage requirements
   for virtual machines and storage capabilities of storage providers.
+version_added: '2.9'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -29,9 +30,7 @@ notes:
 requirements:
 - python >= 2.6
 - PyVmomi
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -92,8 +91,8 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_spbm import SPBM
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware_spbm import SPBM
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec
 
 
 class SPBMClient(SPBM):

@@ -22,6 +22,7 @@ short_description: Manages virtual storage area network (vSAN) configuration on 
 description:
     - Manages vSAN on VMware vSphere clusters.
     - All values and VMware object names are case sensitive.
+version_added: '2.9'
 author:
 - Joseph Callen (@jcpowermac)
 - Abhijeet Kasurde (@Akasurde)
@@ -51,9 +52,7 @@ options:
         on VSAN-enabled hosts in the cluster.
       type: bool
       default: False
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r"""
@@ -89,7 +88,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, TaskError, find_datacenter_by_name,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, TaskError, find_datacenter_by_name,
                                          vmware_argument_spec, wait_for_task)
 from ansible.module_utils._text import to_native
 

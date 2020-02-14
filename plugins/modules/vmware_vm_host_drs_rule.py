@@ -19,6 +19,7 @@ author:
   - "Karsten Kaj Jakobsen (@karstenjakobsen)"
 description:
   - "This module can be used to create VM-Host rules in a given cluster."
+extends_documentation_fragment: vmware.documentation
 module: vmware_vm_host_drs_rule
 notes:
   - "Tested on vSphere 6.5 and 6.7"
@@ -85,10 +86,8 @@ requirements:
   - "python >= 2.6"
   - PyVmomi
 short_description: "Creates vm/host group in a given cluster"
+version_added: "2.8"
 
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -119,7 +118,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec, wait_for_task, find_cluster_by_name,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec, wait_for_task, find_cluster_by_name,
                                          find_datacenter_by_name)
 
 

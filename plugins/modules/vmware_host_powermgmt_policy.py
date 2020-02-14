@@ -21,6 +21,7 @@ module: vmware_host_powermgmt_policy
 short_description: Manages the Power Management Policy of an ESXI host system
 description:
 - This module can be used to manage the Power Management Policy of ESXi host systems in given vCenter infrastructure.
+version_added: 2.8
 author:
 - Christian Kotte (@ckotte) <christian.kotte@gmx.de>
 notes:
@@ -45,9 +46,7 @@ options:
     - Name of the cluster from which all host systems will be used.
     - This is required parameter if C(esxi_hostname) is not specified.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -97,7 +96,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 from ansible.module_utils._text import to_native
 
 

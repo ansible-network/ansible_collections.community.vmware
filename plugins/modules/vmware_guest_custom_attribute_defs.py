@@ -21,6 +21,7 @@ module: vmware_guest_custom_attribute_defs
 short_description: Manage custom attributes definitions for virtual machine from VMware
 description:
     - This module can be used to add and remove custom attributes definitions for the given virtual machine from VMware.
+version_added: 2.7
 author:
     - Jimmy Conner (@cigamit)
     - Abhijeet Kasurde (@Akasurde)
@@ -47,9 +48,7 @@ options:
      choices: ['present', 'absent']
      required: True
      type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -83,7 +82,7 @@ custom_attribute_defs:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 
 try:
     from pyVmomi import vim

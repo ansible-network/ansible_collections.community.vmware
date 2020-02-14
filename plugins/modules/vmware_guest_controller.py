@@ -22,6 +22,7 @@ short_description: Manage disk or USB controllers related to virtual machine in 
 description:
     - This module can be used to add, remove disk controllers or USB controllers belonging to given virtual machine.
     - All parameters and VMware object names are case sensitive.
+version_added: '2.10'
 author:
     - Diane Wang (@Tomorrow9) <dianew@vmware.com>
 notes:
@@ -128,9 +129,7 @@ options:
      - This parameter is not required. Maximum value is 600.
      default: 10
      type: int
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -249,7 +248,7 @@ from random import randint
 import time
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
 
 
 class PyVmomiHelper(PyVmomi):

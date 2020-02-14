@@ -21,6 +21,7 @@ short_description: Gather info about virtual machine's snapshots in vCenter
 description:
     - This module can be used to gather information about virtual machine's snapshots.
     - This module was called C(vmware_guest_snapshot_facts) before Ansible 2.9. The usage did not change.
+version_added: 2.6
 author:
     - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -44,12 +45,14 @@ options:
      description:
      - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
      - This is required if C(name) or C(uuid) is not supplied.
+     version_added: '2.9'
      type: str
    use_instance_uuid:
      description:
      - Whether to use the VMware instance UUID rather than the BIOS UUID.
      default: no
      type: bool
+     version_added: '2.8'
    folder:
      description:
      - Destination folder, absolute or relative path to find an existing guest.
@@ -71,9 +74,7 @@ options:
      - Name of the datacenter.
      required: True
      type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -124,7 +125,7 @@ guest_snapshots:
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, list_snapshots, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, list_snapshots, vmware_argument_spec
 
 
 class PyVmomiHelper(PyVmomi):

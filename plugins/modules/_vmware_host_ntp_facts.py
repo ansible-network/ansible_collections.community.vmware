@@ -23,6 +23,7 @@ deprecated:
 short_description: Gathers facts about NTP configuration on an ESXi host
 description:
 - This module can be used to gather facts about NTP configurations on an ESXi host.
+version_added: 2.7
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -43,9 +44,7 @@ options:
     - NTP config facts about this ESXi server will be returned.
     - If C(cluster_name) is not given, this parameter is required.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -88,7 +87,7 @@ hosts_ntp_facts:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 
 
 class VmwareNtpFactManager(PyVmomi):

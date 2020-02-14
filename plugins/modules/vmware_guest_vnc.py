@@ -19,6 +19,7 @@ module: vmware_guest_vnc
 short_description: Manages VNC remote display on virtual machines in vCenter
 description:
   - This module can be used to enable and disable VNC remote display on virtual machine.
+version_added: 2.8
 author:
   - Armin Ranjbar Daemi (@rmin)
 requirements:
@@ -61,6 +62,7 @@ options:
     description:
       - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
       - This is required if C(name) or C(uuid) is not supplied.
+    version_added: '2.9'
     type: str
   folder:
     description:
@@ -89,9 +91,7 @@ options:
     default: ""
     required: false
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -156,7 +156,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, get_vnc_extraconfig, wait_for_task, gather_vm_facts, TaskError
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, get_vnc_extraconfig, wait_for_task, gather_vm_facts, TaskError
 from ansible.module_utils._text import to_native
 
 

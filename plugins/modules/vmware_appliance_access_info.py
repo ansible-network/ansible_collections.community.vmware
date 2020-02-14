@@ -20,6 +20,7 @@ description:
 - This module can be used to gather information about the four modes of accessing the VCSA.
 - This module is based on REST API and uses httpapi connection plugin for persistent connection.
 - The Appliance API works against the VCSA and uses the "administrator@vsphere.local" user.
+version_added: '2.10'
 author:
 - Paul Knight (@n3pjk)
 notes:
@@ -34,9 +35,7 @@ options:
     required: false
     choices: ['consolecli', 'dcui', 'shell', 'ssh']
     type: str
-
-extends_documentation_fragment:
-- vmware.general.VmwareRestModule.documentation
+extends_documentation_fragment: VmwareRestModule.documentation
 '''
 
 EXAMPLES = r'''
@@ -70,7 +69,7 @@ access_mode:
     }
 '''
 
-from ansible_collections.vmware.general.plugins.module_utils.vmware_httpapi.VmwareRestModule import API, VmwareRestModule
+from ansible_collections.community.vmware.plugins.module_utils.vmware_httpapi.VmwareRestModule import API, VmwareRestModule
 
 
 SLUG = dict(

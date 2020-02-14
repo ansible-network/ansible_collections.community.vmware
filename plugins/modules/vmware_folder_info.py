@@ -20,6 +20,7 @@ module: vmware_folder_info
 short_description: Provides information about folders in a datacenter
 description:
 - The module can be used to gather a hierarchical view of the folders that exist within a datacenter
+version_added: 2.9
 author:
 - David Hewitt (@davidmhewitt)
 notes:
@@ -34,9 +35,7 @@ options:
     required: true
     type: str
     aliases: ['datacenter_name']
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -102,7 +101,7 @@ except ImportError as import_err:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 
 
 class VmwareFolderInfoManager(PyVmomi):

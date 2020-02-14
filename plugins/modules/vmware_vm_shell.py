@@ -20,6 +20,7 @@ module: vmware_vm_shell
 short_description: Run commands in a VMware guest operating system
 description:
     - Module allows user to run common system administration commands in the guest operating system.
+version_added: "2.1"
 author:
   - Ritesh Khadgaray (@ritzk)
   - Abhijeet Kasurde (@Akasurde)
@@ -54,6 +55,7 @@ options:
       - '   folder: /folder1/datacenter1/vm'
       - '   folder: folder1/datacenter1/vm'
       - '   folder: /folder1/datacenter1/vm/folder2'
+      version_added: "2.4"
       type: str
     vm_id:
       description:
@@ -101,15 +103,15 @@ options:
       - If set to C(True), module will wait for process to complete in the given virtual machine.
       default: False
       type: bool
+      version_added: 2.7
     timeout:
       description:
       - Timeout in seconds.
       - If set to positive integers, then C(wait_for_process) will honor this parameter and will exit after this timeout.
       default: 3600
+      version_added: 2.7
       type: int
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -204,7 +206,7 @@ except ImportError:
 
 from ansible.module_utils._text import to_native
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, find_cluster_by_name,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, find_cluster_by_name,
                                          find_datacenter_by_name, find_vm_by_id,
                                          vmware_argument_spec)
 

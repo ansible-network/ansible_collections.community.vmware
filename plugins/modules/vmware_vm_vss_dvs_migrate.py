@@ -17,6 +17,7 @@ module: vmware_vm_vss_dvs_migrate
 short_description: Migrates a virtual machine from a standard vswitch to distributed
 description:
     - Migrates a virtual machine from a standard vswitch to distributed
+version_added: 2.0
 author:
 - Joseph Callen (@jcpowermac)
 notes:
@@ -35,9 +36,7 @@ options:
             - Name of the portgroup to migrate to the virtual machine to
         required: True
         type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -58,7 +57,7 @@ except ImportError:
     HAS_PYVMOMI = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (HAS_PYVMOMI, connect_to_api, get_all_objs,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (HAS_PYVMOMI, connect_to_api, get_all_objs,
                                          vmware_argument_spec, wait_for_task)
 
 

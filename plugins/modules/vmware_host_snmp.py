@@ -21,6 +21,7 @@ module: vmware_host_snmp
 short_description: Configures SNMP on an ESXi host system
 description:
 - This module can be used to configure the embedded SNMP agent on an ESXi host.
+version_added: 2.8
 author:
 - Christian Kotte (@ckotte)
 notes:
@@ -76,9 +77,7 @@ options:
     type: str
     choices: [ debug, info, warning, error ]
     default: info
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -146,7 +145,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_obj
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_obj
 from ansible.module_utils._text import to_native
 
 

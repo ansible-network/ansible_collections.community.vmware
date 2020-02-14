@@ -16,6 +16,7 @@ module: vca_nat
 short_description: add remove nat rules in a gateway  in a vca
 description:
   - Adds or removes nat rules from a gateway in a vca environment
+version_added: "2.0"
 author: Peter Sprygada (@privateip)
 options:
     purge_rules:
@@ -28,9 +29,7 @@ options:
         - A list of rules to be added to the gateway, Please see examples on valid entries
       required: True
       default: false
-
-extends_documentation_fragment:
-- community.general.vca.documentation
+extends_documentation_fragment: vca.documentation
 '''
 
 EXAMPLES = '''
@@ -67,7 +66,7 @@ EXAMPLES = '''
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.community.general.plugins.module_utils.vca import VcaError, vca_argument_spec, vca_login
+from ansible_collections.community.vmware.plugins.module_utils.vca import VcaError, vca_argument_spec, vca_login
 
 
 VALID_RULE_KEYS = ['rule_type', 'original_ip', 'original_port',

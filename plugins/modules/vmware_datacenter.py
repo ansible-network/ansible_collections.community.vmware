@@ -20,6 +20,7 @@ module: vmware_datacenter
 short_description: Manage VMware vSphere Datacenters
 description:
     - This module can be used to manage (create, delete) VMware vSphere Datacenters.
+version_added: 2.0
 author:
 - Joseph Callen (@jcpowermac)
 - Kamil Szczygiel (@kamsz)
@@ -40,9 +41,7 @@ options:
       choices: [ present, absent ]
       default: present
       type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -75,7 +74,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, find_datacenter_by_name, vmware_argument_spec, wait_for_task
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, find_datacenter_by_name, vmware_argument_spec, wait_for_task
 from ansible.module_utils._text import to_native
 
 

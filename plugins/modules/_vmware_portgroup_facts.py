@@ -24,6 +24,7 @@ deprecated:
 short_description: Gathers facts about an ESXi host's Port Group configuration
 description:
 - This module can be used to gather facts about an ESXi host's Port Group configuration when ESXi hostname or Cluster name is given.
+version_added: '2.6'
 author:
 - Abhijeet Kasurde (@Akasurde)
 - Christian Kotte (@ckotte)
@@ -40,6 +41,7 @@ options:
     - The property C(ts) stands for Traffic Shaping and C(lb) for Load Balancing.
     type: bool
     default: false
+    version_added: 2.8
   cluster_name:
     description:
     - Name of the cluster.
@@ -51,9 +53,7 @@ options:
     - ESXi hostname to gather facts from.
     - If C(cluster_name) is not given, this parameter is required.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -114,7 +114,7 @@ hosts_portgroup_facts:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 
 
 class PortgroupFactsManager(PyVmomi):

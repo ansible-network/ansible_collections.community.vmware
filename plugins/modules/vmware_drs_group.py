@@ -20,6 +20,7 @@ author:
   - "Karsten Kaj Jakobsen (@karstenjakobsen)"
 description:
   - "This module can be used to create VM/Host groups in a given cluster. Creates a vm group if C(vms) is set. Creates a host group if C(hosts) is set."
+extends_documentation_fragment: vmware.documentation
 module: vmware_drs_group
 notes:
   - "Tested on vSphere 6.5 and 6.7"
@@ -67,9 +68,7 @@ requirements:
   - "python >= 2.6"
   - PyVmomi
 short_description: "Creates vm/host group in a given cluster."
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+version_added: "2.8"
 '''
 
 EXAMPLES = r'''
@@ -148,7 +147,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec,
                                          wait_for_task, find_cluster_by_name,
                                          find_vm_by_id, find_datacenter_by_name, find_vm_by_name)
 

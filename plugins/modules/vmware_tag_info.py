@@ -26,6 +26,7 @@ description:
 - This module was called C(vmware_tag_facts) before Ansible 2.9. The usage did not change.
 - C(tag_facts) will be deprecated in Ansible 2.14, since it does not return multiple tags with same name and different category id.
 - Please use C(tag_info) instead of C(tag_facts).
+version_added: '2.6'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -34,9 +35,7 @@ requirements:
 - python >= 2.6
 - PyVmomi
 - vSphere Automation SDK
-
-extends_documentation_fragment:
-- vmware.general.vmware_rest_client.documentation
+extends_documentation_fragment: vmware_rest_client.documentation
 '''
 
 EXAMPLES = r'''
@@ -127,7 +126,7 @@ tag_info:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
 
 
 class VmTagInfoManager(VmwareRestClient):

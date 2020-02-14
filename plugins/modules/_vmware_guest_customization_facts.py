@@ -25,6 +25,7 @@ short_description: Gather facts about VM customization specifications
 description:
     - This module can be used to gather facts about customization specifications.
     - All parameters and VMware object names are case sensitive.
+version_added: 2.8
 author:
     - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -38,9 +39,7 @@ options:
      - Name of customization specification to find.
      required: False
      type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -105,7 +104,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_text
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 
 
 class VmwareCustomSpecManger(PyVmomi):

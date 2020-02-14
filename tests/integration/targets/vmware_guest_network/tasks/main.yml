@@ -36,6 +36,7 @@
       hostname: '{{ vcenter_hostname }}'
       username: '{{ vcenter_username }}'
       password: '{{ vcenter_password }}'
+      timeout: 600
       validate_certs: false
       name: test_vm1
   - name: gather network adapters' facts of the virtual machine

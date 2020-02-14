@@ -23,6 +23,7 @@ description:
 - This module can be used to create / delete / update VMware categories.
 - Tag feature is introduced in vSphere 6 version, so this module is not supported in the earlier versions of vSphere.
 - All variables and VMware object names are case sensitive.
+version_added: '2.7'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -86,11 +87,10 @@ options:
       - Resource Pool
       - vApp
       - Virtual Machine
+      version_added: '2.10'
       type: list
       elements: str
-
-extends_documentation_fragment:
-- vmware.general.vmware_rest_client.documentation
+extends_documentation_fragment: vmware_rest_client.documentation
 '''
 
 EXAMPLES = r'''
@@ -156,7 +156,7 @@ category_results:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.community.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
 try:
     from com.vmware.cis.tagging_client import CategoryModel
     from com.vmware.vapi.std.errors_client import Error

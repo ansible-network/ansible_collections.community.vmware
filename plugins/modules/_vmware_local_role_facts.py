@@ -25,6 +25,7 @@ deprecated:
 short_description: Gather facts about local roles on an ESXi host
 description:
     - This module can be used to gather facts about local role facts on an ESXi host
+version_added: 2.7
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -34,9 +35,7 @@ notes:
 requirements:
     - "python >= 2.6"
     - PyVmomi
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -96,7 +95,7 @@ local_role_facts:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 
 
 class VMwareLocalRoleFacts(PyVmomi):

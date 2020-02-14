@@ -18,6 +18,7 @@ module: vmware_resource_pool_info
 short_description: Gathers info about resource pool information
 description:
 - This module can be used to gather information about all resource configuration information.
+version_added: '2.9'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -25,9 +26,7 @@ notes:
 requirements:
 - python >= 2.6
 - PyVmomi
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -84,7 +83,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, get_all_objs
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, get_all_objs
 
 
 class ResourcePoolInfoManager(PyVmomi):

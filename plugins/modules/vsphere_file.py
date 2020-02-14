@@ -17,6 +17,7 @@ module: vsphere_file
 short_description: Manage files on a vCenter datastore
 description:
 - Manage files on a vCenter datastore.
+version_added: '2.8'
 author:
 - Dag Wieers (@dagwieers)
 options:

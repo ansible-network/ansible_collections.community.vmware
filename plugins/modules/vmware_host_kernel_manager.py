@@ -22,6 +22,7 @@ description:
 - If a host is not connected at time of configuration, it will be marked as such in the output.
 - Kernel module options may require a reboot to take effect which is not covered here.
 - You can use M(reboot) or M(vmware_host_powerstate) module to reboot all ESXi host systems.
+version_added: '2.8'
 author:
 - Aaron Longchamps (@alongchamps)
 notes:
@@ -52,9 +53,7 @@ options:
     - These values are specified in key=value pairs and separated by a space when there are multiple options.
     required: true
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -101,7 +100,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 from ansible.module_utils._text import to_native
 
 

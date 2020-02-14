@@ -23,6 +23,7 @@ description:
     - This module can be used to manage maintenance mode of a datastore.
 author:
 - "Abhijeet Kasurde (@Akasurde)"
+version_added: 2.6
 notes:
     - Tested on vSphere 5.5, 6.0 and 6.5
 requirements:
@@ -55,9 +56,7 @@ options:
       default: present
       required: False
       type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -114,7 +113,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec, wait_for_task,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, vmware_argument_spec, wait_for_task,
                                          find_cluster_by_name, get_all_objs)
 from ansible.module_utils._text import to_native
 

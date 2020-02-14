@@ -19,6 +19,7 @@ module: vmware_host_firewall_manager
 short_description: Manage firewall configurations about an ESXi host
 description:
 - This module can be used to manage firewall configurations about an ESXi host when ESXi hostname or Cluster name is given.
+version_added: '2.5'
 author:
 - Abhijeet Kasurde (@Akasurde)
 - Aaron Longchamps (@alongchamps)
@@ -49,9 +50,7 @@ options:
     - Please see examples for more information.
     default: []
     type: list
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -173,9 +172,20 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 from ansible.module_utils._text import to_native
-from ansible_collections.community.general.plugins.module_utils.compat import ipaddress
+import socket
+
+
+def is_ipaddress(value):
+    try:
+        socket.inet_aton(value)
+    except socket.error:
+        try:
+            socket.inet_pton(socket.AF_INET6, value)
+        except socket.error:
+            return False
+    return True
 
 
 class VmwareFirewallManager(PyVmomi):
@@ -230,14 +240,14 @@ class VmwareFirewallManager(PyVmomi):
             ip_networks = allowed_hosts.get('ip_network', [])
             for ip_address in ip_addresses:
                 try:
-                    ipaddress.ip_address(ip_address)
+                    is_ipaddress(ip_address)
                 except ValueError:
                     self.module.fail_json(msg="The provided IP address %s is not a valid IP"
                                               " for the rule %s" % (ip_address, rule_name))
 
             for ip_network in ip_networks:
                 try:
-                    ipaddress.ip_network(ip_network)
+                    is_ipaddress(ip_network)
                 except ValueError:
                     self.module.fail_json(msg="The provided IP network %s is not a valid network"
                                               " for the rule %s" % (ip_network, rule_name))

@@ -17,6 +17,7 @@ module: vmware_export_ovf
 short_description: Exports a VMware virtual machine to an OVF file, device files and a manifest file
 description: >
    This module can be used to export a VMware virtual machine to OVF template from vCenter server or ESXi host.
+version_added: '2.8'
 author:
 - Diane Wang (@Tomorrow9) <dianew@vmware.com>
 requirements:
@@ -38,6 +39,7 @@ options:
     description:
     - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
     - This is required if C(name) or C(uuid) is not supplied.
+    version_added: '2.9'
     type: str
   datacenter:
     default: ha-datacenter
@@ -51,6 +53,7 @@ options:
     - The folder should include the datacenter. ESX's datacenter is ha-datacenter.
     - This parameter is case sensitive.
     - 'If multiple machines are found with same name, this parameter is used to identify
+       uniqueness of the virtual machine. version_added 2.5'
     - 'Examples:'
     - '   folder: /ha-datacenter/vm'
     - '   folder: ha-datacenter/vm'
@@ -79,9 +82,8 @@ options:
     - If the vmdk file is too large, you can increase the value.
     default: 30
     type: int
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+    version_added: '2.9'
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -111,7 +113,7 @@ from threading import Thread
 from ansible.module_utils.urls import open_url
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_text, to_bytes
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 try:
     from pyVmomi import vim
     from pyVim import connect

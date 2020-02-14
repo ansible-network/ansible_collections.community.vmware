@@ -22,6 +22,7 @@ description:
 - This module can be used to gather information about vmhbas available on the given ESXi host.
 - If C(cluster_name) is provided, then vmhba information about all hosts from given cluster will be returned.
 - If C(esxi_hostname) is provided, then vmhba information about given host system will be returned.
+version_added: '2.9'
 author:
 - Christian Kotte (@ckotte)
 notes:
@@ -42,9 +43,7 @@ options:
     - Vmhba information about each ESXi server will be returned for the given cluster.
     - This parameter is required if C(esxi_hostname) is not specified.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -127,7 +126,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 
 
 class HostVmhbaMgr(PyVmomi):

@@ -21,6 +21,7 @@ module: vmware_host_dns
 short_description: Manage DNS configuration of an ESXi host system
 description:
 - This module can be used to configure DNS for the default TCP/IP stack on an ESXi host system.
+version_added: '2.10'
 author:
 - Christian Kotte (@ckotte)
 - Mario Lenz (@mariolenz)
@@ -80,9 +81,7 @@ options:
     - This parameter is required if C(esxi_hostname) is not specified and you connect to a vCenter.
     - Cannot be used when you connect directly to an ESXi host.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -157,7 +156,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 from ansible.module_utils._text import to_native
 
 

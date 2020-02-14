@@ -22,6 +22,7 @@ short_description: Configures general settings on a vCenter server
 description:
 - This module can be used to configure the vCenter server general settings (except the statistics).
 - The statistics can be configured with the module C(vmware_vcenter_statistics).
+version_added: 2.8
 author:
 - Christian Kotte (@ckotte)
 notes:
@@ -139,9 +140,7 @@ options:
         type: str
         choices: ['none', 'error', 'warning', 'info', 'verbose', 'trivia']
         default: 'info'
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -217,7 +216,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 from ansible.module_utils._text import to_native
 
 

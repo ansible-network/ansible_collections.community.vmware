@@ -24,6 +24,7 @@ description:
     - Although this module can manage DRS, HA and VSAN related configurations, this functionality is deprecated and will be removed in 2.12.
     - To manage DRS, HA and VSAN related configurations, use the new modules vmware_cluster_drs, vmware_cluster_ha and vmware_cluster_vsan.
     - All values and VMware object names are case sensitive.
+version_added: '2.0'
 author:
 - Joseph Callen (@jcpowermac)
 - Abhijeet Kasurde (@Akasurde)
@@ -47,16 +48,19 @@ options:
       - If set to C(yes), DRS will not be configured; all explicit and default DRS related configurations will be ignored.
       type: bool
       default: 'no'
+      version_added: 2.9
     ignore_ha:
       description:
       - If set to C(yes), HA will not be configured; all explicit and default HA related configurations will be ignored.
       type: bool
       default: 'no'
+      version_added: 2.9
     ignore_vsan:
       description:
       - If set to C(yes), VSAN will not be configured; all explicit and default VSAN related configurations will be ignored.
       type: bool
       default: 'no'
+      version_added: 2.9
     enable_drs:
       description:
       - If set to C(yes), will enable DRS when the cluster is created.
@@ -68,6 +72,7 @@ options:
       - If set to C(True), overrides C(drs_default_vm_behavior).
       type: bool
       default: True
+      version_added: 2.8
     drs_default_vm_behavior:
       description:
       - Specifies the cluster-wide default DRS behavior for virtual machines.
@@ -79,11 +84,13 @@ options:
         and their placement with a host at power on.
       default: fullyAutomated
       choices: [ fullyAutomated, manual, partiallyAutomated ]
+      version_added: 2.8
     drs_vmotion_rate:
       description:
       - Threshold for generated ClusterRecommendations.
       default: 3
       choices: [ 1, 2, 3, 4, 5 ]
+      version_added: 2.8
     enable_ha:
       description:
       - If set to C(yes) will enable HA when the cluster is created.
@@ -97,6 +104,7 @@ options:
       - If C(enable_ha) is set to C(no), then this value is ignored.
       choices: [ 'enabled', 'disabled' ]
       default: 'enabled'
+      version_added: 2.8
     ha_vm_monitoring:
       description:
       - Indicates the state of virtual machine health monitoring service.
@@ -106,18 +114,21 @@ options:
       - If C(enable_ha) is set to C(no), then this value is ignored.
       choices: ['vmAndAppMonitoring', 'vmMonitoringOnly', 'vmMonitoringDisabled']
       default: 'vmMonitoringDisabled'
+      version_added: 2.8
     ha_failover_level:
       description:
       - Number of host failures that should be tolerated, still guaranteeing sufficient resources to
         restart virtual machines on available hosts.
       - Accepts integer values only.
       default: 2
+      version_added: 2.8
     ha_admission_control_enabled:
       description:
       - Determines if strict admission control is enabled.
       - It is recommended to set this parameter to C(True), please refer documentation for more details.
       default: True
       type: bool
+      version_added: 2.8
     ha_vm_failure_interval:
       description:
       - The number of seconds after which virtual machine is declared as failed
@@ -125,6 +136,7 @@ options:
       - This setting is only valid if C(ha_vm_monitoring) is set to, either C(vmAndAppMonitoring) or C(vmMonitoringOnly).
       - Unit is seconds.
       default: 30
+      version_added: 2.8
     ha_vm_min_up_time:
       description:
       - The number of seconds for the virtual machine's heartbeats to stabilize after
@@ -132,12 +144,14 @@ options:
       - This setting is only valid if C(ha_vm_monitoring) is set to, either C(vmAndAppMonitoring) or C(vmMonitoringOnly).
       - Unit is seconds.
       default: 120
+      version_added: 2.8
     ha_vm_max_failures:
       description:
       - Maximum number of failures and automated resets allowed during the time
        that C(ha_vm_max_failure_window) specifies.
       - This setting is only valid if C(ha_vm_monitoring) is set to, either C(vmAndAppMonitoring) or C(vmMonitoringOnly).
       default: 3
+      version_added: 2.8
     ha_vm_max_failure_window:
       description:
       - The number of seconds for the window during which up to C(ha_vm_max_failures) resets
@@ -146,6 +160,7 @@ options:
       - Unit is seconds.
       - Default specifies no failure window.
       default: -1
+      version_added: 2.8
     ha_restart_priority:
       description:
       - Determines the preference that HA gives to a virtual machine if sufficient capacity is not available
@@ -159,6 +174,7 @@ options:
       - If set to C(low), then virtual machine with this priority have a lower chance of powering on after a failure,
         when there is insufficient capacity on hosts to meet all virtual machine needs.
       default: 'medium'
+      version_added: 2.8
       choices: [ 'disabled', 'high', 'low', 'medium' ]
     enable_vsan:
       description:
@@ -171,14 +187,13 @@ options:
         on VSAN-enabled hosts in the cluster.
       type: bool
       default: False
+      version_added: 2.8
     state:
       description:
       - Create C(present) or remove C(absent) a VMware vSphere cluster.
       choices: [ absent, present ]
       default: present
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r"""
@@ -233,7 +248,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (PyVmomi, TaskError, find_datacenter_by_name,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (PyVmomi, TaskError, find_datacenter_by_name,
                                          vmware_argument_spec, wait_for_task)
 from ansible.module_utils._text import to_native
 

@@ -23,6 +23,7 @@ module: vmware_local_user_manager
 short_description: Manage local users on an ESXi host
 description:
     - Manage local users on an ESXi host
+version_added: "2.2"
 author:
 - Andreas Nafpliotis (@nafpliot-ibm)
 notes:
@@ -53,9 +54,7 @@ options:
         choices: ['present', 'absent']
         default: present
         type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -76,7 +75,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 
 
 class VMwareLocalUserManager(PyVmomi):

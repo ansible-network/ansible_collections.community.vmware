@@ -22,6 +22,7 @@ description:
 - This module can be used to configure, add or remove NTP servers from an ESXi host.
 - If C(state) is not given, the NTP servers will be configured in the exact sequence.
 - User can specify an ESXi hostname or Cluster name. In case of cluster name, all ESXi hosts are updated.
+version_added: '2.5'
 author:
 - Abhijeet Kasurde (@Akasurde)
 - Christian Kotte (@ckotte)
@@ -61,9 +62,8 @@ options:
     type: bool
     required: false
     default: false
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+    version_added: 2.8
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -140,7 +140,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 from ansible.module_utils._text import to_native
 
 

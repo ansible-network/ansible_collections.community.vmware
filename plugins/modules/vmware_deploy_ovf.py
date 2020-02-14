@@ -40,6 +40,7 @@ options:
         default: datastore1
         description:
         - Datastore to deploy to.
+        - "You can also specify datastore storage cluster. version_added: 2.9"
         type: str
     deployment_option:
         description:
@@ -84,6 +85,7 @@ options:
     inject_ovf_env:
         description:
         - Force the given properties to be inserted into an OVF Environment and injected through VMware Tools.
+        version_added: "2.8"
         type: bool
     name:
         description:
@@ -128,9 +130,8 @@ options:
         type: bool
 requirements:
     - pyvmomi
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+version_added: "2.7"
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -182,10 +183,10 @@ from ansible.module_utils._text import to_native
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six import string_types
 from ansible.module_utils.urls import generic_urlparse, open_url, urlparse, urlunparse
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (find_network_by_name, find_vm_by_name, PyVmomi,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (find_network_by_name, find_vm_by_name, PyVmomi,
                                          gather_vm_facts, vmware_argument_spec, wait_for_task, wait_for_vm_ip)
 try:
-    from ansible_collections.vmware.general.plugins.module_utils.vmware import vim
+    from ansible_collections.community.vmware.plugins.module_utils.vmware import vim
     from pyVmomi import vmodl
 except ImportError:
     pass

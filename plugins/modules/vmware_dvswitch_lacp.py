@@ -20,6 +20,7 @@ module: vmware_dvswitch_lacp
 short_description: Manage LACP configuration on a Distributed Switch
 description:
     - This module can be used to configure Link Aggregation Control Protocol (LACP) support mode and Link Aggregation Groups (LAGs).
+version_added: 2.8
 author:
 - Christian Kotte (@ckotte)
 notes:
@@ -76,9 +77,7 @@ options:
             - '   - The default load balancing mode in the vSphere Client is srcDestIpTcpUdpPortVlan.'
             - Please see examples for more information.
         type: list
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -143,7 +142,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (
     PyVmomi, TaskError, find_dvs_by_name, vmware_argument_spec, wait_for_task
 )
 

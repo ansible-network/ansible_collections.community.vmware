@@ -20,6 +20,7 @@ module: vmware_host_ssl_info
 short_description: Gather info of ESXi host system about SSL
 description:
 - This module can be used to gather information of the SSL thumbprint information for a host.
+version_added: '2.9'
 author:
 - Abhijeet Kasurde (@Akasurde)
 notes:
@@ -40,9 +41,7 @@ options:
     - SSL thumbprint information of this ESXi host system will be reported.
     - If C(cluster_name) is not given, this parameter is required.
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -100,7 +99,7 @@ host_ssl_info:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi
 
 
 class VMwareHostSslManager(PyVmomi):

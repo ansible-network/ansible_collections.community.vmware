@@ -22,6 +22,7 @@ description:
 - This module only supports NFS (NFS v3 or NFS v4.1) and VMFS datastores.
 - For VMFS datastore, available device must already be connected on ESXi host.
 - All parameters and VMware object names are case sensitive.
+version_added: '2.5'
 author:
 - Ludovic Rivallain (@lrivallain) <ludovic.rivallain@gmail.com>
 - Christian Kotte (@ckotte) <christian.kotte@gmx.de>
@@ -91,9 +92,7 @@ options:
     default: present
     choices: [ present, absent ]
     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -163,7 +162,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_datastore_by_name, find_obj
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_datastore_by_name, find_obj
 from ansible.module_utils._text import to_native
 
 

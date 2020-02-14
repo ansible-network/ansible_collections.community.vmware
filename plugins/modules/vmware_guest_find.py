@@ -19,6 +19,7 @@ module: vmware_guest_find
 short_description: Find the folder path(s) for a virtual machine by name or UUID
 description:
     - Find the folder path(s) for a virtual machine by name or UUID
+version_added: 2.4
 author:
     - Abhijeet Kasurde (@Akasurde) <akasurde@redhat.com>
 notes:
@@ -42,14 +43,8 @@ options:
      - Whether to use the VMware instance UUID rather than the BIOS UUID.
      default: no
      type: bool
-   datacenter:
-     description:
-     - Destination datacenter for the find operation.
-     - Deprecated in 2.5, will be removed in 2.9 release.
-     type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+     version_added: '2.8'
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -86,7 +81,7 @@ folders:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_vm_by_id
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_vm_by_id
 
 try:
     from pyVmomi import vim
@@ -133,7 +128,6 @@ def main():
         name=dict(type='str'),
         uuid=dict(type='str'),
         use_instance_uuid=dict(type='bool', default=False),
-        datacenter=dict(removed_in_version=2.9, type='str')
     )
 
     module = AnsibleModule(argument_spec=argument_spec,

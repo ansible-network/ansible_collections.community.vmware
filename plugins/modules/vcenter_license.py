@@ -15,6 +15,7 @@ module: vcenter_license
 short_description: Manage VMware vCenter license keys
 description:
 - Add and delete vCenter, ESXi server license keys.
+version_added: '2.4'
 author:
 - Dag Wieers (@dagwieers)
 requirements:
@@ -43,15 +44,18 @@ options:
     description:
     - The hostname of the ESXi server to which the specified license will be assigned.
     - This parameter is optional.
+    version_added: '2.8'
     type: str
   datacenter:
     description:
     - The datacenter name to use for the operation.
     type: str
+    version_added: '2.9'
   cluster_name:
     description:
     - Name of the cluster to apply vSAN license.
     type: str
+    version_added: '2.9'
 notes:
 - This module will also auto-assign the current vCenter to the license key
   if the product matches the license key, and vCenter us currently assigned
@@ -60,9 +64,7 @@ notes:
   when unused.
 - If C(esxi_hostname) is specified, then will assign the C(license) key to
   the ESXi host.
-
-extends_documentation_fragment:
-- vmware.general.vmware.vcenter_documentation
+extends_documentation_fragment: vmware.vcenter_documentation
 '''
 
 EXAMPLES = r'''
@@ -123,7 +125,7 @@ except ImportError:
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_native
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_hostsystem_by_name
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, find_hostsystem_by_name
 
 
 class VcenterLicenseMgr(PyVmomi):

@@ -22,6 +22,7 @@ short_description: Configures statistics on a vCenter server
 description:
 - This module can be used to configure the vCenter server statistics.
 - The remaining settings can be configured with the module C(vmware_vcenter_settings).
+version_added: 2.8
 author:
 - Christian Kotte (@ckotte)
 notes:
@@ -66,9 +67,7 @@ options:
             - '- C(save_for_years) (int): Save for (years). (choices: [1, 2, 3, 4, 5]) (default: 1)'
             - '- C(level) (int): Statistics level. (choices: [1, 2, 3, 4]) (default: 1)'
         type: dict
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -129,7 +128,7 @@ except ImportError:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
 from ansible.module_utils._text import to_native
 
 

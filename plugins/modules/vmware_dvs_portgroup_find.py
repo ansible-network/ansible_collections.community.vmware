@@ -20,6 +20,7 @@ module: vmware_dvs_portgroup_find
 short_description: Find portgroup(s) in a VMware environment
 description:
 - Find portgroup(s) based on different criteria such as distributed vSwitch, VLAN id or a string in the name.
+version_added: 2.9
 author:
 - David Martinez (@dx0xm)
 notes:
@@ -49,9 +50,7 @@ options:
     - Only relevant when C(vlanid) is supplied.
     type: bool
     default: False
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = r'''
@@ -96,7 +95,7 @@ except ImportError as e:
     pass
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_dvs_by_name
+from ansible_collections.community.vmware.plugins.module_utils.vmware import vmware_argument_spec, PyVmomi, find_dvs_by_name
 
 
 class DVSPortgroupFindManager(PyVmomi):

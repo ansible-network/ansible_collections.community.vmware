@@ -18,6 +18,7 @@ DOCUMENTATION = '''
 ---
 module: vmware_guest_tools_upgrade
 short_description: Module to upgrade VMTools
+version_added: 2.8
 description:
     - This module upgrades the VMware Tools on Windows and Linux guests.
 requirements:
@@ -46,6 +47,7 @@ options:
         description:
             - Managed Object ID of the instance to manage if known, this is a unique identifier only within a single vCenter instance.
             - This is required if C(name) or C(uuid) is not supplied.
+        version_added: '2.9'
         type: str
    folder:
         description:
@@ -68,11 +70,9 @@ options:
             - Destination datacenter where the virtual machine exists.
         required: True
         type: str
+extends_documentation_fragment: vmware.documentation
 author:
     - Mike Klebolt (@MikeKlebolt) <michael.klebolt@centurylink.com>
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -99,7 +99,7 @@ RETURN = ''' # '''
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec, wait_for_task
 from ansible.module_utils._text import to_native
 
 

@@ -17,6 +17,7 @@ module: vmware_vsan_cluster
 short_description: Configure VSAN clustering on an ESXi host
 description:
     - This module can be used to configure VSAN clustering on an ESXi host
+version_added: 2.0
 author:
 - Russell Teague (@mtnbikenc)
 notes:
@@ -30,9 +31,7 @@ options:
             - Desired cluster UUID
         required: False
         type: str
-
-extends_documentation_fragment:
-- vmware.general.vmware.documentation
+extends_documentation_fragment: vmware.documentation
 '''
 
 EXAMPLES = '''
@@ -66,7 +65,7 @@ except ImportError:
     HAS_PYVMOMI = False
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.general.plugins.module_utils.vmware import (HAS_PYVMOMI, connect_to_api, get_all_objs, vmware_argument_spec,
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (HAS_PYVMOMI, connect_to_api, get_all_objs, vmware_argument_spec,
                                          wait_for_task)
 
 
